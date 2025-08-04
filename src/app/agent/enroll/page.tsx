@@ -247,7 +247,7 @@ export default function AgentEnroll() {
 
   return (
     <main className="min-h-screen bg-white">
-      <div className="mx-auto max-w-3xl px-4 py-12">
+      <div className="mx-auto max-w-3xl px-4 py-12 animate-fade-in-up">
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold text-[#008751]">
             Agent Onboarding

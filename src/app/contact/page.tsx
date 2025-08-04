@@ -1,25 +1,36 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
 
 const ContactPage: React.FC = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [visible, setVisible] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Replace with actual backend submission logic
-    alert('Message sent!');
+    alert("Message sent!");
   };
 
+  useEffect(() => {
+    // Trigger fade-in animation on mount
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
+
   return (
-    <>
-         <section className="min-h-screen bg-gray-50 px-4 py-16 sm:px-6 lg:px-8">
+    <div
+      className={`transition-all duration-700 ease-out transform ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+      }`}
+    >
+      <section className="min-h-screen bg-gray-50 px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto mb-12 max-w-4xl text-center">
           <h1 className="text-3xl font-bold text-green-800">Contact Us</h1>
           <p className="mx-auto mt-2 max-w-2xl text-gray-600">
-            We’d love to hear from you. Whether you have a question about services, pricing, or anything else, our team is ready to answer all your questions.
+            We’d love to hear from you. Whether you have a question about
+            services, pricing, or anything else, our team is ready to answer all
+            your questions.
           </p>
         </div>
 
@@ -30,7 +41,10 @@ const ContactPage: React.FC = () => {
               <div>
                 <h4 className="text-lg font-semibold text-gray-800">Email</h4>
                 <p className="text-gray-600">
-                  <a href="mailto:info@jubileecare.ng" className="hover:text-green-700">
+                  <a
+                    href="mailto:info@jubileecare.ng"
+                    className="hover:text-green-700"
+                  >
                     info@jubileecare.ng
                   </a>
                 </p>
@@ -63,7 +77,10 @@ const ContactPage: React.FC = () => {
             {/* Contact Form */}
             <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6">
               <div className="grid gap-2">
-                <label htmlFor="name" className="text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="name"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Name
                 </label>
                 <input
@@ -78,7 +95,10 @@ const ContactPage: React.FC = () => {
               </div>
 
               <div className="grid gap-2">
-                <label htmlFor="email" className="text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="email"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Email
                 </label>
                 <input
@@ -93,7 +113,10 @@ const ContactPage: React.FC = () => {
               </div>
 
               <div className="grid gap-2">
-                <label htmlFor="message" className="text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="message"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Message
                 </label>
                 <textarea
@@ -119,7 +142,7 @@ const ContactPage: React.FC = () => {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 };
 

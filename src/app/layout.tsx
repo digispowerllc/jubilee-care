@@ -1,9 +1,8 @@
+// layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navigation from '@/app/components/Navigation';
-import Notification from './components/global/Notification';
-import Footer from '@/app/components/Footer';
+import LayoutLoaderWrapper from "./LayoutLoaderWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,18 +26,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <Navigation />
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
-        
+        <LayoutLoaderWrapper>{children}</LayoutLoaderWrapper>
       </body>
-      <Footer />
-      <Notification />
     </html>
-    
   );
-   
 }
-

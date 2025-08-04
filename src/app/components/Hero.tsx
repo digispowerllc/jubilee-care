@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 
 const Hero: React.FC = () => {
   return (
@@ -10,11 +10,12 @@ const Hero: React.FC = () => {
           NIMC Front-End Partner
         </h1>
         <p className="mt-4 text-base text-gray-600 sm:text-lg">
-          Empowering Nigeria with digital identity and ICT innovation — one community at a time.
+          Empowering Nigeria with digital identity and ICT innovation — one
+          community at a time.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           <a
-            href="/contact"
+            href="/agent/enroll"
             className="inline-block rounded-lg bg-green-700 px-8 py-3 text-white font-semibold shadow-sm hover:bg-green-800"
           >
             Get Started
