@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import useNotificationStore from '../store/notification';
+import { useEffect } from "react";
+import useNotificationStore from "../store/notification";
 
 export default function Notification() {
   const { notification, clear } = useNotificationStore();
@@ -28,6 +28,7 @@ export default function Notification() {
           position: fixed;
           top: 4rem;
           right: 0.5rem;
+          top: 4.5rem;
           padding: 0.5rem 1rem;
           border-radius: 0.375rem;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -66,7 +67,7 @@ export default function Notification() {
           padding: 0;
         }
 
-         @keyframes fadeIn {
+        @keyframes fadeIn {
           from {
             opacity: 0;
             transform: translateY(-10px);
