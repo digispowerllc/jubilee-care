@@ -35,8 +35,14 @@ const testimonials = [
 const Testimonials: React.FC = () => (
   <section className="relative bg-gray-50 px-4 py-16 sm:px-6 lg:px-8 overflow-hidden">
     <div className="mx-auto max-w-6xl text-center">
-      ...
-      <div className="mt-20 mb-10 overflow-visible">
+      <h2 className="text-2xl font-bold text-green-800">
+        What the citizens say
+      </h2>
+      <p className="mx-auto mt-2 max-w-xl text-gray-600">
+        Real stories from people impacted by Jubilee Care’s ICT initiatives.
+      </p>
+
+      <div className="mt-20 mb-10 overflow-hidden">
         {" "}
         {/* Important */}
         <Swiper
@@ -50,7 +56,7 @@ const Testimonials: React.FC = () => (
             768: { slidesPerView: 2 },
             1024: { slidesPerView: 3 },
           }}
-          className="overflow-visible"
+          className="overflow-hidden"
         >
           {testimonials.map((t, idx) => (
             <SwiperSlide key={idx} className="!h-auto">
@@ -61,6 +67,12 @@ const Testimonials: React.FC = () => (
                   </p>
 
                   <div className="mt-8 flex items-center gap-4 justify-end">
+                    <div className="text-right space-y-1">
+                      <div className="truncate max-w-[140px] text-sm font-semibold text-green-800">
+                        {t.name}
+                      </div>
+                      <div className="text-xs text-gray-500">{t.role}</div>
+                    </div>
                     <Image
                       src={t.avatar}
                       alt={t.name}
@@ -70,12 +82,6 @@ const Testimonials: React.FC = () => (
                       loading="lazy"
                       unoptimized
                     />
-                    <div className="text-right space-y-1">
-                      <div className="truncate max-w-[140px] text-sm font-semibold text-green-800">
-                        {t.name}
-                      </div>
-                      <div className="text-xs text-gray-500">{t.role}</div>
-                    </div>
                   </div>
                 </div>
               </div>
