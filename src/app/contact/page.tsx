@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import Navigation from '../components/Navigation'; // Adjust path as needed
 
 const ContactPage: React.FC = () => {
   const [name, setName] = useState('');
@@ -16,9 +15,7 @@ const ContactPage: React.FC = () => {
 
   return (
     <>
-      <Navigation />
-
-      <section className="min-h-screen bg-gray-50 px-4 py-16 sm:px-6 lg:px-8">
+         <section className="min-h-screen bg-gray-50 px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto mb-12 max-w-4xl text-center">
           <h1 className="text-3xl font-bold text-green-800">Contact Us</h1>
           <p className="mx-auto mt-2 max-w-2xl text-gray-600">

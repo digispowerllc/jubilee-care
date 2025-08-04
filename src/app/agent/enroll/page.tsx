@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import Navigation from '@/app/components/Navigation';
 import { notifySuccess, notifyError } from '@/app/components/store/notification';
 
 type AgentData = {
