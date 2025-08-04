@@ -6,7 +6,7 @@ const Hero: React.FC = () => {
   return (
     <section className="bg-white px-4 py-20 text-center sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
-        <h1 className="text-3xl font-bold text-green-900 sm:text-4xl">
+        <h1 className="mb-6 text-2xl font-bold text-green-800 sm:text-4xl lg:text-5xl">
           NIMC Front-End Partner
         </h1>
         <p className="mt-4 text-base text-gray-600 sm:text-lg">

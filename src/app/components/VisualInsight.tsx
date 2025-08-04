@@ -1,17 +1,18 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Image from 'next/image';
+import React from "react";
+import Image from "next/image";
 
 const VisualInsight: React.FC = () => {
   return (
     <section className="px-6 py-20 text-center">
       <div className="mx-auto max-w-5xl">
-        <h2 className="mb-4 text-3xl font-bold text-green-800 sm:text-4xl">
+        <h2 className="mb-6 text-2xl font-bold text-green-800 sm:text-4xl lg:text-5xl">
           Your NIMC Experience, Reimagined
         </h2>
         <p className="mb-8 max-w-2xl mx-auto text-gray-700 sm:text-lg">
-          A glimpse into how Jubilee visualizes NIMC services, trends, and digital inclusion in motion.
+          A glimpse into how Jubilee visualizes NIMC services, trends, and
+          digital inclusion in motion.
         </p>
 
         {/* ✅ Attach onContextMenu here instead of on Image */}
