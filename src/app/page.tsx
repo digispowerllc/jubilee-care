@@ -2,15 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import AgentEnrollmentModal from './components/AgentEnrollmentModal';
-import Navigation from './components/Navigation';
-import Hero from './components/Hero';
-import CoreServices from './components/CoreServices';
-import Testimonials from './components/Testimonials';
-import ImpactSection from './components/ImpactSection';
-import VisualInsight from './components/VisualInsight';
-import AboutUs from './components/AboutUs';
-import SocialHandles from './components/SocialHandles';
-import Footer from './components/Footer';
+import Hero from '@/app/components/Hero';
+import CoreServices from '@/app/components/CoreServices';
+import Testimonials from '@/app/components/Testimonials';
+import ImpactSection from '@/app/components/ImpactSection';
+import VisualInsight from '@/app/components/VisualInsight';
+import AboutUs from '@/app/components/AboutUs';
+import SocialHandles from '@/app/components/SocialHandles';
 
 export default function HomePage() {
   const [showModal, setShowModal] = useState(false);
@@ -28,7 +26,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-white">
       {showModal && <AgentEnrollmentModal onClose={() => setShowModal(false)} />}
-      <Navigation />
+     
       <Hero />
       <CoreServices />
       <ImpactSection />
@@ -36,7 +34,6 @@ export default function HomePage() {
       <VisualInsight />
       <AboutUs />
       <SocialHandles />
-      <Footer />
-    </main>
+          </main>
   );
 }
