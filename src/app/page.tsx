@@ -1,16 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import AgentEnrollmentModal from '../components/AgentEnrollmentModal';
-import Navigation from '../components/Navigation';
-import Hero from '../components/Hero';
-import CoreServices from '../components/CoreServices';
-import Testimonials from '../components/Testimonials';
-import ImpactSection from '../components/ImpactSection';
-import VisualInsight from '../components/VisualInsight';
-import AboutUs from '../components/AboutUs';
-import SocialHandles from '../components/SocialHandles';
-import Footer from '../components/Footer';
+import AgentEnrollmentModal from './components/AgentEnrollmentModal';
+import Navigation from './components/Navigation';
+import Hero from './components/Hero';
+import CoreServices from './components/CoreServices';
+import Testimonials from './components/Testimonials';
+import ImpactSection from './components/ImpactSection';
+import VisualInsight from './components/VisualInsight';
+import AboutUs from './components/AboutUs';
+import SocialHandles from './components/SocialHandles';
+import Footer from './components/Footer';
 
 export default function HomePage() {
   const [showModal, setShowModal] = useState(false);
