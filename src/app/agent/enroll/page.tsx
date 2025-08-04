@@ -95,7 +95,7 @@ export default function AgentEnroll() {
       const result = await res.json();
 
       if (result.disposable) {
-        notifyError("Disposable email detected.");
+        notifyError("Invalid email address provided.");
         return false;
       }
 
