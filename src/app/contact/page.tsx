@@ -24,7 +24,7 @@ const ContactPage: React.FC = () => {
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
       }`}
     >
-      <section className="min-h-screen bg-gray-50 px-4 py-16 sm:px-6 lg:px-8">
+      <section className="min-h-screen bg-white px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto mb-12 max-w-4xl text-center">
           <h1 className="text-3xl font-bold text-green-800">Contact Us</h1>
           <p className="mx-auto mt-2 max-w-2xl text-gray-600">
