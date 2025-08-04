@@ -39,7 +39,7 @@ const Navigation: React.FC = () => {
           <a href="#about" className="text-base font-medium text-gray-700 hover:text-green-700">About Us</a>
           <a href="#services" className="text-base font-medium text-gray-700 hover:text-green-700">Our Services</a>
           <a href="#projects" className="text-base font-medium text-gray-700 hover:text-green-700">Projects</a>
-          <Link href="/contact" className="text-base font-medium text-gray-700 hover:text-green-700">Contact Us</Link>
+          <Link href="#contact" className="text-base font-medium text-gray-700 hover:text-green-700">Contact Us</Link>
         </div>
       </div>
 
@@ -48,7 +48,7 @@ const Navigation: React.FC = () => {
           <a href="#about" className="block w-full px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-green-50 hover:text-green-700">About Us</a>
           <a href="#services" className="block w-full px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-green-50 hover:text-green-700">Our Services</a>
           <a href="#projects" className="block w-full px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-green-50 hover:text-green-700">Projects</a>
-          <Link href="/contact" className="block w-full px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-green-50 hover:text-green-700">Contact Us</Link>
+          <Link href="#contact" className="block w-full px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-green-50 hover:text-green-700">Contact Us</Link>
         </div>
       )}
     </nav>

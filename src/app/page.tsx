@@ -1,4 +1,7 @@
-// No "use client" needed here — this is a server component
+'use client';
+
+import { useEffect, useState } from 'react';
+import AgentEnrollmentModal from '../components/AgentEnrollmentModal';
 import Navigation from '../components/Navigation';
 import Hero from '../components/Hero';
 import CoreServices from '../components/CoreServices';
@@ -10,8 +13,21 @@ import SocialHandles from '../components/SocialHandles';
 import Footer from '../components/Footer';
 
 export default function HomePage() {
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    const now = new Date();
+    const cutoff = new Date();
+    cutoff.setHours(15, 0, 0, 0); // 3:00 PM today
+
+    if (now < cutoff) {
+      setShowModal(true);
+    }
+  }, []);
+
   return (
     <main className="min-h-screen bg-white">
+      {showModal && <AgentEnrollmentModal onClose={() => setShowModal(false)} />}
       <Navigation />
       <Hero />
       <CoreServices />
