@@ -14,7 +14,7 @@ const Hero: React.FC = () => {
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           <a
-            href="#contact"
+            href="/contact"
             className="inline-block rounded-lg bg-green-700 px-8 py-3 text-white font-semibold shadow-sm hover:bg-green-800"
           >
             Get Started
