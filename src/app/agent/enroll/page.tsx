@@ -77,7 +77,7 @@ export default function AgentEnroll() {
       }
 
       return true;
-    } catch (error) {
+    } catch {
       notifyError("Unable to verify email. Please try again.");
       return false;
     } finally {

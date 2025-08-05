@@ -4,13 +4,13 @@ import React from "react";
 import Image from "next/image";
 
 const Footer: React.FC = () => {
-  const year = new Date().getFullYear();
+  // const year = new Date().getFullYear();
 
   return (
     <footer className="bg-white px-4 py-10 sm:px-6 lg:px-8 border-t border-gray-100 shadow-md">
       <div className="mx-auto max-w-7xl text-center text-sm text-gray-500 flex flex-col items-center space-y-2 space-x-0">
         <div className="flex items-center gap-1 space-y-2 sm:space-x-2 sm:space-y-0">
-          <span className="text-base leading-[48px]">Powered by</span>
+          <span className="text-base leading-[48px]"></span>
           <a
             href="https://www.i3hub.com.ng"
             target="_blank"
@@ -28,7 +28,7 @@ const Footer: React.FC = () => {
           </a>
         </div>
         <p>
-          © {year} Jubilee Care ICT Innovative Consult. All rights reserved.
+          {/* © {year} Jubilee Care ICT Innovative Consult. All rights reserved. */}
         </p>
       </div>
     </footer>
