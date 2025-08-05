@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       },
     })
 
-    console.log("✅ Agent profile created successfully:", agent)
+    console.log("Agent profile created successfully:", agent)
 
     return NextResponse.json({ success: true, agent }, { status: 201 })
   } catch (error: unknown) {
