@@ -61,7 +61,7 @@ const Testimonials: React.FC = () => {
   const [activeCard, setActiveCard] = useState<number | null>(null);
 
   return (
-    <section className="relative bg-gray-50 px-4 py-16 sm:px-6 lg:px-8 overflow-visible">
+    <section className="relative bg-gray-50 px-4 py-16 sm:px-6 lg:px-8 overflow-hidden">
       <div className="mx-auto max-w-6xl text-center">
         <h2 className="mb-6 text-2xl font-bold text-green-800 sm:text-4xl lg:text-5xl">
           What the citizens say
