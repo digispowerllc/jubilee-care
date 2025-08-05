@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Mail, Phone, LocateFixed, ExternalLink } from "lucide-react";
 
 const ContactPage: React.FC = () => {
   const [name, setName] = useState("");
@@ -40,32 +41,38 @@ const ContactPage: React.FC = () => {
               {/* Contact Info */}
               <div className="space-y-6">
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-800">Email</h4>
+                  <h4 className="text-lg font-semibold text-gray-800">
+                    <Mail className="h-4 w-4 opacity-60" />
+                  </h4>
                   <p className="text-gray-600">
                     <a
                       href="mailto:info@jubileecare.ng"
                       className="hover:text-green-700"
                     >
-                      info@jubileecare.ng
-                    </a>
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-800">Phone</h4>
-                  <p className="text-gray-600">
-                    <a
-                      href="tel:+2347039792389"
-                      className="hover:text-green-700"
-                    >
-                      +234 703 979 2389
+                      info@jubileecare.ng{" "}
+                      <ExternalLink className="inline h-4 w-4 ml-1" />
                     </a>
                   </p>
                 </div>
 
                 <div>
                   <h4 className="text-lg font-semibold text-gray-800">
-                    Address
+                    <Phone className="h-4 w-4 opacity-60" />
+                  </h4>
+                  <p className="text-gray-600">
+                    <a
+                      href="tel:+2347039792389"
+                      className="hover:text-green-700"
+                    >
+                      +234 703 979 2389{" "}
+                      <ExternalLink className="inline h-4 w-4 ml-1" />
+                    </a>
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-800">
+                    <LocateFixed className="h-4 w-4 opacity-60" />
                   </h4>
                   <p className="text-gray-600">
                     <a
@@ -74,7 +81,8 @@ const ContactPage: React.FC = () => {
                       rel="noopener noreferrer"
                       className="hover:text-green-700"
                     >
-                      Umuahia, Abia State, Nigeria
+                      Umuahia, Abia State, Nigeria{" "}
+                      <ExternalLink className="inline h-4 w-4 ml-1" />
                     </a>
                   </p>
                 </div>
