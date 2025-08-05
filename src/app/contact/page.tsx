@@ -2,16 +2,104 @@
 
 import React, { useEffect, useState } from "react";
 import { Mail, Phone, LocateFixed, ExternalLink } from "lucide-react";
+import {
+  notifySuccess,
+  notifyError,
+} from "@/app/components/store/notification";
 
 const ContactPage: React.FC = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [visible, setVisible] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Message sent!");
+
+    if (loading) return; // Prevent multiple submissions
+
+    // Basic validation
+    if (!name) {
+      notifyError("Your name is required.");
+      return;
+    }
+
+    if (!email) {
+      notifyError("Your email is required.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      notifyError("Please enter a valid email address.");
+      return;
+    }
+
+    if (!message) {
+      notifyError("Your message is required.");
+      return;
+    }
+
+    if (message.length < 10) {
+      notifyError("Your message must be at least 10 characters long.");
+      return;
+    }
+
+    if (message.length > 100) {
+      notifyError("Your message cannot exceed 100 characters.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Check email via API
+      const res = await fetch(
+        `/api/check-email?email=${encodeURIComponent(email)}`
+      );
+
+      if (!res.ok) {
+        try {
+          const errorData = await res.json();
+          notifyError(errorData.error || "Failed to verify email.");
+        } catch {
+          notifyError("Failed to verify email. Invalid server response.");
+        }
+        return;
+      }
+
+      const result = await res.json();
+
+      if (result.disposable) {
+        notifyError("Invalid email address provided.");
+        return;
+      }
+
+      // Proceed to WhatsApp
+      const phoneNumber = "+2347039792389";
+      const text = `Hello, my name is ${name}.\nEmail: ${email}\n\n${message}`;
+      const encoded = encodeURIComponent(text);
+      const url = `https://wa.me/${phoneNumber.replace(
+        /\D/g,
+        ""
+      )}?text=${encoded}`;
+
+      window.open(url, "_blank");
+      setName("");
+      setEmail("");
+      setMessage("");
+      setErrors([]);
+      notifySuccess("Redirecting to WhatsApp...");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        notifyError(error.message);
+      } else {
+        notifyError("Something went wrong. Try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -104,8 +192,6 @@ const ContactPage: React.FC = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     type="text"
-                    required
-                    // readOnly
                     placeholder="Your name"
                     className="block w-full border border-gray-300 focus:border-[#008751] focus:ring-[#008751] rounded-lg shadow-sm px-4 py-3 text-base transition-all duration-200 ease-in-out focus:outline-none"
                   />
@@ -123,8 +209,6 @@ const ContactPage: React.FC = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     type="email"
-                    // readOnly
-                    required
                     placeholder="you@example.com"
                     className="block w-full border border-gray-300 focus:border-[#008751] focus:ring-[#008751] rounded-lg shadow-sm px-4 py-3 text-base transition-all duration-200 ease-in-out focus:outline-none"
                   />
@@ -142,8 +226,6 @@ const ContactPage: React.FC = () => {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     rows={5}
-                    // readOnly
-                    required
                     placeholder="Type your message here..."
                     className="block w-full border border-gray-300 focus:border-[#008751] focus:ring-[#008751] rounded-lg shadow-sm px-4 py-3 text-base transition-all duration-200 ease-in-out focus:outline-none"
                   ></textarea>
@@ -152,10 +234,32 @@ const ContactPage: React.FC = () => {
                 <div>
                   <button
                     type="submit"
-                    // disabled={true || !name || !email || !message}
-                    className="rounded-lg bg-[#008751] px-6 py-3 text-white text-base font-medium hover:bg-[#006f42] transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#006f42] focus:ring-offset-2"
+                    disabled={loading}
+                    className="rounded-lg bg-[#008751] px-6 py-3 text-white text-base font-medium hover:bg-[#006f42] transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#006f42] focus:ring-offset-2 flex items-center justify-center w-full disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Send Message
+                    {loading ? (
+                      <svg
+                        className="h-4 w-4 animate-spin mr-2 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8H4z"
+                        ></path>
+                      </svg>
+                    ) : null}
+                    {loading ? "Sending..." : "Send Message"}
                   </button>
                 </div>
 
