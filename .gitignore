@@ -46,8 +46,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Prima
+# Prisma generated client
 /src/generated/prisma
 
-#  Scripts
-scripts/
+# Prisma schema and migrations
+/prisma
+/prisma*
+
+# Custom scripts
+/scripts
+
+

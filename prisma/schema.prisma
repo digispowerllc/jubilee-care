@@ -15,45 +15,41 @@ datasource db {
 }
 
 model Agent {
-  id          String   @id @default(uuid())
-  surname     String
-  firstName   String
-  otherName   String?
-  email       String
-  phone       String
-  nin         String   @unique
-  state       String
-  lga         String
-  address     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now())
-  deletedAt   DateTime?
-  isActive    Boolean  @default(true)
-  isAdmitted  Boolean  @default(false)
-  isDeleted   Boolean  @default(false)
+  id         String   @id @default(uuid())
+  surname    String
+  firstName  String
+  otherName  String?
+  email      String
+  phone      String
+  nin        String   @unique
+  state      String
+  lga        String
+  address    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+  isActive   Boolean  @default(true)
+  isAdmitted Boolean  @default(false)
+  isDeleted  Boolean  @default(false)
 
-  profiles    AgentProfile[]
+  profiles AgentProfile[]
 
   @@index([email])
   @@index([phone])
   @@index([state])
   @@index([lga])
-  @@index([isActive])
-  @@index([isDeleted])
 }
 
 model AgentProfile {
-  id           String   @id @default(uuid())
-  agentId      String
-  userId       String
-  accessCode   String
-  passportUrl  String?
-  signatureUrl String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now())
-  deletedAt    DateTime?
+  id          String    @id @default(uuid())
+  agentId     String
+  userId      String
+  accessCode  String
+  passportUrl String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now())
+  deletedAt   DateTime?
 
-  agent        Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
   @@index([agentId])
   @@index([userId])
@@ -61,30 +57,29 @@ model AgentProfile {
 }
 
 model User {
-  id                String   @id
-  username          String   @unique
+  id                String    @id
+  username          String    @unique
   passwordHash      String
-  email             String   @unique
-  verified          Int      @default(0)
+  email             String    @unique
+  verified          Int       @default(0)
   fullName          String
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @default(now())
-  profilePicture    String   @default("")
-  bio               String   @default("")
-  country           String   @default("")
-  state             String   @default("")
-  city              String   @default("")
-  address           String   @default("")
-  phoneNumber       String   @unique
-  phoneVerified     Int      @default(0)
-  hasPin            Int      @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now())
+  bio               String    @default("")
+  country           String    @default("")
+  state             String    @default("")
+  city              String    @default("")
+  address           String    @default("")
+  phoneNumber       String    @unique
+  phoneVerified     Int       @default(0)
+  hasPin            Int       @default(0)
   pinHash           String?
-  banned            Int      @default(0)
+  banned            Int       @default(0)
   passwordChangedAt DateTime?
-  role              String   @default("user")
+  role              String    @default("user")
 
-  roles             UserRole[]
-  sessions          Session[]
+  roles    UserRole[]
+  sessions Session[]
 
   @@index([username])
   @@index([email])
@@ -95,7 +90,6 @@ model User {
   @@index([state])
   @@index([city])
   @@index([address])
-  @@index([profilePicture])
   @@index([bio])
   @@index([phoneVerified])
   @@index([hasPin])
@@ -108,19 +102,18 @@ model UserRole {
   userId String
   role   String @default("user")
 
-  user   User   @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 }
 
 model Session {
   id           String   @id @default(uuid())
   userId       String
   token        String   @unique
-  csrfToken    String   @unique
   refreshToken String   @unique
   createdAt    DateTime @default(now())
   expiresAt    DateTime
 
-  user         User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([expiresAt])
