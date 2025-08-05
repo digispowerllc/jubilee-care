@@ -21,7 +21,7 @@ export default function HomePage() {
     cutoff.setHours(15, 0, 0, 0); // 3:00 PM today
 
     if (now < cutoff) {
-      setShowModal(true);
+      setShowModal(false);
     }
 
     const durationsInSeconds = [1];
