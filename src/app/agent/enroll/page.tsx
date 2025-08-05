@@ -163,18 +163,29 @@ export default function AgentEnroll() {
     if (!(await validateStep())) return;
 
     setFormSubmitted(true);
+
     try {
-      const res = await fetch("/agent/enroll", {
+      const validationRes = await fetch("/api/agent/validate", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nin: agentData.nin, email: agentData.email }),
+      });
+
+      const validationResult = await validationRes.json();
+      if (!validationRes.ok) {
+        notifyError(validationResult.message);
+        return;
+      }
+
+      const enrollRes = await fetch("/agent/enroll", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(agentData),
       });
 
-      const result = await res.json();
-      if (!res.ok) {
-        notifyError(result?.message || "Submission failed.");
+      const enrollResult = await enrollRes.json();
+      if (!enrollRes.ok) {
+        notifyError(enrollResult?.message || "Submission failed.");
         return;
       }
 
