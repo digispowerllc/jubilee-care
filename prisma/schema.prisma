@@ -16,6 +16,7 @@ datasource db {
 
 model Agent {
   id         String   @id @default(uuid())
+  agentid    String
   surname    String
   firstName  String
   otherName  String?
@@ -33,6 +34,7 @@ model Agent {
 
   profiles AgentProfile[]
 
+  @@index([agentid])
   @@index([email])
   @@index([phone])
   @@index([state])
@@ -41,18 +43,18 @@ model Agent {
 
 model AgentProfile {
   id          String    @id @default(uuid())
-  agentId     String
-  userId      String
+  agentid     String
+  userid      String
   accessCode  String
   passportUrl String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @default(now())
   deletedAt   DateTime?
 
-  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agent Agent @relation(fields: [agentid], references: [id], onDelete: Cascade)
 
-  @@index([agentId])
-  @@index([userId])
+  @@index([agentid])
+  @@index([userid])
   @@index([accessCode])
 }
 
