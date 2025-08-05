@@ -27,7 +27,7 @@ export default function HomePage() {
       });
 
       if (now < cutoff) {
-        setShowModal(true);
+        setShowModal(false);
       }
     }, 1000);
 
