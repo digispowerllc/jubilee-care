@@ -20,12 +20,15 @@ export async function POST(req: Request) {
         )
       }
     }
+    const userId = generateUserId();
+    const accessCode = generateAccessCode();
+    const agentId = await generatePatternedId();
 
     const agent = await prisma.agent.create({
       data: {
         surname: body.surname.trim(),
         firstName: body.firstName.trim(),
-        otherName: body.lastName.trim() ?? null,
+        otherName: body.lastName?.trim() ?? null,
         email: body.email.trim(),
         phone: body.phone.trim(),
         nin: body.nin.trim(),
@@ -33,21 +36,18 @@ export async function POST(req: Request) {
         lga: body.lga.trim(),
         address: body.address.trim(),
       },
-    })
-
-    const userId = generateUserId();
-    const accessCode = generateAccessCode();
-    const uniqueId = await generatePatternedId();
-
+    });
 
     const profile = await prisma.agentProfile.create({
       data: {
-        agentid: agent.id,
-        userid: uniqueId,
-        accessCode: accessCode,
-        passportUrl: null, // or set if available
+        id: agent.id,               // Shared ID (if intended)
+        agentid: agent.id,          // Required for relation
+        userid: agent.id,           // If userid = agent.id
+        accessCode: generateAccessCode(),
+        passportUrl: null,
       },
     });
+
 
     // console.log("Agent profile created successfully:", agent)
 
