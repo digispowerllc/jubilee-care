@@ -1,46 +1,40 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+// src/app/api/your-endpoint/route.ts
+import { NextResponse } from "next/server";
+import { prisma } from "@/app/lib/prisma";
 
-const prisma = new PrismaClient();
+export async function POST(req: Request) {
+  console.log(`[${new Date().toISOString()}] Incoming POST request to /api/your-endpoint`);
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  console.log(`[${new Date().toISOString()}] Incoming ${req.method} request to /api/your-endpoint`);
+  try {
+    const body = await req.json();
 
-  if (req.method === 'POST') {
-    console.log("Request body:", req.body);
+    console.log("Request body:", body);
 
-    try {
-      const user = await prisma.user.create({
-        data: {
-          surname: req.body.surname,
-          firstName: req.body.firstName,
-          lastName: req.body.lastName || null,
-          email: req.body.email,
-          phone: req.body.phone,
-          nin: req.body.nin,
-          state: req.body.state,
-          lga: req.body.lga,
-          address: req.body.address,
-        },
-      });
+    const user = await prisma.user.create({
+      data: {
+        surname: body.surname,
+        firstName: body.firstName,
+        lastName: body.lastName || null,
+        email: body.email,
+        phone: body.phone,
+        nin: body.nin,
+        state: body.state,
+        lga: body.lga,
+        address: body.address,
+      },
+    });
 
-      console.log("User created successfully:", user);
+    console.log("✅ User created successfully:", user);
 
-      res.status(201).json({ success: true, user });
-    } catch (error: unknown) {
-      console.error("Error creating user:", error);
+    return NextResponse.json({ success: true, user }, { status: 201 });
+  } catch (error: unknown) {
+    console.error("❌ Error creating user:", error);
 
-      if (error instanceof Error) {
-        res.status(500).json({ error: error.message });
-      } else {
-        res.status(500).json({ error: 'Unknown error occurred' });
-      }
-    }
-  } else {
-    console.warn(`Method ${req.method} not allowed`);
-    res.status(405).json({ error: 'Method not allowed' });
+    const message = error instanceof Error ? error.message : "Unknown error occurred";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
+}
+
+export function GET() {
+  return NextResponse.json({ message: "Use POST to create a user" }, { status: 405 });
 }
