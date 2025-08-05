@@ -1,0 +1,127 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Agent {
+  id          String   @id @default(uuid())
+  surname     String
+  firstName   String
+  otherName   String?
+  email       String
+  phone       String
+  nin         String   @unique
+  state       String
+  lga         String
+  address     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+  deletedAt   DateTime?
+  isActive    Boolean  @default(true)
+  isAdmitted  Boolean  @default(false)
+  isDeleted   Boolean  @default(false)
+
+  profiles    AgentProfile[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([state])
+  @@index([lga])
+  @@index([isActive])
+  @@index([isDeleted])
+}
+
+model AgentProfile {
+  id           String   @id @default(uuid())
+  agentId      String
+  userId       String
+  accessCode   String
+  passportUrl  String?
+  signatureUrl String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now())
+  deletedAt    DateTime?
+
+  agent        Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@index([userId])
+  @@index([accessCode])
+}
+
+model User {
+  id                String   @id
+  username          String   @unique
+  passwordHash      String
+  email             String   @unique
+  verified          Int      @default(0)
+  fullName          String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now())
+  profilePicture    String   @default("")
+  bio               String   @default("")
+  country           String   @default("")
+  state             String   @default("")
+  city              String   @default("")
+  address           String   @default("")
+  phoneNumber       String   @unique
+  phoneVerified     Int      @default(0)
+  hasPin            Int      @default(0)
+  pinHash           String?
+  banned            Int      @default(0)
+  passwordChangedAt DateTime?
+  role              String   @default("user")
+
+  roles             UserRole[]
+  sessions          Session[]
+
+  @@index([username])
+  @@index([email])
+  @@index([phoneNumber])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([country])
+  @@index([state])
+  @@index([city])
+  @@index([address])
+  @@index([profilePicture])
+  @@index([bio])
+  @@index([phoneVerified])
+  @@index([hasPin])
+  @@index([banned])
+  @@index([passwordChangedAt])
+}
+
+model UserRole {
+  id     String @id @default(uuid())
+  userId String
+  role   String @default("user")
+
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  token        String   @unique
+  csrfToken    String   @unique
+  refreshToken String   @unique
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+}
