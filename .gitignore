@@ -49,9 +49,6 @@ next-env.d.ts
 # Prisma generated client
 /src/generated/prisma
 
-# Prisma schema and migrations
-/prisma/migrations
-
 # Custom scripts
 /scripts
 
