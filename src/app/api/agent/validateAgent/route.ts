@@ -1,59 +1,24 @@
-import { prisma } from "@/app/lib/prisma";
-import { AgentSchema } from "@/app/lib/agentSchema";
+import { NextResponse } from "next/server";
+import { validateAgent } from "@/app/lib/validateAgent";
 
-type AgentInput = {
-  nin: string;
-  email: string;
-  phone: string;
-};
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
 
-export async function validateAgent(data: AgentInput) {
-  console.log("🔍 Starting agent validation with data:", data);
+    const result = await validateAgent({
+      nin: body.nin,
+      email: body.email,
+      phone: body.phone,
+    });
 
-  // Step 1: Zod validation
-  const validation = AgentSchema.pick({
-    nin: true,
-    email: true,
-    phone: true,
-  }).safeParse(data);
+    if (!result.valid) {
+      return NextResponse.json({ success: false, message: result.message }, { status: 400 });
+    }
 
-  if (!validation.success) {
-    const errorMsg = validation.error.issues[0]?.message || "Invalid input";
-    console.log("❌ Zod validation failed:", errorMsg);
-    return { valid: false, message: errorMsg };
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error: unknown) {
+    console.error("❌ Error in validateAgent route:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
-
-  console.log("✅ Zod validation passed");
-
-  // Step 2: Normalize input
-  const { nin, email, phone } = {
-    nin: data.nin.trim(),
-    email: data.email.trim().toLowerCase(),
-    phone: data.phone.trim(),
-  };
-
-  console.log("📦 Checking for existing agent in database...");
-  const existingAgent = await prisma.agent.findFirst({
-    where: {
-      OR: [{ nin }, { email }, { phone }],
-    },
-  });
-
-  // Step 3: Conflict resolution
-  if (existingAgent) {
-    console.log("⚠️ Conflict found with existing agent:", existingAgent);
-
-    if (existingAgent.nin === nin) {
-      return { valid: false, message: "NIN already registered" };
-    }
-    if (existingAgent.email === email) {
-      return { valid: false, message: "Email already registered" };
-    }
-    if (existingAgent.phone === phone) {
-      return { valid: false, message: "Phone already registered" };
-    }
-  }
-
-  console.log("✅ Agent data is valid and unique");
-  return { valid: true };
 }
