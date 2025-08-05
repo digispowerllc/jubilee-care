@@ -1,19 +1,21 @@
 // pages/api/agent/enroll.ts
 
-import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/app/lib/prisma";
 import { agentSchema } from "@/app/lib/agentValidation/agentSchema";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export async function POST(req: Request) {
     if (req.method !== "POST") {
-        return res.status(405).json({ message: "Method not allowed" });
+        return new Response(JSON.stringify({ message: "Method not allowed" }), { status: 405 });
     }
 
     try {
         const parsed = agentSchema.safeParse(req.body);
         if (!parsed.success) {
             const errorMessages = parsed.error.issues.map(err => err.message).join(", ");
-            return res.status(400).json({ message: `Invalid input: ${errorMessages}` });
+            return new Response(JSON.stringify({ message: `Invalid input: ${errorMessages}` }), {
+                status: 400,
+                headers: { "Content-Type": "application/json" },
+            });
         }
 
         const agentData = parsed.data;
@@ -25,9 +27,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             },
         });
 
-        return res.status(201).json({ message: "Agent enrolled successfully", agentId: newAgent.id });
+        return new Response(JSON.stringify({
+            message: "Agent enrolled successfully",
+            agentId: newAgent.id,
+        }), {
+            status: 201,
+            headers: { "Content-Type": "application/json" },
+        });
     } catch (error: unknown) {
         console.error("Enrollment error:", error);
-        return res.status(500).json({ message: "Failed to enroll agent." });
+        return new Response(JSON.stringify({ message: "Failed to enroll agent." }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+        });
     }
 }
