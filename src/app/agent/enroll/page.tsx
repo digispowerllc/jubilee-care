@@ -30,29 +30,6 @@ const initialData: AgentData = {
   address: "",
 };
 
-const Input = ({
-  label,
-  ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) => (
-  <div className="flex flex-col gap-1">
-    <label className="text-sm font-medium text-gray-700">{label}</label>
-    <input {...props} className="input" />
-  </div>
-);
-
-const Select = ({
-  label,
-  children,
-  ...props
-}: React.SelectHTMLAttributes<HTMLSelectElement> & { label: string }) => (
-  <div className="flex flex-col gap-1">
-    <label className="text-sm font-medium text-gray-700">{label}</label>
-    <select {...props} className="input">
-      {children}
-    </select>
-  </div>
-);
-
 export default function AgentEnroll() {
   const [step, setStep] = useState(1);
   const [formSubmitted, setFormSubmitted] = useState(false);
