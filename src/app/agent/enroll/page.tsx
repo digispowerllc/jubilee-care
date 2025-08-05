@@ -9,7 +9,7 @@ import {
 type AgentData = {
   surname: string;
   firstName: string;
-  otherName: string;
+  otherName?: string; // Made optional (matches Prisma schema)
   email: string;
   phone: string;
   nin: string;
@@ -72,7 +72,7 @@ export default function AgentEnroll() {
       const result = await res.json();
 
       if (result.disposable) {
-        notifyError("Invalid email address provided.");
+        notifyError("This e-Mail address cannot be used.");
         return false;
       }
 
@@ -97,33 +97,59 @@ export default function AgentEnroll() {
       lga,
       address,
     } = agentData;
+
     const onlyLetters = /^[A-Za-z]+$/;
     const phonePattern = /^\d{10,15}$/;
     const ninPattern = /^\d{11}$/;
 
     switch (step) {
-      case 1:
-        if (!surname.trim() || !onlyLetters.test(surname))
-          return notifyError("Surname is required."), false;
-        if (!firstName.trim() || !onlyLetters.test(firstName))
-          return notifyError("First name is required."), false;
-        if (otherName && !onlyLetters.test(otherName.trim()))
-          return notifyError("Other name must contain only letters."), false;
+      case 1: {
+        const trimmedSurname = surname.trim();
+        const trimmedFirstName = firstName.trim();
+        const trimmedOtherName = otherName?.trim();
+
+        if (!trimmedSurname || !onlyLetters.test(trimmedSurname)) {
+          notifyError("Surname is required and must contain only letters.");
+          return false;
+        }
+        if (!trimmedFirstName || !onlyLetters.test(trimmedFirstName)) {
+          notifyError("First name is required and must contain only letters.");
+          return false;
+        }
+        if (trimmedOtherName && !onlyLetters.test(trimmedOtherName)) {
+          notifyError("Other name must contain only letters.");
+          return false;
+        }
         break;
-      case 2:
-        if (!validateEmail(email)) return false;
-        if (!phonePattern.test(phone))
-          return notifyError("Invalid phone number."), false;
+      }
+      case 2: {
+        const trimmedEmail = email.trim();
+        if (!validateEmail(trimmedEmail)) return false;
+        if (!phonePattern.test(phone)) {
+          notifyError("Invalid phone number.");
+          return false;
+        }
         return await checkEmail();
+      }
       case 3:
-        if (!ninPattern.test(nin))
-          return notifyError("NIN must be 11 digits."), false;
+        if (!ninPattern.test(nin)) {
+          notifyError("NIN must be 11 digits.");
+          return false;
+        }
         break;
       case 4:
-        if (!state) return notifyError("Select a state."), false;
-        if (!lga) return notifyError("Select an LGA."), false;
-        if (address.length < 10)
-          return notifyError("Address too short."), false;
+        if (!state) {
+          notifyError("Select a state.");
+          return false;
+        }
+        if (!lga) {
+          notifyError("Select an LGA.");
+          return false;
+        }
+        if (address.trim().length < 10) {
+          notifyError("Address too short.");
+          return false;
+        }
         break;
     }
 
@@ -141,36 +167,55 @@ export default function AgentEnroll() {
 
     setFormSubmitted(true);
 
+    const cleanedData = {
+      ...agentData,
+      surname: agentData.surname.trim(),
+      firstName: agentData.firstName.trim(),
+      otherName: agentData.otherName?.trim() || "",
+      email: agentData.email.trim(),
+      address: agentData.address.trim(),
+      state: agentData.state.trim(),
+      lga: agentData.lga.trim(),
+    };
+
     try {
-      const validationRes = await fetch("/api/agent/validate", {
+      // 1. Validate uniqueness of NIN and Email
+      const validationRes = await fetch("/api/agent/validateAgent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nin: agentData.nin, email: agentData.email }),
+        body: JSON.stringify({
+          nin: agentData.nin.trim(),
+          email: agentData.email.trim(),
+          phone: agentData.phone.trim(),
+        }),
       });
 
-      const validationResult = await validationRes.json();
       if (!validationRes.ok) {
-        notifyError(validationResult.message);
-        return;
+        const errorData = await validationRes.json();
+        throw new Error(errorData.message || "Validation failed.");
       }
 
-      const enrollRes = await fetch("/agent/enroll", {
+      // 2. Save to DB
+      const enrollRes = await fetch("/api/agent/enroll", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(agentData),
+        body: JSON.stringify(cleanedData),
       });
 
-      const enrollResult = await enrollRes.json();
       if (!enrollRes.ok) {
-        notifyError(enrollResult?.message || "Submission failed.");
-        return;
+        const errorData = await enrollRes.json();
+        throw new Error(errorData.message || "Enrollment failed.");
       }
 
       notifySuccess("Agent onboarded successfully!");
+
+      // Reset form state
       setAgentData({ ...initialData });
       setStep(1);
-    } catch {
-      notifyError("Failed to submit.");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to submit.";
+      notifyError(message);
     } finally {
       setFormSubmitted(false);
     }
@@ -233,6 +278,23 @@ export default function AgentEnroll() {
     }
   }, [agentData.state, fetchCities, previousState]);
 
+  useEffect(() => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        if (e.target instanceof HTMLTextAreaElement) return;
+        e.preventDefault();
+
+        if (step < 4) {
+          await nextStep();
+        } else {
+          await submitForm();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [step]); // Add dependencies to capture latest state
+
   return (
     <main className="min-h-screen bg-white">
       <div className="mx-auto max-w-3xl px-4 py-12 animate-fade-in-up">
@@ -247,6 +309,25 @@ export default function AgentEnroll() {
 
         <form
           onSubmit={(e) => e.preventDefault()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              const target = e.target as HTMLElement;
+              const tagName = target.tagName.toLowerCase();
+
+              if (tagName === "textarea" || tagName === "select") return;
+
+              e.preventDefault();
+
+              // Wait for React state to update before validation
+              requestAnimationFrame(async () => {
+                if (step < 4) {
+                  await nextStep();
+                } else {
+                  await submitForm();
+                }
+              });
+            }
+          }}
           className="bg-white p-8 shadow-lg rounded-3xl space-y-10"
         >
           {/* Step 1: Personal Info */}
@@ -276,12 +357,17 @@ export default function AgentEnroll() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-base font-medium text-gray-800 mb-2">
+                <div className="sm:col-span-2">
+                  <label
+                    htmlFor="firstname"
+                    className="block text-base font-medium text-gray-800 mb-2"
+                  >
                     First Name
                   </label>
                   <input
                     type="text"
+                    id="firstName"
+                    name="firstName"
                     placeholder="Enter first name"
                     value={agentData.firstName}
                     onChange={(e) =>
@@ -348,6 +434,8 @@ export default function AgentEnroll() {
                   </label>
                   <input
                     type="tel"
+                    minLength={11}
+                    maxLength={15}
                     placeholder="e.g. 08012345678"
                     value={agentData.phone}
                     onChange={(e) =>
@@ -372,6 +460,8 @@ export default function AgentEnroll() {
                 </label>
                 <input
                   type="tel"
+                  minLength={11}
+                  maxLength={15}
                   placeholder="Enter NIN"
                   value={agentData.nin}
                   onChange={(e) =>
@@ -469,7 +559,7 @@ export default function AgentEnroll() {
                   {step === 2 && emailChecking ? (
                     <>
                       <svg
-                        className="h-5 w-5 animate-spin text-white"
+                        className="h-4 w-4 animate-spin mr-2 text-white"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -481,12 +571,12 @@ export default function AgentEnroll() {
                           r="10"
                           stroke="currentColor"
                           strokeWidth="4"
-                        />
+                        ></circle>
                         <path
                           className="opacity-75"
                           fill="currentColor"
-                          d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 018 8h-4l3 3 3-3h-4a8 8 0 01-8 8v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
-                        />
+                          d="M4 12a8 8 0 018-8v8H4z"
+                        ></path>
                       </svg>
                       Checking...
                     </>
@@ -501,7 +591,33 @@ export default function AgentEnroll() {
                   onClick={submitForm}
                   className="rounded-lg bg-[#008751] px-6 py-3 text-white text-base font-medium hover:bg-[#006f42] transition-all duration-200"
                 >
-                  {formSubmitted ? "Submitting..." : "Submit"}
+                  {formSubmitted ? (
+                    <span className="flex items-center">
+                      <svg
+                        className="h-4 w-4 animate-spin mr-2 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8H4z"
+                        ></path>
+                      </svg>
+                      Submitting...
+                    </span>
+                  ) : (
+                    "Submit"
+                  )}
                 </button>
               )}
             </div>
