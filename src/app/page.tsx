@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AgentEnrollmentModal from "./components/AgentEnrollmentModal";
+import AgentEnrollmentModal from "./components/global/AgentEnrollmentModal";
 import Hero from "@/app/components/Hero";
 import CoreServices from "@/app/components/CoreServices";
 import Testimonials from "@/app/components/Testimonials";
@@ -18,23 +18,18 @@ export default function HomePage() {
   useEffect(() => {
     const now = new Date();
     const cutoff = new Date();
-    cutoff.setHours(15, 0, 0, 0); // 3:00 PM today
-
-    if (now < cutoff) {
-      setShowModal(false);
-    }
-
-    const durationsInSeconds = [1];
-    const randomSeconds =
-      durationsInSeconds[Math.floor(Math.random() * durationsInSeconds.length)];
+    cutoff.setHours(15, 0, 0, 0); // 3:00 PM
 
     const timeout = setTimeout(() => {
       setLoading(false);
-      // Trigger fade-in slightly after loading finishes
       requestAnimationFrame(() => {
         setContentVisible(true);
       });
-    }, randomSeconds * 1000);
+
+      if (now < cutoff) {
+        setShowModal(true);
+      }
+    }, 1000);
 
     return () => clearTimeout(timeout);
   }, []);
@@ -48,26 +43,29 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <>
+      {/* ✅ Modal rendered outside main content */}
       {showModal && (
         <AgentEnrollmentModal onClose={() => setShowModal(false)} />
       )}
 
-      <div
-        className={`transition-all duration-700 ease-out transform ${
-          contentVisible
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-6"
-        }`}
-      >
-        <Hero />
-        <CoreServices />
-        <ImpactSection />
-        <Testimonials />
-        <VisualInsight />
-        <AboutUs />
-        <SocialHandles />
-      </div>
-    </main>
+      <main className="min-h-screen bg-white">
+        <div
+          className={`transition-all duration-700 ease-out transform ${
+            contentVisible
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-6"
+          }`}
+        >
+          <Hero />
+          <CoreServices />
+          <ImpactSection />
+          <Testimonials />
+          <VisualInsight />
+          <AboutUs />
+          <SocialHandles />
+        </div>
+      </main>
+    </>
   );
 }
