@@ -41,8 +41,6 @@ export async function POST(req: Request) {
     const profile = await prisma.agentProfile.create({
       data: {
         id: agent.id,               // Shared ID (if intended)
-        agentid: agent.id,          // Required for relation
-        userid: agent.id,           // If userid = agent.id
         accessCode: generateAccessCode(),
         passportUrl: null,
       },
