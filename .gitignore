@@ -50,8 +50,7 @@ next-env.d.ts
 /src/generated/prisma
 
 # Prisma schema and migrations
-/prisma
-/prisma*
+/prisma/migrations
 
 # Custom scripts
 /scripts
