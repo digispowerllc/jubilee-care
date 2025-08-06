@@ -18,7 +18,7 @@ model Agent {
   id         String   @id @default(uuid())
   surname    String
   firstName  String
-  otherName  String?
+  otherName  String
   email      String
   phone      String
   nin        String   @unique
@@ -41,9 +41,9 @@ model Agent {
 
 model AgentProfile {
   id          String    @id // Same as Agent.id
-  accessCode  String
-  agentId     String
-  passportUrl String?
+  accessCode  String    @unique
+  agentId     String    @unique
+  passportUrl String    @default("")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @default(now())
   deletedAt   DateTime?
@@ -69,10 +69,10 @@ model User {
   city              String    @default("")
   address           String    @default("")
   phoneNumber       String    @unique
-  phoneVerified     Int       @default(0)
-  hasPin            Int       @default(0)
+  phoneVerified     Boolean   @default(false)
+  hasPin            Boolean   @default(false)
   pinHash           String?
-  banned            Int       @default(0)
+  isBanned          Boolean   @default(false)
   passwordChangedAt DateTime?
   role              String    @default("user")
 
@@ -91,16 +91,15 @@ model User {
   @@index([bio])
   @@index([phoneVerified])
   @@index([hasPin])
-  @@index([banned])
+  @@index([isBanned])
   @@index([passwordChangedAt])
 }
 
 model UserRole {
-  id     String @id @default(uuid())
-  userId String
-  role   String @default("user")
+  id   String @id
+  role String @default("agent")
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [id], references: [id], onDelete: Cascade)
 }
 
 model Session {
@@ -111,7 +110,7 @@ model Session {
   createdAt    DateTime @default(now())
   expiresAt    DateTime
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])

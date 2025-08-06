@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   notifySuccess,
   notifyError,
@@ -9,7 +9,7 @@ import {
 type AgentData = {
   surname: string;
   firstName: string;
-  otherName?: string; // Made optional (matches Prisma schema)
+  otherName: string;
   email: string;
   phone: string;
   nin: string;
@@ -39,11 +39,11 @@ export default function AgentEnroll() {
   const [stateLoading, setStateLoading] = useState(false);
   const [cityLoading, setCityLoading] = useState(false);
   const [previousState, setPreviousState] = useState("");
-  const lgaCache = new Map<string, string[]>();
+  const lgaCache = useMemo(() => new Map<string, string[]>(), []);
 
   const [emailChecking, setEmailChecking] = useState(false);
 
-  const validateEmail = (email: string): boolean => {
+  const validateEmail = useCallback((email: string): boolean => {
     const trimmed = email.trim();
     if (
       !trimmed ||
@@ -54,9 +54,9 @@ export default function AgentEnroll() {
       return false;
     }
     return true;
-  };
+  }, []);
 
-  const checkEmail = async (): Promise<boolean> => {
+  const checkEmail = useCallback(async (): Promise<boolean> => {
     try {
       setEmailChecking(true);
       const res = await fetch(
@@ -83,9 +83,9 @@ export default function AgentEnroll() {
     } finally {
       setEmailChecking(false);
     }
-  };
+  }, [agentData.email]);
 
-  const validateStep = async (): Promise<boolean> => {
+  const validateStep = useCallback(async (): Promise<boolean> => {
     const {
       surname,
       firstName,
@@ -154,15 +154,15 @@ export default function AgentEnroll() {
     }
 
     return true;
-  };
+  }, [agentData, step, validateEmail, checkEmail]);
 
-  const nextStep = async () => {
+  const nextStep = useCallback(async () => {
     if (await validateStep()) setStep((s) => s + 1);
-  };
+  }, [validateStep]);
 
   const prevStep = () => setStep((s) => Math.max(1, s - 1));
 
-  const submitForm = async () => {
+  const submitForm = useCallback(async () => {
     if (!(await validateStep())) return;
 
     setFormSubmitted(true);
@@ -219,7 +219,7 @@ export default function AgentEnroll() {
     } finally {
       setFormSubmitted(false);
     }
-  };
+  }, [validateStep, agentData]);
 
   const fetchStates = async () => {
     setStateLoading(true);
@@ -293,7 +293,7 @@ export default function AgentEnroll() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [step]); // Add dependencies to capture latest state
+  }, [step, nextStep, submitForm]); // Add dependencies to capture latest state
 
   return (
     <main className="min-h-screen bg-white">
