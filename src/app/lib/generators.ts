@@ -1,4 +1,4 @@
-export function generateUserId(): string {
+export function generateAgentId(): string {
   const yearSuffix = new Date().getFullYear().toString().slice(-2); // "25"
   const prefix = `JCGANIMC-U${yearSuffix}`; // "JCGA25"
   const remainingLength = 15 - prefix.length; // 15 - 6 = 9
