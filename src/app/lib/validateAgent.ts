@@ -1,5 +1,5 @@
 import { prisma } from "@/app/lib/prisma";
-import { AgentSchema } from "@/app/lib/agentValidation/agentSchema";
+import { AgentSchema } from "@/app/lib/agentSchema";
 
 type AgentInput = {
     nin: string;
