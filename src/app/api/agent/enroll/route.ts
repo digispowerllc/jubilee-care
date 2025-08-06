@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       data: {
         surname: data.surname.trim(),
         firstName: data.firstName.trim(),
-        otherName: data.otherName?.trim() ? data.otherName.trim() : undefined,
+        otherName: data.otherName?.trim() ?? null,
         email: data.email.trim(),
         phone: data.phone.trim(),
         nin: data.nin.trim(),
