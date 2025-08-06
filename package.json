@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
- "scripts": {
-  "dev": "next dev --turbopack",
-  "build": "npx prisma db push && npx prisma generate && next build",
-  "start": "next start",
-  "lint": "next lint"
-},
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "npx prisma db push && npx prisma generate && next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
   "dependencies": {
     "@prisma/client": "^6.13.0",
     "@supabase/supabase-js": "^2.53.0",
@@ -28,6 +28,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
+    "prisma": "^6.13.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
