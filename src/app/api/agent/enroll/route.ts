@@ -1,40 +1,40 @@
 // src/app/api/your-endpoint/route.ts
-import { NextResponse } from "next/server"
-import { prisma } from "@/app/lib/prisma"
-import { generateAccessCode, generatePatternedId } from "@/app/lib/generators";
+import { NextResponse } from "next/server";
+import { prisma } from "@/app/lib/prisma";
+import { generateAccessCode, generateUserId } from "@/app/lib/generators";
+import { AgentSchema } from "@/app/lib/agentValidation/agentSchema";
 
 export async function POST(req: Request) {
-  // console.log(`[${new Date().toISOString()}] Incoming POST request to /api/your-endpoint`)
   try {
-    const body = await req.json()
+    const json = await req.json();
 
-    // console.log("Request body:", body)
+    // ✅ Zod validation
+    const result = AgentSchema.safeParse(json);
 
-    // Validate required fields (optional but recommended)
-    const requiredFields = ["surname", "firstName", "email", "phone", "nin", "state", "lga", "address"]
-    for (const field of requiredFields) {
-      if (!body[field]) {
-        return NextResponse.json(
-          { success: false, error: `Missing required field: ${field}` },
-          { status: 400 }
-        )
-      }
+    if (!result.success) {
+      const errorMessage = result.error.issues.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+      return NextResponse.json(
+        { success: false, error: `Validation failed: ${errorMessage}` },
+        { status: 400 }
+      );
     }
-    // const userId = generateUserId();
+
+    const data = result.data;
+
     const accessCode = generateAccessCode();
-    const agentId = await generatePatternedId();
+    const agentId = await generateUserId();
 
     const agent = await prisma.agent.create({
       data: {
-        surname: body.surname.trim(),
-        firstName: body.firstName.trim(),
-        otherName: body.lastName?.trim() ?? null,
-        email: body.email.trim(),
-        phone: body.phone.trim(),
-        nin: body.nin.trim(),
-        state: body.state.trim(),
-        lga: body.lga.trim(),
-        address: body.address.trim(),
+        surname: data.surname.trim(),
+        firstName: data.firstName.trim(),
+        otherName: data.otherName?.trim() ? data.otherName.trim() : undefined,
+        email: data.email.trim(),
+        phone: data.phone.trim(),
+        nin: data.nin.trim(),
+        state: data.state.trim(),
+        lga: data.lga.trim(),
+        address: data.address.trim(),
       },
     });
 
@@ -47,15 +47,10 @@ export async function POST(req: Request) {
       },
     });
 
-
-    // console.log("Agent profile created successfully:", agent)
-
-    return NextResponse.json({ success: true, agent, profile }, { status: 201 })
+    return NextResponse.json({ success: true, agent, profile }, { status: 201 });
   } catch (error: unknown) {
-    // console.error("❌ Error creating agent:", error)
-
-    const message = error instanceof Error ? error.message : "Unknown error occurred"
-    return NextResponse.json({ success: false, error: message }, { status: 500 })
+    const message = error instanceof Error ? error.message : "Unknown error occurred";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
 
@@ -63,5 +58,5 @@ export function GET() {
   return NextResponse.json(
     { message: "Method Not Allowed. Use POST to create a user." },
     { status: 405 }
-  )
+  );
 }
