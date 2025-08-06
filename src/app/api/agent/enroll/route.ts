@@ -1,7 +1,7 @@
 // src/app/api/your-endpoint/route.ts
 import { NextResponse } from "next/server"
 import { prisma } from "@/app/lib/prisma"
-import { generateUserId, generateAccessCode, generatePatternedId } from "@/app/lib/generators";
+import { generateAccessCode, generatePatternedId } from "@/app/lib/generators";
 
 export async function POST(req: Request) {
   // console.log(`[${new Date().toISOString()}] Incoming POST request to /api/your-endpoint`)
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
         )
       }
     }
-    const userId = generateUserId();
+    // const userId = generateUserId();
     const accessCode = generateAccessCode();
     const agentId = await generatePatternedId();
 
