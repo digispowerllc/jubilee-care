@@ -242,7 +242,7 @@ export default function AgentEnroll() {
       }
 
       // Create agent account
-      const enrollRes = await fetch("/api/agent/enroll", {
+      const enrollRes = await fetch("/api/agent/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

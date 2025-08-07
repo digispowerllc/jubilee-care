@@ -4,13 +4,13 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, appSignIn } from "@/app/actions/auth";
 import { Eye, EyeOff } from "lucide-react";
+import { notifySuccess, notifyError } from "@/components/store/notification";
 import "./signin.css";
 
 export default function SignInPage() {
   const [agentId, setAgentId] = useState("");
   const [accessCode, setAccessCode] = useState("");
   const [showAccessCode, setShowAccessCode] = useState(false);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -39,27 +39,46 @@ export default function SignInPage() {
 
     // Basic validation
     if (!agentId.trim() || !accessCode.trim()) {
-      setError("Please enter both Agent ID and Access Code");
+      notifyError("Please enter both Agent ID and Access Code");
       return;
     }
 
     setLoading(true);
-    setError("");
 
     try {
       const result = await signIn(agentId, accessCode);
 
       if (result.success) {
+        notifySuccess("Login successful! Redirecting...");
         router.push(redirectTo);
       } else {
-        setError(
+        notifyError(
           result.message ||
             "Authentication failed. Please check your credentials."
         );
       }
     } catch (err) {
-      setError("An error occurred during authentication. Please try again.");
+      notifyError("An error occurred during authentication. Please try again.");
       console.error("SignIn error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSocialSignIn = async (provider: string) => {
+    try {
+      setLoading(true);
+      const result = await appSignIn(provider);
+
+      if (result.success) {
+        notifySuccess(`Signed in with ${provider} successfully!`);
+        router.push(redirectTo);
+      } else {
+        notifyError(result.message || `Failed to sign in with ${provider}`);
+      }
+    } catch (error) {
+      notifyError(`Error signing in with ${provider}`);
+      console.error(`${provider} sign in error:`, error);
     } finally {
       setLoading(false);
     }
@@ -74,12 +93,6 @@ export default function SignInPage() {
             Enter your credentials to access your account
           </p>
         </div>
-
-        {error && (
-          <div className="p-4 text-sm text-green-700 bg-green-50 rounded-lg animate-fade-in">
-            {error}
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
@@ -218,11 +231,11 @@ export default function SignInPage() {
               href="/agent/signup"
               className="font-medium text-green-600 hover:text-green-500"
             >
-              Create an account 
-              {/* Contact administration */}
+              Create an account
             </a>
           </p>
         </div>
+
         <div className="relative mt-6">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300" />
@@ -233,11 +246,13 @@ export default function SignInPage() {
             </span>
           </div>
         </div>
+
         <div className="mt-4 grid grid-cols-2 gap-3">
           <button
             type="button"
-            onClick={() => appSignIn("google")}
-            className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+            onClick={() => handleSocialSignIn("google")}
+            disabled={loading}
+            className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg
               className="w-5 h-5"
@@ -265,8 +280,9 @@ export default function SignInPage() {
           </button>
           <button
             type="button"
-            onClick={() => appSignIn("facebook")}
-            className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+            onClick={() => handleSocialSignIn("facebook")}
+            disabled={loading}
+            className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg
               className="w-5 h-5"
@@ -278,38 +294,6 @@ export default function SignInPage() {
                 d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"
                 fill="#1877F2"
               />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={() => appSignIn("github")}
-            className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 0C4.477 0 0 4.477 0 10c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0110 4.844c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.933.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C17.14 18.163 20 14.418 20 10c0-5.523-4.477-10-10-10z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={() => appSignIn("twitter")}
-            className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              aria-hidden="true"
-            >
-              <path d="M6.29 18.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0020 3.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.073 4.073 0 01.8 7.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 010 16.407a11.616 11.616 0 006.29 1.84" />
             </svg>
           </button>
         </div>
