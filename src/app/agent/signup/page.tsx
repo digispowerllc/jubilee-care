@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import {
-  notifySuccess,
-  notifyError,
-} from "@/app/components/store/notification";
+import { notifySuccess, notifyError } from "@/components/store/notification";
 
 type AgentData = {
   surname: string;

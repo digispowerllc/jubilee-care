@@ -15,21 +15,22 @@ datasource db {
 }
 
 model Agent {
-  id         String   @id @default(uuid())
-  surname    String
-  firstName  String
-  otherName  String
-  email      String
-  phone      String
-  nin        String   @unique
-  state      String
-  lga        String
-  address    String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now())
-  isActive   Boolean  @default(true)
-  isAdmitted Boolean  @default(false)
-  isDeleted  Boolean  @default(false)
+  id            String         @id @default(uuid())
+  surname       String
+  firstName     String
+  otherName     String
+  email         String
+  phone         String
+  nin           String         @unique
+  state         String
+  lga           String
+  address       String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now())
+  isActive      Boolean        @default(true)
+  isAdmitted    Boolean        @default(false)
+  isDeleted     Boolean        @default(false)
+  oauthAccounts OAuthAccount[]
 
   profile AgentProfile? // 👈 Just declare relation field here
 
@@ -114,4 +115,15 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+model OAuthAccount {
+  id         String   @id @default(cuid())
+  provider   String // 'google', 'facebook', etc.
+  providerId String // Unique ID from the provider
+  agent      Agent    @relation(fields: [agentId], references: [id])
+  agentId    String
+  createdAt  DateTime @default(now())
+
+  @@unique([provider, providerId]) // One account per provider per user
 }

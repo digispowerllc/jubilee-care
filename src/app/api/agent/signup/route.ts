@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/app/lib/prisma"
-import { generateAccessCode, generateAgentId } from "@/app/lib/generators"
+import { prisma } from "../../../../lib/prisma"
+import { generateAccessCode, generateAgentId } from "../../../../lib/generators"
 import { z } from "zod"
 
 // Zod schema to validate the incoming request body
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     })
     console.log("Agent profile created successfully")
 
-       console.log("Agent creation process completed successfully")
+    console.log("Agent creation process completed successfully")
     return NextResponse.json({ success: true, agent, profile }, { status: 201 })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error occurred"

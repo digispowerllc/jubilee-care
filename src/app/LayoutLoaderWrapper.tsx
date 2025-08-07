@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Navigation from "@/app/components/Navigation";
-import Footer from "@/app/components/Footer";
-import Notification from "@/app/components/global/Notification";
+import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
+import Notification from "@/components/global/Notification";
 
 export default function LayoutLoaderWrapper({
   children,

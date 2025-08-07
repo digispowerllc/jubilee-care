@@ -1,6 +1,8 @@
 // layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+// app/layout.tsx
+import { AuthProvider } from "@/components/auth-provider";
 import "./globals.css";
 import LayoutLoaderWrapper from "./LayoutLoaderWrapper";
 
@@ -29,7 +31,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <LayoutLoaderWrapper>{children}</LayoutLoaderWrapper>
+        <LayoutLoaderWrapper>
+          <AuthProvider>{children}</AuthProvider>
+        </LayoutLoaderWrapper>
       </body>
     </html>
   );

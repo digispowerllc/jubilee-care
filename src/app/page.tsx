@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AgentEnrollmentModal from "./components/global/AgentEnrollmentModal";
-import Hero from "@/app/components/Hero";
-import CoreServices from "@/app/components/CoreServices";
-import Testimonials from "@/app/components/Testimonials";
-import ImpactSection from "@/app/components/ImpactSection";
-import VisualInsight from "@/app/components/VisualInsight";
-import AboutUs from "@/app/components/AboutUs";
-import SocialHandles from "@/app/components/SocialHandles";
+import AgentEnrollmentModal from "../components/global/AgentEnrollmentModal";
+import Hero from "@/components/Hero";
+import CoreServices from "@/components/CoreServices";
+import Testimonials from "@/components/Testimonials";
+import ImpactSection from "@/components/ImpactSection";
+import VisualInsight from "@/components/VisualInsight";
+import AboutUs from "@/components/AboutUs";
+import SocialHandles from "@/components/SocialHandles";
 
 export default function HomePage() {
   const [showModal, setShowModal] = useState(false);
@@ -37,7 +37,7 @@ export default function HomePage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-8 h-8 border-4 border-[#008751] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#008751] border-t-transparent rounded-full" />
       </div>
     );
   }
