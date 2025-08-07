@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import { notifySuccess, notifyError } from "@/components/store/notification";
 
 type AgentData = {
@@ -27,31 +29,110 @@ const initialData: AgentData = {
   address: "",
 };
 
+const PasswordStrength = ({ strength }: { strength: number }) => {
+  const getColor = () => {
+    if (strength > 70) return "bg-green-500";
+    if (strength > 40) return "bg-yellow-500";
+    return "bg-red-500";
+  };
+
+  return (
+    <div className="mt-1 h-1 w-full bg-gray-200 rounded-full">
+      <div
+        className={`h-full rounded-full ${getColor()}`}
+        style={{ width: `${strength}%` }}
+      />
+    </div>
+  );
+};
+
 export default function AgentEnroll() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
-  const [formSubmitted, setFormSubmitted] = useState(false);
   const [agentData, setAgentData] = useState<AgentData>({ ...initialData });
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
   const [states, setStates] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [stateLoading, setStateLoading] = useState(false);
   const [cityLoading, setCityLoading] = useState(false);
-  const [previousState, setPreviousState] = useState("");
+  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [emailChecking, setEmailChecking] = useState(false);
   const lgaCache = useMemo(() => new Map<string, string[]>(), []);
 
-  const [emailChecking, setEmailChecking] = useState(false);
+  // Calculate password strength
+  useEffect(() => {
+    const strength = Math.min(Math.max(password.length * 10, 0), 100);
+    setPasswordStrength(strength);
+  }, [password]);
 
-  const validateEmail = useCallback((email: string): boolean => {
+  // Fetch states on mount
+  useEffect(() => {
+    const fetchStates = async () => {
+      setStateLoading(true);
+      try {
+        const cached = sessionStorage.getItem("cachedStates");
+        if (cached) {
+          setStates(JSON.parse(cached));
+        } else {
+          const res = await fetch(
+            "https://apinigeria.vercel.app/api/v1/states"
+          );
+          const data = await res.json();
+          setStates(data.states);
+          sessionStorage.setItem("cachedStates", JSON.stringify(data.states));
+        }
+      } catch (error) {
+        notifyError("Failed to load states");
+      } finally {
+        setStateLoading(false);
+      }
+    };
+    fetchStates();
+  }, []);
+
+  // Fetch cities when state changes
+  useEffect(() => {
+    if (agentData.state) {
+      const fetchCities = async () => {
+        if (lgaCache.has(agentData.state)) {
+          setCities(lgaCache.get(agentData.state) ?? []);
+          return;
+        }
+
+        setCityLoading(true);
+        try {
+          const res = await fetch(
+            `https://apinigeria.vercel.app/api/v1/lga?state=${encodeURIComponent(
+              agentData.state
+            )}`
+          );
+          const data = await res.json();
+          setCities(data.lgas);
+          lgaCache.set(agentData.state, data.lgas);
+        } catch (error) {
+          notifyError("Failed to load LGAs");
+        } finally {
+          setCityLoading(false);
+        }
+      };
+      fetchCities();
+    }
+  }, [agentData.state, lgaCache]);
+
+  const validateEmail = (email: string): boolean => {
     const trimmed = email.trim();
     if (
       !trimmed ||
       /\s/.test(trimmed) ||
       !/^[\w.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(trimmed)
     ) {
-      notifyError("Enter a valid email address.");
+      notifyError("Enter a valid email address");
       return false;
     }
     return true;
-  }, []);
+  };
 
   const checkEmail = useCallback(async (): Promise<boolean> => {
     try {
@@ -62,20 +143,19 @@ export default function AgentEnroll() {
 
       if (!res.ok) {
         const errorData = await res.json();
-        notifyError(errorData.error || "Failed to verify email.");
+        notifyError(errorData.error || "Failed to verify email");
         return false;
       }
 
       const result = await res.json();
-
       if (result.disposable) {
-        notifyError("This e-Mail address cannot be used.");
+        notifyError("This email address cannot be used");
         return false;
       }
 
       return true;
-    } catch {
-      notifyError("Unable to verify email. Please try again.");
+    } catch (error) {
+      notifyError("Unable to verify email. Please try again");
       return false;
     } finally {
       setEmailChecking(false);
@@ -83,75 +163,55 @@ export default function AgentEnroll() {
   }, [agentData.email]);
 
   const validateStep = useCallback(async (): Promise<boolean> => {
-    const {
-      surname,
-      firstName,
-      otherName,
-      email,
-      phone,
-      nin,
-      state,
-      lga,
-      address,
-    } = agentData;
-
-    const onlyLetters = /^[A-Za-z]+$/;
-    const phonePattern = /^\d{10,15}$/;
-    const ninPattern = /^\d{11}$/;
+    const validateField = (value: string, fieldName: string, minLength = 1) => {
+      if (!value?.trim() || value.trim().length < minLength) {
+        notifyError(`${fieldName} is required`);
+        return false;
+      }
+      return true;
+    };
 
     switch (step) {
-      case 1: {
-        const trimmedSurname = surname.trim();
-        const trimmedFirstName = firstName.trim();
-        const trimmedOtherName = otherName?.trim();
-
-        if (!trimmedSurname || !onlyLetters.test(trimmedSurname)) {
-          notifyError("Surname is required and must contain only letters.");
-          return false;
-        }
-        if (!trimmedFirstName || !onlyLetters.test(trimmedFirstName)) {
-          notifyError("First name is required and must contain only letters.");
-          return false;
-        }
-        if (trimmedOtherName && !onlyLetters.test(trimmedOtherName)) {
-          notifyError("Other name must contain only letters.");
+      case 1:
+        if (!validateField(agentData.surname, "Surname")) return false;
+        if (!validateField(agentData.firstName, "First name")) return false;
+        if (agentData.otherName && !/^[A-Za-z]+$/.test(agentData.otherName)) {
+          notifyError("Other name must contain only letters");
           return false;
         }
         break;
-      }
-      case 2: {
-        const trimmedEmail = email.trim();
-        if (!validateEmail(trimmedEmail)) return false;
-        if (!phonePattern.test(phone)) {
-          notifyError("Invalid phone number.");
+
+      case 2:
+        if (!validateField(agentData.email, "Email")) return false;
+        if (!validateEmail(agentData.email)) return false;
+        if (!validateField(agentData.phone, "Phone number", 10)) return false;
+        if (!/^\d+$/.test(agentData.phone)) {
+          notifyError("Phone number must contain only digits");
+          return false;
+        }
+        if (password.length < 8) {
+          notifyError("Password must be at least 8 characters");
           return false;
         }
         return await checkEmail();
-      }
+
       case 3:
-        if (!ninPattern.test(nin)) {
-          notifyError("NIN must be 11 digits.");
+        if (!validateField(agentData.nin, "NIN", 11)) return false;
+        if (!/^\d{11}$/.test(agentData.nin)) {
+          notifyError("NIN must be exactly 11 digits");
           return false;
         }
         break;
+
       case 4:
-        if (!state) {
-          notifyError("Select a state.");
-          return false;
-        }
-        if (!lga) {
-          notifyError("Select an LGA.");
-          return false;
-        }
-        if (address.trim().length < 10) {
-          notifyError("Address too short.");
-          return false;
-        }
+        if (!validateField(agentData.state, "State")) return false;
+        if (!validateField(agentData.lga, "LGA")) return false;
+        if (!validateField(agentData.address, "Address", 10)) return false;
         break;
     }
 
     return true;
-  }, [agentData, step, validateEmail, checkEmail]);
+  }, [step, agentData, password, checkEmail]);
 
   const nextStep = useCallback(async () => {
     if (await validateStep()) setStep((s) => s + 1);
@@ -164,399 +224,336 @@ export default function AgentEnroll() {
 
     setFormSubmitted(true);
 
-    const cleanedData = {
-      ...agentData,
-      surname: agentData.surname.trim(),
-      firstName: agentData.firstName.trim(),
-      otherName: agentData.otherName?.trim() || "",
-      email: agentData.email.trim(),
-      address: agentData.address.trim(),
-      state: agentData.state.trim(),
-      lga: agentData.lga.trim(),
-    };
-
     try {
-      // 1. Validate uniqueness of NIN and Email
+      // Validate agent data first
       const validationRes = await fetch("/api/agent/validateAgent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nin: agentData.nin.trim(),
           email: agentData.email.trim(),
           phone: agentData.phone.trim(),
+          nin: agentData.nin.trim(),
         }),
       });
 
       if (!validationRes.ok) {
         const errorData = await validationRes.json();
-        throw new Error(errorData.message || "Validation failed.");
+        throw new Error(errorData.message || "Validation failed");
       }
 
-      // 2. Save to DB
+      // Create agent account
       const enrollRes = await fetch("/api/agent/enroll", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cleanedData),
+        body: JSON.stringify({
+          ...agentData,
+          surname: agentData.surname.trim(),
+          firstName: agentData.firstName.trim(),
+          otherName: agentData.otherName?.trim() || "",
+          email: agentData.email.trim(),
+          phone: agentData.phone.trim(),
+          nin: agentData.nin.trim(),
+          state: agentData.state.trim(),
+          lga: agentData.lga.trim(),
+          address: agentData.address.trim(),
+          password,
+        }),
       });
 
       if (!enrollRes.ok) {
         const errorData = await enrollRes.json();
-        throw new Error(errorData.message || "Enrollment failed.");
+        throw new Error(errorData.message || "Enrollment failed");
       }
 
-      notifySuccess("Agent onboarded successfully!");
-
-      // Reset form state
-      setAgentData({ ...initialData });
-      setStep(1);
+      notifySuccess("Account created successfully!");
+      router.push("/signin");
     } catch (error: unknown) {
       const message =
-        error instanceof Error ? error.message : "Failed to submit.";
+        error instanceof Error ? error.message : "Failed to submit form";
       notifyError(message);
     } finally {
       setFormSubmitted(false);
     }
-  }, [validateStep, agentData]);
+  }, [validateStep, agentData, password, router]);
 
-  const fetchStates = async () => {
-    setStateLoading(true);
-    try {
-      const cached = sessionStorage.getItem("cachedStates");
-      if (cached) {
-        setStates(JSON.parse(cached));
-      } else {
-        const res = await fetch("https://apinigeria.vercel.app/api/v1/states");
-        const data = await res.json();
-        setStates(data.states);
-        sessionStorage.setItem("cachedStates", JSON.stringify(data.states));
-      }
-    } catch {
-      setStates([]);
-    } finally {
-      setStateLoading(false);
-    }
-  };
-
-  const fetchCities = useCallback(
-    async (state: string) => {
-      if (lgaCache.has(state)) {
-        setCities(lgaCache.get(state) ?? []);
-        return;
-      }
-
-      setCityLoading(true);
-      try {
-        const res = await fetch(
-          `https://apinigeria.vercel.app/api/v1/lga?state=${encodeURIComponent(
-            state
-          )}`
-        );
-        const data = await res.json();
-        setCities(data.lgas);
-        lgaCache.set(state, data.lgas);
-      } catch {
-        setCities([]);
-      } finally {
-        setCityLoading(false);
-      }
-    },
-    [lgaCache]
-  );
-
-  useEffect(() => {
-    fetchStates();
-  }, []);
-
-  useEffect(() => {
-    if (agentData.state && agentData.state !== previousState) {
-      setPreviousState(agentData.state);
-      setCities([]);
-      fetchCities(agentData.state);
-    }
-  }, [agentData.state, fetchCities, previousState]);
-
+  // Handle Enter key navigation
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
       if (e.key === "Enter") {
-        if (e.target instanceof HTMLTextAreaElement) return;
         e.preventDefault();
-
-        if (step < 4) {
-          await nextStep();
-        } else {
-          await submitForm();
-        }
+        if (step < 4) await nextStep();
+        else await submitForm();
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [step, nextStep, submitForm]); // Add dependencies to capture latest state
+  }, [step, nextStep, submitForm]);
 
   return (
-    <main className="min-h-screen bg-white">
-      <div className="mx-auto max-w-3xl px-4 py-12 animate-fade-in-up">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-[#008751]">
-            Agent Onboarding
-          </h1>
-          <p className="text-gray-600 text-base mt-2">
-            Complete all steps to register an agent.
-          </p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-12">
+      <div className="w-full max-w-3xl bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="p-8 space-y-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-[#008751]">
+              Agent Enrollment
+            </h1>
+            <p className="mt-2 text-gray-600">
+              Complete all steps to register as an agent
+            </p>
+          </div>
 
-        <form
-          onSubmit={(e) => e.preventDefault()}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              const target = e.target as HTMLElement;
-              const tagName = target.tagName.toLowerCase();
+          {/* Progress Steps */}
+          <div className="flex justify-between mb-8">
+            {[1, 2, 3, 4].map((stepNumber) => (
+              <div
+                key={stepNumber}
+                className={`flex flex-col items-center ${
+                  stepNumber < step ? "text-green-600" : "text-gray-400"
+                }`}
+              >
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    stepNumber <= step
+                      ? "bg-green-100 border-2 border-green-500"
+                      : "bg-gray-100 border-2 border-gray-300"
+                  }`}
+                >
+                  {stepNumber < step ? "✓" : stepNumber}
+                </div>
+                <span className="text-xs mt-1">Step {stepNumber}</span>
+              </div>
+            ))}
+          </div>
 
-              if (tagName === "textarea" || tagName === "select") return;
-
-              e.preventDefault();
-
-              // Wait for React state to update before validation
-              requestAnimationFrame(async () => {
-                if (step < 4) {
-                  await nextStep();
-                } else {
-                  await submitForm();
-                }
-              });
-            }
-          }}
-          className="bg-white p-8 shadow-lg rounded-3xl space-y-10"
-        >
-          {/* Step 1: Personal Info */}
-          {step === 1 && (
-            <>
-              <h2 className="text-2xl font-semibold text-[#008751] mb-6">
-                Step 1: Personal Info
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {/* Form Steps */}
+          <form onSubmit={(e) => e.preventDefault()} className="space-y-5">
+            {/* Step 1: Personal Info */}
+            {step === 1 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="sm:col-span-2">
-                  <label
-                    htmlFor="surname"
-                    className="block text-base font-medium text-gray-800 mb-2"
-                  >
-                    Surname
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Surname*
                   </label>
                   <input
                     type="text"
-                    id="surname"
-                    name="surname"
-                    placeholder="Enter surname"
                     value={agentData.surname}
                     onChange={(e) =>
                       setAgentData({ ...agentData, surname: e.target.value })
                     }
-                    className="block w-full border border-gray-300 focus:border-[#008751] focus:ring-[#008751] rounded-lg shadow-sm px-4 py-3 text-base transition-all duration-200 ease-in-out focus:outline-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    placeholder="Enter your surname"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label
-                    htmlFor="firstname"
-                    className="block text-base font-medium text-gray-800 mb-2"
-                  >
-                    First Name
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    First Name*
                   </label>
                   <input
                     type="text"
-                    id="firstName"
-                    name="firstName"
-                    placeholder="Enter first name"
                     value={agentData.firstName}
                     onChange={(e) =>
                       setAgentData({ ...agentData, firstName: e.target.value })
                     }
-                    className="block w-full border border-gray-300 focus:border-[#008751] focus:ring-[#008751] rounded-lg shadow-sm px-4 py-3 text-base transition-all duration-200 ease-in-out focus:outline-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    placeholder="Enter your first name"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-base font-medium text-gray-800 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Other Name (Optional)
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter other name"
                     value={agentData.otherName}
                     onChange={(e) =>
                       setAgentData({ ...agentData, otherName: e.target.value })
                     }
-                    className="block w-full border border-gray-300 focus:border-[#008751] focus:ring-[#008751] rounded-lg shadow-sm px-4 py-3 text-base transition-all duration-200 ease-in-out focus:outline-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    placeholder="Enter other name if any"
                   />
                 </div>
               </div>
+            )}
 
-              {/* Next button aligned right */}
-              <div className="flex justify-end pt-8">
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="rounded-lg bg-[#008751] px-6 py-3 text-white text-base font-medium hover:bg-[#006f42] transition-all duration-200"
-                >
-                  Next →
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* Step 2: Contact Info */}
-          {step === 2 && (
-            <>
-              <h2 className="text-2xl font-semibold text-[#008751] mb-6">
-                Step 2: Contact Info
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="relative">
-                  <label className="block text-base font-medium text-gray-800 mb-2">
-                    Email Address
+            {/* Step 2: Contact Info */}
+            {step === 2 && (
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address*
                   </label>
                   <input
                     type="email"
-                    placeholder="Enter email address"
                     value={agentData.email}
                     onChange={(e) =>
                       setAgentData({ ...agentData, email: e.target.value })
                     }
-                    className="block w-full border border-gray-300 focus:border-[#008751] focus:ring-[#008751] rounded-lg shadow-sm px-4 py-3 text-base transition-all duration-200 ease-in-out focus:outline-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    placeholder="your.email@example.com"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-base font-medium text-gray-800 mb-2">
-                    Phone Number
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number*
                   </label>
                   <input
                     type="tel"
-                    minLength={11}
-                    maxLength={15}
-                    placeholder="e.g. 08012345678"
                     value={agentData.phone}
                     onChange={(e) =>
                       setAgentData({ ...agentData, phone: e.target.value })
                     }
-                    className="block w-full border border-gray-300 focus:border-[#008751] focus:ring-[#008751] rounded-lg shadow-sm px-4 py-3 text-base transition-all duration-200 ease-in-out focus:outline-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    placeholder="08012345678"
                   />
                 </div>
-              </div>
-            </>
-          )}
 
-          {/* Step 3: Identification */}
-          {step === 3 && (
-            <>
-              <h2 className="text-2xl font-semibold text-[#008751] mb-6">
-                Step 3: Identification
-              </h2>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Create Password*
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all pr-12"
+                      placeholder="At least 8 characters"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                  <PasswordStrength strength={passwordStrength} />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {password.length > 0
+                      ? password.length < 8
+                        ? "Password too short"
+                        : "Strong password"
+                      : "Minimum 8 characters"}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Identification */}
+            {step === 3 && (
               <div>
-                <label className="block text-base font-medium text-gray-800 mb-2">
-                  NIN (11 digits)
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  National Identification Number (NIN)*
                 </label>
                 <input
-                  type="tel"
-                  minLength={11}
-                  maxLength={15}
-                  placeholder="Enter NIN"
+                  type="text"
                   value={agentData.nin}
                   onChange={(e) =>
                     setAgentData({ ...agentData, nin: e.target.value })
                   }
-                  className="block w-full border border-gray-300 focus:border-[#008751] focus:ring-[#008751] rounded-lg shadow-sm px-4 py-3 text-base transition-all duration-200 ease-in-out focus:outline-none"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                  placeholder="11-digit NIN"
+                  maxLength={11}
                 />
               </div>
-            </>
-          )}
+            )}
 
-          {/* Step 4: Location */}
-          {step === 4 && (
-            <>
-              <h2 className="text-2xl font-semibold text-[#008751] mb-6">
-                Step 4: Location
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-base font-medium text-gray-800 mb-2">
-                    State
-                  </label>
-                  <select
-                    value={agentData.state}
-                    onChange={(e) =>
-                      setAgentData({ ...agentData, state: e.target.value })
-                    }
-                    disabled={stateLoading}
-                    className="block w-full border border-gray-300 focus:border-[#008751] focus:ring-[#008751] rounded-lg shadow-sm px-4 py-3 text-base transition-all duration-200 ease-in-out focus:outline-none"
-                  >
-                    <option value="">Select State</option>
-                    {states.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
+            {/* Step 4: Location */}
+            {step === 4 && (
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      State*
+                    </label>
+                    <select
+                      value={agentData.state}
+                      onChange={(e) =>
+                        setAgentData({ ...agentData, state: e.target.value })
+                      }
+                      disabled={stateLoading}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    >
+                      <option value="">Select State</option>
+                      {states.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      LGA*
+                    </label>
+                    <select
+                      value={agentData.lga}
+                      onChange={(e) =>
+                        setAgentData({ ...agentData, lga: e.target.value })
+                      }
+                      disabled={!cities.length || cityLoading}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    >
+                      <option value="">Select LGA</option>
+                      {cities.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-base font-medium text-gray-800 mb-2">
-                    LGA
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Address*
                   </label>
-                  <select
-                    value={agentData.lga}
+                  <textarea
+                    value={agentData.address}
                     onChange={(e) =>
-                      setAgentData({ ...agentData, lga: e.target.value })
+                      setAgentData({ ...agentData, address: e.target.value })
                     }
-                    disabled={!cities.length || cityLoading}
-                    className="block w-full border border-gray-300 focus:border-[#008751] focus:ring-[#008751] rounded-lg shadow-sm px-4 py-3 text-base transition-all duration-200 ease-in-out focus:outline-none"
-                  >
-                    <option value="">Select LGA</option>
-                    {cities.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+                    className="w-full min-h-[100px] px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    placeholder="Street, Area, Landmark..."
+                  />
                 </div>
               </div>
+            )}
 
-              <div className="mt-6">
-                <label className="block text-base font-medium text-gray-800 mb-2">
-                  Full Address
-                </label>
-                <textarea
-                  value={agentData.address}
-                  onChange={(e) =>
-                    setAgentData({ ...agentData, address: e.target.value })
-                  }
-                  className="w-full min-h-[120px] border border-gray-300 focus:border-[#008751] focus:ring-[#008751] rounded-lg shadow-sm px-4 py-3 text-base transition-all duration-200 ease-in-out focus:outline-none resize-none"
-                  placeholder="Street, Area, Landmark..."
-                />
-              </div>
-            </>
-          )}
+            {/* Navigation Buttons */}
+            <div className="flex items-center justify-between pt-4">
+              {step > 1 ? (
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  className="text-green-600 hover:text-green-800 text-sm font-medium"
+                >
+                  ← Back
+                </button>
+              ) : (
+                <div></div>
+              )}
 
-          {/* Navigation */}
-          {step > 1 && (
-            <div className="flex justify-between pt-8">
-              <button
-                type="button"
-                onClick={prevStep}
-                className="text-[#008751] hover:underline text-base"
-              >
-                ← Back
-              </button>
               {step < 4 ? (
                 <button
                   type="button"
                   onClick={nextStep}
+                  className="flex items-center justify-center rounded-lg bg-green-600 hover:bg-green-700 px-6 py-3 text-white font-medium disabled:opacity-70 disabled:cursor-not-allowed"
                   disabled={step === 2 && emailChecking}
-                  className="flex items-center justify-center gap-2 rounded-lg bg-[#008751] px-6 py-3 text-white text-base font-medium hover:bg-[#006f42] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {step === 2 && emailChecking ? (
                     <>
                       <svg
-                        className="h-4 w-4 animate-spin mr-2 text-white"
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -572,26 +569,26 @@ export default function AgentEnroll() {
                         <path
                           className="opacity-75"
                           fill="currentColor"
-                          d="M4 12a8 8 0 018-8v8H4z"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      Checking...
+                      Verifying...
                     </>
                   ) : (
-                    "Next →"
+                    "Continue →"
                   )}
                 </button>
               ) : (
                 <button
-                  type="submit"
-                  disabled={formSubmitted}
+                  type="button"
                   onClick={submitForm}
-                  className="rounded-lg bg-[#008751] px-6 py-3 text-white text-base font-medium hover:bg-[#006f42] transition-all duration-200"
+                  disabled={formSubmitted}
+                  className="flex items-center justify-center rounded-lg bg-green-600 hover:bg-green-700 px-6 py-3 text-white font-medium disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {formSubmitted ? (
-                    <span className="flex items-center">
+                    <>
                       <svg
-                        className="h-4 w-4 animate-spin mr-2 text-white"
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -607,20 +604,32 @@ export default function AgentEnroll() {
                         <path
                           className="opacity-75"
                           fill="currentColor"
-                          d="M4 12a8 8 0 018-8v8H4z"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
                       Submitting...
-                    </span>
+                    </>
                   ) : (
-                    "Submit"
+                    "Complete Enrollment"
                   )}
                 </button>
               )}
             </div>
-          )}
-        </form>
+          </form>
+
+          <div className="text-center text-sm text-gray-500 pt-4 border-t border-gray-200">
+            <p>
+              Already have an account?{" "}
+              <a
+                href="/signin"
+                className="font-medium text-green-600 hover:text-green-500"
+              >
+                Sign in here
+              </a>
+            </p>
+          </div>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
