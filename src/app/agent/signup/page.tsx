@@ -621,7 +621,7 @@ export default function AgentEnroll() {
             <p>
               Already have an account?{" "}
               <a
-                href="/signin"
+                href="agent/signin"
                 className="font-medium text-green-600 hover:text-green-500"
               >
                 Sign in here
