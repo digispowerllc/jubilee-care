@@ -24,7 +24,7 @@ const Hero: React.FC = () => {
             href="#services"
             className="inline-block rounded-lg border border-green-700 px-8 py-3 text-green-700 font-semibold hover:bg-green-50"
           >
-            Explore Services
+            Explore
           </a>
         </div>
       </div>
