@@ -18,7 +18,7 @@ const Hero: React.FC = () => {
             href="/agent/signup"
             className="inline-block rounded-lg bg-green-700 px-8 py-3 text-white font-semibold shadow-sm hover:bg-green-800"
           >
-            Get Started
+            Agent Onboarding
           </a>
           <a
             href="#services"
