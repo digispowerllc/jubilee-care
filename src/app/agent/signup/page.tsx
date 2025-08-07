@@ -266,7 +266,7 @@ export default function AgentEnroll() {
       }
 
       notifySuccess("Account created successfully!");
-      router.push("/signin");
+      router.push("agent/signin");
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Failed to submit form";
