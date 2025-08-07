@@ -4,7 +4,10 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, appSignIn } from "@/app/actions/auth";
 import { Eye, EyeOff } from "lucide-react";
-import { notifySuccess, notifyError } from "@/components/store/notification";
+import {
+  useNotifySuccess,
+  useNotifyError,
+} from "@/components/notification/NotificationProvider";
 import "./signin.css";
 
 export default function SignInPage() {
@@ -34,10 +37,12 @@ export default function SignInPage() {
     );
   };
 
+  const notifySuccess = useNotifySuccess();
+  const notifyError = useNotifyError();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Basic validation
     if (!agentId.trim() || !accessCode.trim()) {
       notifyError("Please enter both Agent ID and Access Code");
       return;
@@ -47,7 +52,6 @@ export default function SignInPage() {
 
     try {
       const result = await signIn(agentId, accessCode);
-
       if (result.success) {
         notifySuccess("Login successful! Redirecting...");
         router.push(redirectTo);
@@ -58,7 +62,9 @@ export default function SignInPage() {
         );
       }
     } catch (err) {
-      notifyError("An error occurred during authentication. Please try again.");
+      notifyError(
+        "An error occurred during authentication. Please try again."
+      );
       console.error("SignIn error:", err);
     } finally {
       setLoading(false);
@@ -85,7 +91,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-white px-4">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">Agent Portal</h1>
@@ -95,6 +101,7 @@ export default function SignInPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Email/Agent ID Field */}
           <div>
             <label
               htmlFor="agentId"
@@ -105,10 +112,8 @@ export default function SignInPage() {
             <div className="relative">
               <input
                 id="agentId"
-                name="agentId"
                 type="text"
                 autoComplete="username"
-                required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                 placeholder="Enter your agent ID or email"
                 value={agentId}
@@ -118,6 +123,7 @@ export default function SignInPage() {
             </div>
           </div>
 
+          {/* Password/Access Code Field */}
           <div>
             <label
               htmlFor="accessCode"
@@ -128,10 +134,8 @@ export default function SignInPage() {
             <div className="relative">
               <input
                 id="accessCode"
-                name="accessCode"
                 type={showAccessCode ? "text" : "password"}
                 autoComplete="current-password"
-                required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all pr-12"
                 placeholder="Enter your access code"
                 value={accessCode}
@@ -161,11 +165,11 @@ export default function SignInPage() {
             )}
           </div>
 
+          {/* Remember Me & Forgot Password */}
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <input
                 id="remember-me"
-                name="remember-me"
                 type="checkbox"
                 className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
               />
@@ -176,7 +180,6 @@ export default function SignInPage() {
                 Remember me
               </label>
             </div>
-
             <div className="text-sm">
               <a
                 href="#"
@@ -187,6 +190,7 @@ export default function SignInPage() {
             </div>
           </div>
 
+          {/* Sign In Button */}
           <div>
             <button
               type="submit"
@@ -224,9 +228,10 @@ export default function SignInPage() {
           </div>
         </form>
 
+        {/* Sign Up Link */}
         <div className="text-center text-sm text-gray-500">
           <p>
-            Don&#39;t have an account?{" "}
+            Don&apos;t have an account?{" "}
             <a
               href="/agent/signup"
               className="font-medium text-green-600 hover:text-green-500"
@@ -236,6 +241,7 @@ export default function SignInPage() {
           </p>
         </div>
 
+        {/* Social Login Divider */}
         <div className="relative mt-6">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300" />
@@ -247,7 +253,9 @@ export default function SignInPage() {
           </div>
         </div>
 
+        {/* Social Login Buttons */}
         <div className="mt-4 grid grid-cols-2 gap-3">
+          {/* Google Button */}
           <button
             type="button"
             onClick={() => handleSocialSignIn("google")}
@@ -278,21 +286,24 @@ export default function SignInPage() {
               />
             </svg>
           </button>
+
+          {/* GitHub Button */}
           <button
             type="button"
-            onClick={() => handleSocialSignIn("facebook")}
+            onClick={() => handleSocialSignIn("github")}
             disabled={loading}
             className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg
               className="w-5 h-5"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
               fill="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <path
-                d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"
-                fill="#1877F2"
+                fillRule="evenodd"
+                d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.933.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.14 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"
+                clipRule="evenodd"
               />
             </svg>
           </button>

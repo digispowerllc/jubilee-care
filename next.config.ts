@@ -42,7 +42,6 @@ const nextConfig: NextConfig = {
 
   // Development settings
   reactStrictMode: true,
-  swcMinify: true,
   compress: true,
   productionBrowserSourceMaps: false,
 

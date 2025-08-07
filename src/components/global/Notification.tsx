@@ -1,3 +1,4 @@
+// src/components/global/Notification.tsx
 "use client";
 
 import { useEffect } from "react";
