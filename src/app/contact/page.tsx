@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Mail, Phone, LocateFixed, ExternalLink } from "lucide-react";
-import { notifySuccess, notifyError } from "@/components/store/notification";
+import { notifySuccess, notifyError } from "@/components/Notification";
 
 const ContactPage: React.FC = () => {
   const [name, setName] = useState("");
