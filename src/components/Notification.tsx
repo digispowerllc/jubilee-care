@@ -1,14 +1,25 @@
 // components/Notification.tsx
 "use client";
 
-  import { useCallback } from "react";
+import { useCallback } from "react";
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle, XCircle, Info, AlertTriangle, Loader2, X } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  Info,
+  AlertTriangle,
+  Loader2,
+  X,
+} from "lucide-react";
 
 type NotificationType = "success" | "error" | "info" | "warning" | "loading";
-type NotificationPosition = "top-right" | "top-left" | "bottom-right" | "bottom-left";
+type NotificationPosition =
+  | "top-right"
+  | "top-left"
+  | "bottom-right"
+  | "bottom-left";
 
 interface NotificationItem {
   id: string;
@@ -19,7 +30,11 @@ interface NotificationItem {
 
 declare global {
   interface Window {
-    notify?: (message: string, type?: NotificationType, duration?: number) => void;
+    notify?: (
+      message: string,
+      type?: NotificationType,
+      duration?: number
+    ) => void;
   }
 }
 
@@ -28,46 +43,55 @@ interface NotificationProps {
   position?: NotificationPosition;
 }
 
-export function Notification({ 
-  maxNotifications = 3, 
-  position = "top-right"
+export function Notification({
+  maxNotifications = 3,
+  position = "top-right",
 }: NotificationProps) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [positions, setPositions] = useState<{id: string, top: number}[]>([]);
+  const [positions, setPositions] = useState<{ id: string; top: number }[]>([]);
 
+  const calculateTopPosition = useCallback(
+    (index: number) => {
+      if (maxNotifications === 1) return 6; // 4rem (top-16)
+      // 4rem (top-16) + (index * 3.5rem) for gap-2 + notification height
+      return 62 + index * 56;
+    },
+    [maxNotifications]
+  );
 
+  const notify = useCallback(
+    (message: string, type: NotificationType = "info", duration = 5000) => {
+      const id = Math.random().toString(36).slice(2, 9);
 
-  const calculateTopPosition = useCallback((index: number) => {
-    if (maxNotifications === 1) return 16; // 1rem (top-4)
-    // 1rem (top-4) + (index * 3.5rem) for gap-2 + notification height
-    return 16 + (index * 56); 
-  }, [maxNotifications]);
+      setNotifications((prev) => {
+        const updated =
+          prev.length >= maxNotifications
+            ? [...prev.slice(1), { id, message, type, duration }]
+            : [...prev, { id, message, type, duration }];
+        return updated;
+      });
 
-  const notify = useCallback((message: string, type: NotificationType = "info", duration = 5000) => {
-    const id = Math.random().toString(36).slice(2, 9);
+      // Calculate fixed positions for persistent locations
+      setPositions((prev) => {
+        const newPositions =
+          prev.length >= maxNotifications
+            ? [
+                ...prev.slice(1),
+                { id, top: calculateTopPosition(prev.length - 1) },
+              ]
+            : [...prev, { id, top: calculateTopPosition(prev.length) }];
+        return newPositions;
+      });
 
-    setNotifications(prev => {
-      const updated = prev.length >= maxNotifications 
-        ? [...prev.slice(1), { id, message, type, duration }]
-        : [...prev, { id, message, type, duration }];
-      return updated;
-    });
-
-    // Calculate fixed positions for persistent locations
-    setPositions(prev => {
-      const newPositions = prev.length >= maxNotifications 
-        ? [...prev.slice(1), { id, top: calculateTopPosition(prev.length - 1) }]
-        : [...prev, { id, top: calculateTopPosition(prev.length) }];
-      return newPositions;
-    });
-
-    if (duration > 0) {
-      setTimeout(() => {
-        setNotifications(prev => prev.filter(n => n.id !== id));
-        setPositions(prev => prev.filter(p => p.id !== id));
-      }, duration);
-    }
-  }, [maxNotifications, calculateTopPosition]);
+      if (duration > 0) {
+        setTimeout(() => {
+          setNotifications((prev) => prev.filter((n) => n.id !== id));
+          setPositions((prev) => prev.filter((p) => p.id !== id));
+        }, duration);
+      }
+    },
+    [maxNotifications, calculateTopPosition]
+  );
 
   useEffect(() => {
     window.notify = notify;
@@ -100,53 +124,56 @@ export function Notification({
   };
 
   const dismissNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-    setPositions(prev => prev.filter(p => p.id !== id));
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    setPositions((prev) => prev.filter((p) => p.id !== id));
   };
 
   return (
     <>
       {notifications.map((notification) => {
-        const positionStyle = positions.find(p => p.id === notification.id);
+        const positionStyle = positions.find((p) => p.id === notification.id);
         return (
           <motion.div
             key={notification.id}
-            initial={{ opacity: 0, y: -20, scale: 0.9 }}
-            animate={{ 
-              opacity: 1, 
-              y: 0, 
+            initial={{ opacity: 0, y: -21, scale: 0.9 }}
+            animate={{
+              opacity: 1,
+              y: 0,
               scale: 1,
-              top: positionStyle?.top || calculateTopPosition(0)
+              top: positionStyle?.top || calculateTopPosition(0),
             }}
-            exit={{ opacity: 0, x: position.includes('right') ? 100 : -100 }}
-            className={`fixed z-[9999] w-80 max-w-[calc(100vw-2rem)] rounded-lg shadow-lg ${variantClasses[notification.type]} ${positionClasses[position]}`}
+            exit={{ opacity: 0, x: position.includes("right") ? 100 : -100 }}
+            className={`fixed z-[9999] w-80 max-w-[calc(100vw-2rem)] rounded-lg shadow-lg ${
+              variantClasses[notification.type]
+            } ${positionClasses[position]}`}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             style={{
-              top: `${positionStyle?.top || calculateTopPosition(0)}px`
+              top: `${positionStyle?.top || calculateTopPosition(0)}px`,
             }}
           >
             <div className="flex items-start gap-3 p-4">
-              <div className="flex-shrink-0">
-                {iconMap[notification.type]}
-              </div>
+              <div className="flex-shrink-0">{iconMap[notification.type]}</div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium break-words">
                   {notification.message}
                 </p>
               </div>
-              <button 
+              <button
                 onClick={() => dismissNotification(notification.id)}
                 className="flex-shrink-0 text-current opacity-50 hover:opacity-100 transition-opacity"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            
+
             {notification.duration && notification.duration > 0 && (
               <motion.div
-                initial={{ width: '100%' }}
-                animate={{ width: '0%' }}
-                transition={{ duration: notification.duration / 1000, ease: "linear" }}
+                initial={{ width: "100%" }}
+                animate={{ width: "0%" }}
+                transition={{
+                  duration: notification.duration / 1000,
+                  ease: "linear",
+                }}
                 className="h-1 bg-current opacity-20 absolute bottom-0 left-0 rounded-b-lg"
               />
             )}
