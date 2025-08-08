@@ -1,9 +1,11 @@
 // app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { AuthProvider } from "@/components/auth-provider";
-import { NotificationProvider } from "@/components/notification/NotificationProvider";
+import { Notification } from "@/components/Notification";
+
 import LayoutLoaderWrapper from "./LayoutLoaderWrapper";
+import { AuthProvider } from "@/components/auth-provider";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -31,11 +33,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <NotificationProvider>
-          <LayoutLoaderWrapper>
-            <AuthProvider>{children}</AuthProvider>
-          </LayoutLoaderWrapper>
-        </NotificationProvider>
+        <AuthProvider>
+          <LayoutLoaderWrapper>{children}</LayoutLoaderWrapper>
+        </AuthProvider>
+        {/* <Notification />
+         */}
+        <Notification maxNotifications={1} position="top-right" />
       </body>
     </html>
   );

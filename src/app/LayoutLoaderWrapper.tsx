@@ -1,9 +1,8 @@
+// src/app/LayoutLoaderWrapper.tsx
 "use client";
-
 import { useEffect, useState } from "react";
- import Navigation from "@/components/Navigation";
+import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import Notification from "@/components/global/Notification";
 
 export default function LayoutLoaderWrapper({
   children,
@@ -17,19 +16,17 @@ export default function LayoutLoaderWrapper({
   useEffect(() => {
     const timeout = setTimeout(() => {
       setLoading(false);
-      // Trigger visibility transition on next frame
       requestAnimationFrame(() => setVisible(true));
     }, 500);
 
     return () => clearTimeout(timeout);
   }, []);
 
-  // Trigger content visibility once visible is true
   useEffect(() => {
     if (visible) {
       const timeout = setTimeout(() => {
         setContentVisible(true);
-      }, 10); // Delay just enough for transition to kick in
+      }, 10);
       return () => clearTimeout(timeout);
     }
   }, [visible]);
@@ -45,7 +42,6 @@ export default function LayoutLoaderWrapper({
   return (
     <>
       <Navigation />
-
       <div
         className={`transition-all duration-700 ease-out transform ${
           contentVisible
@@ -55,9 +51,7 @@ export default function LayoutLoaderWrapper({
       >
         {children}
       </div>
-
       <Footer />
-      <Notification />
     </>
   );
 }

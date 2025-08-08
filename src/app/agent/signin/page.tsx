@@ -4,10 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, appSignIn } from "@/app/actions/auth";
 import { Eye, EyeOff } from "lucide-react";
-import {
-  useNotifySuccess,
-  useNotifyError,
-} from "@/components/notification/NotificationProvider";
+import { notifySuccess, notifyError } from "@/components/Notification";
 import "./signin.css";
 
 export default function SignInPage() {
@@ -37,9 +34,6 @@ export default function SignInPage() {
     );
   };
 
-  const notifySuccess = useNotifySuccess();
-  const notifyError = useNotifyError();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -62,9 +56,7 @@ export default function SignInPage() {
         );
       }
     } catch (err) {
-      notifyError(
-        "An error occurred during authentication. Please try again."
-      );
+      notifyError("An error occurred during authentication. Please try again.");
       console.error("SignIn error:", err);
     } finally {
       setLoading(false);

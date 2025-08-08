@@ -3,7 +3,10 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
-import { notifySuccess, notifyError } from "@/components/store/notification";
+import {
+  notifySuccess,
+  notifyError
+} from "@/components/Notification";
 
 type AgentData = {
   surname: string;
