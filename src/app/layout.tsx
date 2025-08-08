@@ -38,7 +38,7 @@ export default function RootLayout({
         </AuthProvider>
         {/* <Notification />
          */}
-        <Notification maxNotifications={1} position="top-right" />
+        <Notification maxNotifications={3} position="top-right" />
       </body>
     </html>
   );

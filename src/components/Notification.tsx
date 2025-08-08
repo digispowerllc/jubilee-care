@@ -1,8 +1,10 @@
 // components/Notification.tsx
 "use client";
 
+  import { useCallback } from "react";
+
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { CheckCircle, XCircle, Info, AlertTriangle, Loader2, X } from "lucide-react";
 
 type NotificationType = "success" | "error" | "info" | "warning" | "loading";
@@ -33,9 +35,17 @@ export function Notification({
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [positions, setPositions] = useState<{id: string, top: number}[]>([]);
 
-  const notify = (message: string, type: NotificationType = "info", duration = 5000) => {
+
+
+  const calculateTopPosition = useCallback((index: number) => {
+    if (maxNotifications === 1) return 16; // 1rem (top-4)
+    // 1rem (top-4) + (index * 3.5rem) for gap-2 + notification height
+    return 16 + (index * 56); 
+  }, [maxNotifications]);
+
+  const notify = useCallback((message: string, type: NotificationType = "info", duration = 5000) => {
     const id = Math.random().toString(36).slice(2, 9);
-    
+
     setNotifications(prev => {
       const updated = prev.length >= maxNotifications 
         ? [...prev.slice(1), { id, message, type, duration }]
@@ -50,27 +60,21 @@ export function Notification({
         : [...prev, { id, top: calculateTopPosition(prev.length) }];
       return newPositions;
     });
-    
+
     if (duration > 0) {
       setTimeout(() => {
         setNotifications(prev => prev.filter(n => n.id !== id));
         setPositions(prev => prev.filter(p => p.id !== id));
       }, duration);
     }
-  };
-
-  const calculateTopPosition = (index: number) => {
-    if (maxNotifications === 1) return 16; // 1rem (top-4)
-    // 1rem (top-4) + (index * 3.5rem) for gap-2 + notification height
-    return 16 + (index * 56); 
-  };
+  }, [maxNotifications, calculateTopPosition]);
 
   useEffect(() => {
     window.notify = notify;
     return () => {
       window.notify = undefined;
     };
-  }, []);
+  }, [notify]);
 
   const iconMap = {
     success: <CheckCircle className="w-5 h-5" />,
