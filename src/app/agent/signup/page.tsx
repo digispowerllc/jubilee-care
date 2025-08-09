@@ -3,10 +3,9 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
-import {
-  notifySuccess,
-  notifyError
-} from "@/components/Notification";
+import { notifySuccess, notifyError } from "@/components/Notification";
+import { protectData, unprotectData } from "@/lib/dataProtection";
+import PasswordStrengthMeter from "@/components/PasswordStrengthMeter";
 
 type AgentData = {
   surname: string;
@@ -32,23 +31,6 @@ const initialData: AgentData = {
   address: "",
 };
 
-const PasswordStrength = ({ strength }: { strength: number }) => {
-  const getColor = () => {
-    if (strength > 70) return "bg-green-500";
-    if (strength > 40) return "bg-yellow-500";
-    return "bg-red-500";
-  };
-
-  return (
-    <div className="mt-1 h-1 w-full bg-gray-200 rounded-full">
-      <div
-        className={`h-full rounded-full ${getColor()}`}
-        style={{ width: `${strength}%` }}
-      />
-    </div>
-  );
-};
-
 export default function AgentEnroll() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -63,6 +45,101 @@ export default function AgentEnroll() {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [emailChecking, setEmailChecking] = useState(false);
   const lgaCache = useMemo(() => new Map<string, string[]>(), []);
+
+  // Storage management with encryption
+  const storage = useMemo(
+    () => ({
+      saveTempData: (data: AgentData, currentStep: number, pass: string) => {
+        try {
+          const encryptedData = {
+            surname: data.surname,
+            firstName: data.firstName,
+            otherName: data.otherName || "",
+            email: protectData(data.email, "email") as string,
+            phone: protectData(data.phone, "phone") as string,
+            nin: protectData(data.nin, "government-id") as string,
+            state: data.state,
+            lga: data.lga,
+            address: data.address,
+          };
+
+          localStorage.setItem(
+            "agent_enrollment",
+            JSON.stringify({
+              data: encryptedData,
+              step: currentStep,
+              password: pass,
+              timestamp: new Date().toISOString(),
+            })
+          );
+        } catch (error) {
+          console.error("Failed to save temporary data:", error);
+        }
+      },
+
+      getTempData: () => {
+        try {
+          const saved = localStorage.getItem("agent_enrollment");
+          if (!saved) return null;
+
+          const parsed = JSON.parse(saved);
+          return {
+            data: {
+              ...parsed.data,
+              email: unprotectData(parsed.data.email, "email"),
+              phone: unprotectData(parsed.data.phone, "phone"),
+              nin: unprotectData(parsed.data.nin, "government-id"),
+            },
+            step: parsed.step,
+            password: parsed.password,
+          };
+        } catch (error) {
+          console.error("Failed to load temporary data:", error);
+          return null;
+        }
+      },
+
+      clearTempData: () => {
+        localStorage.removeItem("agent_enrollment");
+      },
+    }),
+    []
+  );
+
+  // Load saved data on mount
+  useEffect(() => {
+    const saved = storage.getTempData();
+    if (saved) {
+      setAgentData(saved.data);
+      setPassword(saved.password);
+      setStep(saved.step);
+    }
+  }, [storage]);
+
+  // Auto-save when fields change
+  const updateField = useCallback(
+    (field: keyof AgentData, value: string) => {
+      setAgentData((prev) => {
+        const newData = { ...prev, [field]: value };
+        storage.saveTempData(newData, step, password);
+        return newData;
+      });
+    },
+    [step, password, storage]
+  );
+
+  const updatePassword = useCallback(
+    (value: string) => {
+      setPassword(value);
+      storage.saveTempData(agentData, step, value);
+    },
+    [agentData, step, storage]
+  );
+
+  // Field blur handler for auto-saving
+  const handleBlur = useCallback(() => {
+    storage.saveTempData(agentData, step, password);
+  }, [agentData, step, password, storage]);
 
   // Calculate password strength
   useEffect(() => {
@@ -86,7 +163,7 @@ export default function AgentEnroll() {
           setStates(data.states);
           sessionStorage.setItem("cachedStates", JSON.stringify(data.states));
         }
-      } catch (error) {
+      } catch {
         notifyError("Failed to load states");
       } finally {
         setStateLoading(false);
@@ -114,7 +191,7 @@ export default function AgentEnroll() {
           const data = await res.json();
           setCities(data.lgas);
           lgaCache.set(agentData.state, data.lgas);
-        } catch (error) {
+        } catch {
           notifyError("Failed to load LGAs");
         } finally {
           setCityLoading(false);
@@ -159,6 +236,7 @@ export default function AgentEnroll() {
       return true;
     } catch (error) {
       notifyError("Unable to verify email. Please try again");
+      console.error("Failed to verify email:", error);
       return false;
     } finally {
       setEmailChecking(false);
@@ -217,10 +295,18 @@ export default function AgentEnroll() {
   }, [step, agentData, password, checkEmail]);
 
   const nextStep = useCallback(async () => {
-    if (await validateStep()) setStep((s) => s + 1);
-  }, [validateStep]);
+    if (await validateStep()) {
+      const newStep = step + 1;
+      setStep(newStep);
+      storage.saveTempData(agentData, newStep, password);
+    }
+  }, [validateStep, step, agentData, password, storage]);
 
-  const prevStep = () => setStep((s) => Math.max(1, s - 1));
+  const prevStep = () => {
+    const newStep = step - 1;
+    setStep(newStep);
+    storage.saveTempData(agentData, newStep, password);
+  };
 
   const submitForm = useCallback(async () => {
     if (!(await validateStep())) return;
@@ -228,56 +314,31 @@ export default function AgentEnroll() {
     setFormSubmitted(true);
 
     try {
-      // Validate agent data first
-      const validationRes = await fetch("/api/agent/validateAgent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: agentData.email.trim(),
-          phone: agentData.phone.trim(),
-          nin: agentData.nin.trim(),
-        }),
-      });
-
-      if (!validationRes.ok) {
-        const errorData = await validationRes.json();
-        throw new Error(errorData.message || "Validation failed");
-      }
-
-      // Create agent account
-      const enrollRes = await fetch("/api/agent/signup", {
+      const response = await fetch("/api/agent/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...agentData,
-          surname: agentData.surname.trim(),
-          firstName: agentData.firstName.trim(),
-          otherName: agentData.otherName?.trim() || "",
-          email: agentData.email.trim(),
-          phone: agentData.phone.trim(),
-          nin: agentData.nin.trim(),
-          state: agentData.state.trim(),
-          lga: agentData.lga.trim(),
-          address: agentData.address.trim(),
           password,
+          encryptionVersion: "v2",
         }),
       });
 
-      if (!enrollRes.ok) {
-        const errorData = await enrollRes.json();
-        throw new Error(errorData.message || "Enrollment failed");
+      if (!response.ok) {
+        throw new Error(await response.text());
       }
 
+      storage.clearTempData();
       notifySuccess("Account created successfully!");
-      router.push("agent/signin");
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Failed to submit form";
-      notifyError(message);
+      router.push("/agent/signin");
+    } catch (error) {
+      notifyError(
+        error instanceof Error ? error.message : "Registration failed"
+      );
     } finally {
       setFormSubmitted(false);
     }
-  }, [validateStep, agentData, password, router]);
+  }, [validateStep, agentData, password, router, storage]);
 
   // Handle Enter key navigation
   useEffect(() => {
@@ -292,6 +353,33 @@ export default function AgentEnroll() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [step, nextStep, submitForm]);
+
+  // Render field helper
+  const renderField = (
+    field: keyof AgentData,
+    label: string,
+    type = "text",
+    required = true,
+    options?: { maxLength?: number; minLength?: number }
+  ) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label}
+        {required && "*"}
+      </label>
+      <input
+        type={type}
+        value={agentData[field]}
+        onChange={(e) => updateField(field, e.target.value)}
+        onBlur={handleBlur}
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+        placeholder={`Enter your ${label.toLowerCase()}`}
+        required={required}
+        maxLength={options?.maxLength}
+        minLength={options?.minLength}
+      />
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-12">
@@ -334,86 +422,26 @@ export default function AgentEnroll() {
             {/* Step 1: Personal Info */}
             {step === 1 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Surname*
-                  </label>
-                  <input
-                    type="text"
-                    value={agentData.surname}
-                    onChange={(e) =>
-                      setAgentData({ ...agentData, surname: e.target.value })
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                    placeholder="Enter your surname"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    First Name*
-                  </label>
-                  <input
-                    type="text"
-                    value={agentData.firstName}
-                    onChange={(e) =>
-                      setAgentData({ ...agentData, firstName: e.target.value })
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                    placeholder="Enter your first name"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Other Name (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={agentData.otherName}
-                    onChange={(e) =>
-                      setAgentData({ ...agentData, otherName: e.target.value })
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                    placeholder="Enter other name if any"
-                  />
-                </div>
+                {renderField("surname", "Surname")}
+                {renderField("firstName", "First Name")}
+                {renderField(
+                  "otherName",
+                  "Other Name (Optional)",
+                  "text",
+                  false
+                )}
               </div>
             )}
 
             {/* Step 2: Contact Info */}
             {step === 2 && (
               <div className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email Address*
-                  </label>
-                  <input
-                    type="email"
-                    value={agentData.email}
-                    onChange={(e) =>
-                      setAgentData({ ...agentData, email: e.target.value })
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                    placeholder="your.email@example.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone Number*
-                  </label>
-                  <input
-                    type="tel"
-                    value={agentData.phone}
-                    onChange={(e) =>
-                      setAgentData({ ...agentData, phone: e.target.value })
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                    placeholder="08012345678"
-                  />
-                </div>
-
+                {renderField("email", "Email Address", "email")}
+                {renderField("phone", "Phone Number", "tel", true, {
+                  minLength: 10,
+                  maxLength: 11,
+                })}
+                {/* Password */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Create Password*
@@ -422,9 +450,11 @@ export default function AgentEnroll() {
                     <input
                       type={showPassword ? "text" : "password"}
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => updatePassword(e.target.value)}
+                      onBlur={handleBlur}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all pr-12"
                       placeholder="At least 8 characters"
+                      minLength={8}
                     />
                     <button
                       type="button"
@@ -438,36 +468,21 @@ export default function AgentEnroll() {
                       )}
                     </button>
                   </div>
-                  <PasswordStrength strength={passwordStrength} />
-                  <p className="text-xs text-gray-500 mt-1">
-                    {password.length > 0
-                      ? password.length < 8
-                        ? "Password too short"
-                        : "Strong password"
-                      : "Minimum 8 characters"}
-                  </p>
+                  {/* Password Strength Meter */}
+                  <PasswordStrengthMeter password={password} />
                 </div>
               </div>
             )}
 
             {/* Step 3: Identification */}
-            {step === 3 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  National Identification Number (NIN)*
-                </label>
-                <input
-                  type="text"
-                  value={agentData.nin}
-                  onChange={(e) =>
-                    setAgentData({ ...agentData, nin: e.target.value })
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                  placeholder="11-digit NIN"
-                  maxLength={11}
-                />
-              </div>
-            )}
+            {step === 3 &&
+              renderField(
+                "nin",
+                "National Identification Number (NIN)",
+                "tel",
+                true,
+                { minLength: 11, maxLength: 11 }
+              )}
 
             {/* Step 4: Location */}
             {step === 4 && (
@@ -479,11 +494,11 @@ export default function AgentEnroll() {
                     </label>
                     <select
                       value={agentData.state}
-                      onChange={(e) =>
-                        setAgentData({ ...agentData, state: e.target.value })
-                      }
+                      onChange={(e) => updateField("state", e.target.value)}
+                      onBlur={handleBlur}
                       disabled={stateLoading}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                      required
                     >
                       <option value="">Select State</option>
                       {states.map((s) => (
@@ -500,11 +515,11 @@ export default function AgentEnroll() {
                     </label>
                     <select
                       value={agentData.lga}
-                      onChange={(e) =>
-                        setAgentData({ ...agentData, lga: e.target.value })
-                      }
+                      onChange={(e) => updateField("lga", e.target.value)}
+                      onBlur={handleBlur}
                       disabled={!cities.length || cityLoading}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                      required
                     >
                       <option value="">Select LGA</option>
                       {cities.map((c) => (
@@ -522,11 +537,13 @@ export default function AgentEnroll() {
                   </label>
                   <textarea
                     value={agentData.address}
-                    onChange={(e) =>
-                      setAgentData({ ...agentData, address: e.target.value })
-                    }
+                    onChange={(e) => updateField("address", e.target.value)}
+                    onBlur={handleBlur}
                     className="w-full min-h-[100px] px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                     placeholder="Street, Area, Landmark..."
+                    minLength={10}
+                    maxLength={200}
+                    required
                   />
                 </div>
               </div>

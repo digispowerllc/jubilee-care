@@ -1,39 +1,33 @@
-import { NextResponse } from "next/server"
-import { prisma } from "../../../../lib/prisma"
-import { generateAccessCode, generateAgentId } from "../../../../lib/generators"
-import { z } from "zod"
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { protectData } from "@/lib/dataProtection";
+import { z } from "zod";
 
-// Zod schema to validate the incoming request body
 const agentSchema = z.object({
-  surname: z.string().min(1, "Surname is required"),
-  firstName: z.string().min(1, "First name is required"),
-  otherName: z.string().optional(),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().min(1, "Phone number is required"),
-  nin: z.string().min(1, "NIN is required"),
-  state: z.string().min(1, "State is required"),
-  lga: z.string().min(1, "LGA is required"),
-  address: z.string().min(1, "Address is required"),
-})
+  surname: z.string().min(1).max(100),
+  firstName: z.string().min(1).max(100),
+  otherName: z.string().max(100).optional().nullable(),
+  email: z.string().email().max(100),
+  phone: z.string().min(10).max(15),
+  nin: z.string().min(11).max(11),
+  state: z.string().min(1).max(50),
+  lga: z.string().min(1).max(50),
+  address: z.string().min(1).max(200),
+  password: z.string().min(8),
+});
 
 export async function POST(req: Request) {
-  console.log("POST request received to create new agent")
   try {
-    const body = await req.json()
-    console.log("Request body:", JSON.stringify(body, null, 2))
+    const body = await req.json();
+    const parseResult = agentSchema.safeParse(body);
 
-    // Validate request body using Zod
-    const parseResult = agentSchema.safeParse(body)
     if (!parseResult.success) {
-      const formattedErrors = parseResult.error.flatten().fieldErrors
-      console.log("Validation failed with errors:", formattedErrors)
       return NextResponse.json(
-        { success: false, error: "Invalid input", details: formattedErrors },
+        { success: false, error: parseResult.error.flatten() },
         { status: 400 }
-      )
+      );
     }
 
-    // Destructure and sanitize the validated input
     const {
       surname,
       firstName,
@@ -44,55 +38,71 @@ export async function POST(req: Request) {
       state,
       lga,
       address,
-    } = parseResult.data
+      password
+    } = parseResult.data;
 
-    console.log("Generating access code and agent ID")
-    const accessCode = generateAccessCode()
-    const agentId = await generateAgentId()
-    console.log(`Generated access code: ${accessCode}, agent ID: ${agentId}`)
+    // Check if email or phone already exists
+    const existingAgent = await prisma.agent.findFirst({
+      where: {
+        OR: [
+          { email: await protectData(email, 'email') as string },
+          { phone: await protectData(phone, 'phone') as string }
+        ]
+      }
+    });
 
-    // Create agent in DB
-    console.log("Creating agent in database")
-    const agent = await prisma.agent.create({
-      data: {
-        surname: surname.trim(),
-        firstName: firstName.trim(),
-        otherName: otherName ? otherName.trim() : "",
-        email: email.trim(),
-        phone: phone.trim(),
-        nin: nin.trim(),
-        state: state.trim(),
-        lga: lga.trim(),
-        address: address.trim(),
+    if (existingAgent) {
+      return NextResponse.json(
+        { success: false, error: "Email or phone number already registered" },
+        { status: 409 }
+      );
+    }
+
+    // Create agent in transaction
+    const result = await prisma.$transaction(async (prisma) => {
+      // Create agent with encrypted data
+      const agent = await prisma.agent.create({
+        data: {
+          surname: await protectData(surname, 'name') as string,
+          firstName: await protectData(firstName, 'name') as string,
+          otherName: otherName ? await protectData(otherName, 'name') as string : "",
+          email: await protectData(email, 'email') as string,
+          phone: await protectData(phone, 'phone') as string,
+          nin: await protectData(nin, 'government-id') as string,
+          state: await protectData(state, 'location') as string,
+          lga: await protectData(lga, 'location') as string,
+          address: await protectData(address, 'location') as string
+        }
+      });
+
+      // Create profile
+      await prisma.agentProfile.create({
+        data: {
+          id: agent.id,
+          agentId: agent.id, // Or generate a separate ID if needed
+          accessCode: await protectData(password, 'system-code') as string
+        }
+      });
+
+      return agent;
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        agentId: result.id
       },
-    })
-    console.log("Agent created successfully with ID:", agent.id)
+      { status: 201 }
+    );
 
-    // Create corresponding agent profile
-    console.log("Creating agent profile")
-    const profile = await prisma.agentProfile.create({
-      data: {
-        id: agent.id,
-        agentId: agentId,
-        accessCode: accessCode,
+  } catch (error) {
+    console.error("Agent creation error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Registration failed. Please try again."
       },
-    })
-    console.log("Agent profile created successfully")
-
-    console.log("Agent creation process completed successfully")
-    return NextResponse.json({ success: true, agent, profile }, { status: 201 })
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown error occurred"
-    console.error("Error in agent creation:", error)
-    return NextResponse.json({ success: false, error: message }, { status: 500 })
+      { status: 500 }
+    );
   }
-}
-
-// Fallback for unsupported HTTP methods
-export function GET() {
-  console.log("GET method called but not allowed")
-  return NextResponse.json(
-    { message: "Method Not Allowed. Use POST to create a user." },
-    { status: 405 }
-  )
 }

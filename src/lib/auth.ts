@@ -3,7 +3,7 @@ import { prisma } from './prisma';
 import bcrypt from 'bcryptjs';
 
 // Configure bcrypt (you'll need to install it)
-const SALT_ROUNDS = 12;
+const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS || '10', 10);
 
 export async function signIn(agentId: string, accessCode: string) {
     try {

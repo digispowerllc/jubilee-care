@@ -53,6 +53,7 @@ model AgentProfile {
 
   @@index([agentId])
   @@index([accessCode])
+  @@index([createdAt])
 }
 
 model User {
