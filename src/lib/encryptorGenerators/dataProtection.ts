@@ -7,7 +7,7 @@ import {
     decryptBasic,
     hashData,
     verifyHash
-} from './encryption';
+} from '@/lib/encryptorGenerators/encryption';
 
 type DataType =
     | 'government-id'

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { protectData } from "@/lib/dataProtection";
+import { protectData } from "@/lib/encryptorGenerators/dataProtection";
 import { z } from "zod";
 
 const agentSchema = z.object({

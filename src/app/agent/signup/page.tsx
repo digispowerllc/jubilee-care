@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { notifySuccess, notifyError } from "@/components/Notification";
-import { protectData, unprotectData } from "@/lib/dataProtection";
+import { protectData, unprotectData } from "@/lib/encryptorGenerators/dataProtection";
 import PasswordStrengthMeter from "@/components/PasswordStrengthMeter";
 
 type AgentData = {
