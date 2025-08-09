@@ -52,6 +52,5 @@ next-env.d.ts
 # Custom scripts
 /scripts
 
-
-
 .vercel
+key-change-log.txt
