@@ -172,12 +172,14 @@ export const securityHeadersConfig = {
       "'unsafe-eval'", // Required for Next.js in production
       "'report-sample'",
       "https://*.vercel.app", // Add if using Vercel
+      "https://jcic.vercel.app"
     ],
     styleSrc: [
       "'self'",
       "'unsafe-inline'", // Required for Next.js
       "https://fonts.googleapis.com",
-      "https://*.vercel.app" // Add if using Vercel
+      "https://*.vercel.app",
+      "https://jcic.vercel.app"
     ],
     imgSrc: [
       "'self'",
@@ -203,6 +205,7 @@ export const securityHeadersConfig = {
       "https://*.google-analytics.com",
       "https://*.analytics.google.com",
       "https://*.vercel-insights.com",
+      "https://jcic.vercel.app",
       "https://*.vercel.app", // Add if using Vercel
       "wss://*.vercel.app" // For WebSockets
     ],
