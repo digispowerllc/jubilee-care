@@ -37,9 +37,7 @@ const productionConfig: SecurityHeadersConfig = {
     scriptSrc: [
       "'self'",
       "'unsafe-inline'",
-      "'report-sample'",
-      "https://*.google-analytics.com",
-      "https://*.googletagmanager.com"
+      "'report-sample'"
     ],
     styleSrc: ["'self'", "'unsafe-inline'"],
     imgSrc: ["'self'", "data:", "blob:"],
@@ -49,7 +47,7 @@ const productionConfig: SecurityHeadersConfig = {
     objectSrc: ["'none'"],
     baseUri: ["'self'"],
     formAction: ["'self'"],
-    workerSrc: ["'self'", "blob:"],    
+    workerSrc: ["'self'", "blob:"],
     upgradeInsecureRequests: true
   }
 };
@@ -160,11 +158,8 @@ export const securityHeadersConfig = {
       "'unsafe-inline'",
       "'unsafe-eval'", // Required for Next.js in production
       "'report-sample'",
-      "https://*.google-analytics.com",
-      "https://*.googletagmanager.com",
-      "https://*.vercel-insights.com",
       "https://*.vercel.app", // Add if using Vercel
-         ],
+    ],
     styleSrc: [
       "'self'",
       "'unsafe-inline'", // Required for Next.js
@@ -197,7 +192,7 @@ export const securityHeadersConfig = {
       "https://*.vercel-insights.com",
       "https://*.vercel.app", // Add if using Vercel
       "wss://*.vercel.app" // For WebSockets
-         ],
+    ],
     frameSrc: ["'self'"],
     mediaSrc: ["'self'"],
     manifestSrc: ["'self'"],
