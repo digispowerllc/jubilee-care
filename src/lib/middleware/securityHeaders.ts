@@ -34,11 +34,7 @@ const productionConfig: SecurityHeadersConfig = {
   permissionsPolicy: 'camera=(), microphone=(), geolocation=()',
   csp: {
     defaultSrc: ["'self'"],
-    scriptSrc: [
-      "'self'",
-      "'unsafe-inline'",
-      "'report-sample'"
-    ],
+    scriptSrc: ["'self'", "'unsafe-inline'", "'report-sample'"],
     styleSrc: ["'self'", "'unsafe-inline'"],
     imgSrc: ["'self'", "data:", "blob:"],
     fontSrc: ["'self'", "data:"],
@@ -77,44 +73,38 @@ export async function withSecurityHeaders(
 
   const response = NextResponse.next();
 
-  // Set standard security headers
   if (config.frameOptions) {
     response.headers.set('X-Frame-Options', config.frameOptions);
   }
-
   if (config.contentTypeOptions) {
     response.headers.set('X-Content-Type-Options', config.contentTypeOptions);
   }
-
   if (config.referrerPolicy) {
     response.headers.set('Referrer-Policy', config.referrerPolicy);
   }
-
   if (config.permissionsPolicy) {
     response.headers.set('Permissions-Policy', config.permissionsPolicy);
   }
 
-  // Generate CSP
   if (config.csp) {
     const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+
     const cspDirectives: string[] = [];
 
-    // Helper function to process CSP directives
     const processDirective = (directive: string, sources?: string[]) => {
       if (sources && sources.length > 0) {
-        // Add nonce to script-src if it's the directive
-        if (directive === 'script-src' && !sources.includes(`'nonce-${nonce}'`)) {
+        if (directive === 'script-src' && !sources.some(s => s.startsWith("'nonce-"))) {
           sources.push(`'nonce-${nonce}'`);
+          // Optional: Add integrity here if precomputed
+          // sources.push(`'sha256-<hash>'`);
         }
         cspDirectives.push(`${directive} ${sources.join(' ')}`);
       }
     };
 
-    // Process each CSP directive
     Object.entries(config.csp).forEach(([directive, sources]) => {
       if (directive === 'reportUri' || directive === 'requireTrustedTypesFor' ||
         directive === 'sandbox' || directive === 'upgradeInsecureRequests') {
-        // Handle special cases
         if (directive === 'upgradeInsecureRequests' && sources) {
           cspDirectives.push('upgrade-insecure-requests');
         } else if (sources) {
@@ -127,6 +117,11 @@ export async function withSecurityHeaders(
 
     const cspHeader = config.reportOnly ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy';
     response.headers.set(cspHeader, cspDirectives.join('; '));
+
+    // Expose nonce for server-side rendered scripts
+    // Extend NextResponse type to include 'locals'
+    type NextResponseWithLocals = NextResponse & { locals?: Record<string, unknown> };
+    (response as NextResponseWithLocals).locals = { ...(response as NextResponseWithLocals).locals, cspNonce: nonce };
   }
 
   if (isDevelopment) {
