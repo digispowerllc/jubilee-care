@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { notifySuccess, notifyError } from "@/components/Notification";
-import { protectData, unprotectData } from "@/lib/encryptorGenerators/dataProtection";
+import { protectData, unprotectData } from "@/lib/security/dataProtection";
 import PasswordStrengthMeter from "@/components/PasswordStrengthMeter";
 
 type AgentData = {
@@ -49,15 +49,19 @@ export default function AgentEnroll() {
   // Storage management with encryption
   const storage = useMemo(
     () => ({
-      saveTempData: (data: AgentData, currentStep: number, pass: string) => {
+      saveTempData: async (
+        data: AgentData,
+        currentStep: number,
+        pass: string
+      ) => {
         try {
           const encryptedData = {
             surname: data.surname,
             firstName: data.firstName,
             otherName: data.otherName || "",
-            email: protectData(data.email, "email") as string,
-            phone: protectData(data.phone, "phone") as string,
-            nin: protectData(data.nin, "government-id") as string,
+            email: await protectData(data.email, "email"),
+            phone: await protectData(data.phone, "phone"),
+            nin: await protectData(data.nin, "government"),
             state: data.state,
             lga: data.lga,
             address: data.address,
@@ -88,7 +92,7 @@ export default function AgentEnroll() {
               ...parsed.data,
               email: unprotectData(parsed.data.email, "email"),
               phone: unprotectData(parsed.data.phone, "phone"),
-              nin: unprotectData(parsed.data.nin, "government-id"),
+              nin: unprotectData(parsed.data.nin, "government"),
             },
             step: parsed.step,
             password: parsed.password,
@@ -118,27 +122,32 @@ export default function AgentEnroll() {
 
   // Auto-save when fields change
   const updateField = useCallback(
-    (field: keyof AgentData, value: string) => {
+    async (field: keyof AgentData, value: string) => {
       setAgentData((prev) => {
         const newData = { ...prev, [field]: value };
         storage.saveTempData(newData, step, password);
         return newData;
       });
+      await storage.saveTempData(
+        { ...agentData, [field]: value },
+        step,
+        password
+      );
     },
-    [step, password, storage]
+    [step, password, storage, agentData]
   );
 
   const updatePassword = useCallback(
-    (value: string) => {
+    async (value: string) => {
       setPassword(value);
-      storage.saveTempData(agentData, step, value);
+      await storage.saveTempData(agentData, step, value);
     },
     [agentData, step, storage]
   );
 
   // Field blur handler for auto-saving
-  const handleBlur = useCallback(() => {
-    storage.saveTempData(agentData, step, password);
+  const handleBlur = useCallback(async () => {
+    await storage.saveTempData(agentData, step, password);
   }, [agentData, step, password, storage]);
 
   // Calculate password strength
@@ -256,7 +265,10 @@ export default function AgentEnroll() {
       case 1:
         if (!validateField(agentData.surname, "Surname")) return false;
         if (!validateField(agentData.firstName, "First name")) return false;
-        if (agentData.otherName && !/^[A-Za-z]+$/.test(agentData.otherName)) {
+        if (
+          agentData.otherName.trim() &&
+          !/^[A-Za-z]+$/.test(agentData.otherName.trim())
+        ) {
           notifyError("Other name must contain only letters");
           return false;
         }

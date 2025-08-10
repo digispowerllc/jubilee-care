@@ -7,19 +7,19 @@ import {
     decryptBasic,
     hashData,
     verifyHash
-} from '@/lib/encryptorGenerators/encryption';
+} from '@/lib/security/encryption';
 
 type DataType =
-    | 'government-id'
+    | 'government'  // Changed from 'government' for consistency
     | 'phone'
     | 'email'
     | 'name'
     | 'location'
-    | 'system-code';
+    | 'system-code';   // Changed from 'system' for clarity
 
-export function protectData(data: string, type: DataType): Promise<string> | string {
+export async function protectData(data: string, type: DataType): Promise<string> {
     switch (type) {
-        case 'government-id':
+        case 'government':
             return encryptHighestSecurity(data);
         case 'phone':
         case 'email':
@@ -28,15 +28,15 @@ export function protectData(data: string, type: DataType): Promise<string> | str
         case 'location':
             return encryptBasic(data);
         case 'system-code':
-            return hashData(data);
+            return await hashData(data);  // Added await since hashData is async
         default:
             throw new Error(`Unknown data type: ${type}`);
     }
 }
 
-export function unprotectData(protectedData: string, type: Exclude<DataType, 'system-code'>): string {
+export function unprotectData(protectedData: string, type: Exclude<DataType, 'system'>): string {
     switch (type) {
-        case 'government-id':
+        case 'government':
             return decryptHighestSecurity(protectedData);
         case 'phone':
         case 'email':
@@ -50,5 +50,5 @@ export function unprotectData(protectedData: string, type: Exclude<DataType, 'sy
 }
 
 export async function verifyProtectedData(data: string, hash: string): Promise<boolean> {
-    return verifyHash(data, hash);
+    return await verifyHash(data, hash);
 }

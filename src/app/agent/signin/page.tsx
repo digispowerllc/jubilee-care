@@ -5,47 +5,28 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, appSignIn } from "@/app/actions/auth";
 import { Eye, EyeOff } from "lucide-react";
 import { notifySuccess, notifyError } from "@/components/Notification";
-import "./signin.css";
 
 export default function SignInPage() {
-  const [agentId, setAgentId] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [accessCode, setAccessCode] = useState("");
   const [showAccessCode, setShowAccessCode] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("from") || "/profile";
-
-  const PasswordStrength = ({ code }: { code: string }) => {
-    const strength = Math.min((code.length / 10) * 100, 100);
-    return (
-      <div className="mt-1 h-1 w-full bg-gray-200 rounded-full">
-        <div
-          className={`h-full rounded-full ${
-            strength > 70
-              ? "bg-green-500"
-              : strength > 40
-              ? "bg-yellow-500"
-              : "bg-red-500"
-          }`}
-          style={{ width: `${strength}%` }}
-        />
-      </div>
-    );
-  };
+  const redirectTo = searchParams.get("from") || "/agent/profile";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!agentId.trim() || !accessCode.trim()) {
-      notifyError("Please enter both Agent ID and Access Code");
+    if (!identifier.trim() || !accessCode.trim()) {
+      notifyError("Please enter your ID/email/phone and access code");
       return;
     }
 
     setLoading(true);
 
     try {
-      const result = await signIn(agentId, accessCode);
+      const result = await signIn(identifier, accessCode);
       if (result.success) {
         notifySuccess("Login successful! Redirecting...");
         router.push(redirectTo);
@@ -63,10 +44,13 @@ export default function SignInPage() {
     }
   };
 
-  const handleSocialSignIn = async (provider: string) => {
+  const handleSocialSignIn = async (provider: "google" | "facebook") => {
     try {
       setLoading(true);
-      const result = await appSignIn(provider);
+      // For OAuth, we'll get the identifier from the provider
+      // In a real implementation, you would use something like next-auth
+      // This is just a placeholder for the flow
+      const result = await appSignIn("", "", provider);
 
       if (result.success) {
         notifySuccess(`Signed in with ${provider} successfully!`);
@@ -93,29 +77,29 @@ export default function SignInPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Email/Agent ID Field */}
+          {/* Identifier Field */}
           <div>
             <label
-              htmlFor="agentId"
+              htmlFor="identifier"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Agent ID / Email
+              Agent ID / Email / Phone
             </label>
             <div className="relative">
               <input
-                id="agentId"
+                id="identifier"
                 type="text"
                 autoComplete="username"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                placeholder="Enter your agent ID or email"
-                value={agentId}
-                onChange={(e) => setAgentId(e.target.value)}
+                placeholder="Enter your agent ID, email or phone"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 disabled={loading}
               />
             </div>
           </div>
 
-          {/* Password/Access Code Field */}
+          {/* Access Code Field */}
           <div>
             <label
               htmlFor="accessCode"
@@ -149,9 +133,9 @@ export default function SignInPage() {
             </div>
             {accessCode && (
               <div className="mt-2">
-                <PasswordStrength code={accessCode} />
-                <p className="text-xs text-gray-500 mt-1">
-                  Strength indicator (minimum 8 characters recommended)
+                <p className="text-sm text-amber-600">
+                  Ensure your ID/email/phone and access code are correct. If you
+                  forgot it, contact support.
                 </p>
               </div>
             )}
@@ -174,7 +158,7 @@ export default function SignInPage() {
             </div>
             <div className="text-sm">
               <a
-                href="#"
+                href="/agent/forgot-password"
                 className="font-medium text-green-600 hover:text-green-500"
               >
                 Forgot access code?
@@ -279,23 +263,22 @@ export default function SignInPage() {
             </svg>
           </button>
 
-          {/* GitHub Button */}
+          {/* Facebook Button */}
           <button
             type="button"
-            onClick={() => handleSocialSignIn("github")}
+            onClick={() => handleSocialSignIn("facebook")}
             disabled={loading}
             className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg
               className="w-5 h-5"
-              fill="currentColor"
+              xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
-              aria-hidden="true"
+              fill="currentColor"
             >
               <path
-                fillRule="evenodd"
-                d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.933.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.14 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"
-                clipRule="evenodd"
+                d="M22.675 0H1.325C.593 0 0 .593 0 1.325v21.351C0 23.407.593 24 1.325 24H12.82v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116c.73 0 1.323-.593 1.323-1.325V1.325C24 .593 23.407 0 22.675 0z"
+                fill="#1877F2"
               />
             </svg>
           </button>

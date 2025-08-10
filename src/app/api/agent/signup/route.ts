@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { protectData } from "@/lib/encryptorGenerators/dataProtection";
+import { protectData } from "@/lib/security/dataProtection";
 import { z } from "zod";
 
 const agentSchema = z.object({
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
           otherName: otherName ? await protectData(otherName, 'name') as string : "",
           email: await protectData(email, 'email') as string,
           phone: await protectData(phone, 'phone') as string,
-          nin: await protectData(nin, 'government-id') as string,
+          nin: await protectData(nin, 'government') as string,
           state: await protectData(state, 'location') as string,
           lga: await protectData(lga, 'location') as string,
           address: await protectData(address, 'location') as string

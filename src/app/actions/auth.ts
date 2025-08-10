@@ -2,26 +2,50 @@
 
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
-import { redirect } from 'next/navigation';
+import { protectData, unprotectData } from '@/lib/security/dataProtection';
 
 export async function signIn(identifier: string, accessCode: string) {
     try {
-        const agent = await prisma.agent.findFirst({
-            where: {
-                OR: [
-                    { email: identifier },
-                    { phone: identifier },
-                    { profile: { accessCode: identifier } },
-                ],
-                isActive: true,
-                isDeleted: false,
-            },
-            include: { profile: true },
-        });
+        const isAgentId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
 
-        if (!agent?.profile || !(await bcrypt.compare(accessCode, agent.profile.accessCode))) {
-            return { success: false, message: 'Invalid credentials' };
+        let agent;
+
+        if (isAgentId) {
+            agent = await prisma.agent.findFirst({
+                where: {
+                    id: identifier,
+                    isActive: true,
+                    isDeleted: false,
+                },
+                include: { profile: true },
+            });
+        } else {
+            const encryptedIdentifier = await protectData(
+                identifier,
+                identifier.includes('@') ? 'email' : 'phone'
+            );
+
+            agent = await prisma.agent.findFirst({
+                where: {
+                    OR: [
+                        { email: encryptedIdentifier },
+                        { phone: encryptedIdentifier },
+                    ],
+                    isActive: true,
+                    isDeleted: false,
+                },
+                include: { profile: true },
+            });
+        }
+
+        if (!agent?.profile) {
+            return { success: false, message: 'Invalid credentials provided' };
+        }
+
+        const decryptedAccessCode = await unprotectData(agent.profile.accessCode, 'system-code');
+
+        if (accessCode !== decryptedAccessCode) {
+            return { success: false, message: 'Invalid credentials provided' };
         }
 
         const cookieStore = await cookies();
@@ -49,48 +73,29 @@ export async function appSignIn(
         let agent;
 
         if (provider) {
-            // OAuth login - just match by email
+            const encryptedEmail = await protectData(identifier, 'email');
             agent = await prisma.agent.findFirst({
                 where: {
-                    email: identifier, // identifier should be the email from OAuth
+                    email: encryptedEmail,
                     isActive: true,
                     isDeleted: false,
                 },
                 include: { profile: true },
             });
+
+            if (!agent) {
+                return {
+                    success: false,
+                    message: 'No account with this email exists. Please sign up first.'
+                };
+            }
         } else {
-            // Regular login flow remains the same
             if (!accessCode) {
                 return { success: false, message: 'Access code is required' };
             }
-
-            agent = await prisma.agent.findFirst({
-                where: {
-                    OR: [
-                        { email: identifier },
-                        { phone: identifier },
-                    ],
-                    isActive: true,
-                    isDeleted: false,
-                },
-                include: { profile: true },
-            });
-
-            if (!agent?.profile || agent.profile.accessCode !== accessCode) {
-                return { success: false, message: 'Invalid credentials' };
-            }
+            return await signIn(identifier, accessCode);
         }
 
-        if (!agent) {
-            return {
-                success: false,
-                message: provider
-                    ? 'No account with this email exists'
-                    : 'Account not found'
-            };
-        }
-
-        // Set session cookie
         const cookieStore = await cookies();
         cookieStore.set('agent-session', agent.id, {
             secure: process.env.NODE_ENV === 'production',
@@ -108,17 +113,23 @@ export async function appSignIn(
 }
 
 export async function signOut() {
-    const cookieStore = await cookies();
-    cookieStore.delete('agent-session');
-    redirect('/agent/signin');
+    try {
+        const cookieStore = await cookies();
+        cookieStore.delete('agent-session');
+        return { success: true };
+    } catch (error) {
+        console.error('Sign out error:', error);
+        return { success: false, message: 'Failed to sign out' };
+    }
 }
 
 export async function isAuthenticated() {
-    const cookieStore = await cookies();
-    const session = cookieStore.get('agent-session')?.value;
-    if (!session) return false;
-
     try {
+        const cookieStore = await cookies();
+        const session = cookieStore.get('agent-session')?.value;
+
+        if (!session) return false;
+
         const agent = await prisma.agent.findUnique({
             where: {
                 id: session,
@@ -127,22 +138,10 @@ export async function isAuthenticated() {
             },
             select: { id: true },
         });
+
         return !!agent;
     } catch (error) {
         console.error('Session verification error:', error);
         return false;
     }
-}
-
-// Generate a secure random access code
-export async function generateAccessCode(length = 8): Promise<string> {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // No ambiguous characters
-    const bytes = crypto.getRandomValues(new Uint8Array(length));
-    return Array.from(bytes, (byte) => chars[byte % chars.length]).join('');
-}
-
-// Send access code via email (mock implementation)
-export async function sendAccessCode(email: string, code: string) {
-    console.log(`Mock email sent to ${email} with code: ${code}`);
-    // In production: integrate with SendGrid, Postmark, etc.
 }
