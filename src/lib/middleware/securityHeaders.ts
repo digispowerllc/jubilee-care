@@ -1,3 +1,4 @@
+// lib/security.ts
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -18,36 +19,87 @@ interface SecurityHeadersConfig {
     baseUri?: string[];
     formAction?: string[];
     reportUri?: string;
-    requireTrustedTypesFor?: string[];
     sandbox?: string[];
     upgradeInsecureRequests?: boolean;
     workerSrc?: string[];
+    mediaSrc?: string[];
+    manifestSrc?: string[];
+    childSrc?: string[];
+    blockAllMixedContent?: boolean;
   };
   reportOnly?: boolean;
 }
 
+/**
+ * Default production config
+ *
+ * NOTE: This version intentionally DOES NOT add 'strict-dynamic' and does NOT
+ * automatically require nonces. This makes host-based allowlisting (like
+ * https://*.vercel.app and your own domain) effective for Next.js runtime chunks.
+ */
 const productionConfig: SecurityHeadersConfig = {
   frameOptions: 'DENY',
   contentTypeOptions: 'nosniff',
   referrerPolicy: 'strict-origin-when-cross-origin',
-  permissionsPolicy: 'camera=(), microphone=(), geolocation=()',
+  permissionsPolicy: 'camera=(), microphone=(), geolocation=(), payment=()',
   csp: {
     defaultSrc: ["'self'"],
+    // Allow Next.js scripts from same origin and Vercel hosts (if deployed)
     scriptSrc: [
       "'self'",
-      "'unsafe-inline'",
-      "'report-sample'"
+      // Keep 'unsafe-eval' off in production unless you truly need it.
+      // Next.js sometimes requires it in dev only.
+      //"'unsafe-eval'",
+      "'report-sample'",
+      'https://*.vercel.app',
+      'https://*.vercel.com',
+      // add your deployed domain(s)
+      'https://jcic.vercel.app',
+      // Next.js chunks live under /_next - same origin allowed by 'self'
     ],
-    styleSrc: ["'self'", "'unsafe-inline'"],
-    imgSrc: ["'self'", "data:", "blob:"],
-    fontSrc: ["'self'", "data:"],
-    connectSrc: ["'self'"],
-    frameSrc: ["'none'"],
+    styleSrc: [
+      "'self'",
+      "'unsafe-inline'", // keep if you use inline styles (e.g., styled components SSR or critical CSS)
+      'https://fonts.googleapis.com',
+      'https://*.vercel.app',
+      'https://jcic.vercel.app'
+    ],
+    imgSrc: [
+      "'self'",
+      'data:',
+      'blob:',
+      'https://*.google-analytics.com',
+      'https://*.googletagmanager.com',
+      'https://*.vercel.app',
+      'https://ui-avatars.com',
+      'https://cdn.prod.website-files.com',
+      'https://*.cloudinary.com'
+    ],
+    fontSrc: [
+      "'self'",
+      'data:',
+      'https://fonts.gstatic.com',
+      'https://*.vercel.app'
+    ],
+    connectSrc: [
+      "'self'",
+      'https://*.google-analytics.com',
+      'https://*.analytics.google.com',
+      'https://*.vercel-insights.com',
+      'https://jcic.vercel.app',
+      'https://*.vercel.app',
+      'wss://*.vercel.app'
+    ],
+    frameSrc: ["'self'"],
+    mediaSrc: ["'self'"],
+    manifestSrc: ["'self'"],
     objectSrc: ["'none'"],
     baseUri: ["'self'"],
     formAction: ["'self'"],
-    workerSrc: ["'self'", "blob:"],
-    upgradeInsecureRequests: true
+    workerSrc: ["'self'", 'blob:'],
+    childSrc: ["'self'"],
+    upgradeInsecureRequests: true,
+    blockAllMixedContent: true
   }
 };
 
@@ -56,16 +108,25 @@ const developmentConfig: SecurityHeadersConfig = {
   csp: {
     ...productionConfig.csp,
     connectSrc: [
-      "'self'",
+      ...((productionConfig.csp && productionConfig.csp.connectSrc) || ["'self'"]),
+      // dev additions for hot reload / local APIs
       "ws://localhost:*",
-      "ws://192.168.0.159:*",
       "http://localhost:*",
-      "http://192.168.0.159:*"
+      "http://192.168.0.159:*",
+      "ws://192.168.0.159:*"
     ],
+    // disable upgradeInsecureRequests in dev to avoid breaking local http
     upgradeInsecureRequests: false
   }
 };
 
+/**
+ * withSecurityHeaders
+ *
+ * Usage:
+ *  const response = await withSecurityHeaders(request);
+ *  // or pass overrides: await withSecurityHeaders(request, { reportOnly: true })
+ */
 export async function withSecurityHeaders(
   request: NextRequest,
   userConfig: Partial<SecurityHeadersConfig> = {}
@@ -76,73 +137,76 @@ export async function withSecurityHeaders(
 
   const response = NextResponse.next();
 
-  // Generate nonce for CSP
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  // NOTE: We do NOT generate/apply a nonce by default here.
+  // If you want a nonce-based flow, see the commented "nonce approach" below.
 
-  // Store nonce in request headers so it can be accessed in pages
-  request.headers.set('x-nonce', nonce);
-
-  // Set standard security headers
+  // Standard security headers
   if (config.frameOptions) {
     response.headers.set('X-Frame-Options', config.frameOptions);
   }
-
   if (config.contentTypeOptions) {
     response.headers.set('X-Content-Type-Options', config.contentTypeOptions);
   }
-
   if (config.referrerPolicy) {
     response.headers.set('Referrer-Policy', config.referrerPolicy);
   }
-
   if (config.permissionsPolicy) {
     response.headers.set('Permissions-Policy', config.permissionsPolicy);
   }
 
-  // Generate CSP
+  // Build CSP string
   if (config.csp) {
-    const cspDirectives: string[] = [];
+    const directives: string[] = [];
 
-    // Helper function to process CSP directives
-    const processDirective = (directive: string, sources?: string[]) => {
-      if (sources && sources.length > 0) {
-        // Add nonce to script-src and style-src if they're the directives
-        if (directive === 'script-src' && !sources.includes(`'nonce-${nonce}'`)) {
-          sources.push(`'nonce-${nonce}'`);
+    const push = (name: string, sources?: (string | boolean)[]) => {
+      if (!sources || sources.length === 0) return;
+      // Map boolean true/false (for flags like upgrade-insecure-requests) out of sources
+      const parts: string[] = [];
+      for (const s of sources) {
+        if (typeof s === 'string') {
+          parts.push(s);
         }
-        if (directive === 'style-src' && !sources.includes(`'nonce-${nonce}'`)) {
-          sources.push(`'nonce-${nonce}'`);
-        }
-
-        // Add integrity support for script-src
-        if (directive === 'script-src' && !sources.includes("'strict-dynamic'")) {
-          sources.push("'strict-dynamic'");
-        }
-
-        cspDirectives.push(`${directive} ${sources.join(' ')}`);
+      }
+      if (parts.length > 0) {
+        directives.push(`${name} ${parts.join(' ')}`);
       }
     };
 
-    // Process each CSP directive
-    Object.entries(config.csp).forEach(([directive, sources]) => {
-      if (directive === 'reportUri' || directive === 'requireTrustedTypesFor' ||
-        directive === 'sandbox' || directive === 'upgradeInsecureRequests') {
-        // Handle special cases
-        if (directive === 'upgradeInsecureRequests' && sources) {
-          cspDirectives.push('upgrade-insecure-requests');
-        } else if (sources) {
-          cspDirectives.push(`${directive.replace(/([A-Z])/g, '-$1').toLowerCase()} ${sources}`);
-        }
-      } else {
-        processDirective(directive.replace(/([A-Z])/g, '-$1').toLowerCase(), sources as string[]);
-      }
-    });
+    // Core groups - add only when present
+    push('default-src', config.csp.defaultSrc);
+    push('script-src', config.csp.scriptSrc);
+    push('style-src', config.csp.styleSrc);
+    push('img-src', config.csp.imgSrc);
+    push('font-src', config.csp.fontSrc);
+    push('connect-src', config.csp.connectSrc);
+    push('frame-src', config.csp.frameSrc);
+    push('object-src', config.csp.objectSrc);
+    push('base-uri', config.csp.baseUri);
+    push('form-action', config.csp.formAction);
+    push('worker-src', config.csp.workerSrc);
+    push('media-src', config.csp.mediaSrc);
+    push('manifest-src', config.csp.manifestSrc);
+    push('child-src', config.csp.childSrc);
 
-    const cspHeader = config.reportOnly ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy';
-    response.headers.set(cspHeader, cspDirectives.join('; '));
+    // Flags / single-token directives
+    if (config.csp.upgradeInsecureRequests) {
+      directives.push('upgrade-insecure-requests');
+    }
+    if (config.csp.blockAllMixedContent) {
+      directives.push('block-all-mixed-content');
+    }
+    // report-uri (if present)
+    if (config.csp.reportUri) {
+      directives.push(`report-uri ${config.csp.reportUri}`);
+    }
+
+    const cspHeaderName = config.reportOnly ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy';
+    response.headers.set(cspHeaderName, directives.join('; '));
   }
 
   if (isDevelopment) {
+    // Helpful debug output in dev only
+    // eslint-disable-next-line no-console
     console.debug('Security headers applied:', {
       'X-Frame-Options': response.headers.get('X-Frame-Options'),
       'X-Content-Type-Options': response.headers.get('X-Content-Type-Options'),
@@ -157,186 +221,21 @@ export async function withSecurityHeaders(
   return response;
 }
 
-// Production-ready security headers configuration
-export const securityHeadersConfig = {
-  frameOptions: 'DENY',
-  contentTypeOptions: 'nosniff',
-  referrerPolicy: 'strict-origin-when-cross-origin',
-  permissionsPolicy: 'camera=(), microphone=(), geolocation=(), payment=()',
+export const securityHeadersConfig: SecurityHeadersConfig = productionConfig;
 
-  csp: {
-    defaultSrc: ["'self'"], // Changed from 'none' to 'self' for Next.js
-    scriptSrc: [
-      "'self'",
-      "'unsafe-inline'",
-      "'unsafe-eval'", // Required for Next.js in production
-      "'report-sample'",
-      "https://*.vercel.app", // Add if using Vercel
-      "https://jcic.vercel.app",
-      "https://jcic.vercel.app/_next/static/chunks/webpack-ebb5f22564f63797.js"
-    ],
-    styleSrc: [
-      "'self'",
-      "'unsafe-inline'", // Required for Next.js
-      "https://fonts.googleapis.com",
-      "https://*.vercel.app",
-      "https://jcic.vercel.app"
-    ],
-    imgSrc: [
-      "'self'",
-      "data:",
-      "blob:",
-      "https://*.google-analytics.com",
-      "https://*.googletagmanager.com",
-      "https://*.vercel.com",
-      "https://*.vercel.app",
-      "https://*.cloudinary.com",
-      "https://ui-avatars.com",
-      "https://cdn.prod.website-files.com"
-      // Add if using Cloudinary
-    ],
-    fontSrc: [
-      "'self'",
-      "data:",
-      "https://fonts.gstatic.com",
-      "https://*.vercel.app" // Add if using Vercel
-    ],
-    connectSrc: [
-      "'self'",
-      "https://*.google-analytics.com",
-      "https://*.analytics.google.com",
-      "https://*.vercel-insights.com",
-      "https://jcic.vercel.app",
-      "https://*.vercel.app", // Add if using Vercel
-      "wss://*.vercel.app" // For WebSockets
-    ],
-    frameSrc: ["'self'"],
-    mediaSrc: ["'self'"],
-    manifestSrc: ["'self'"],
-    objectSrc: ["'none'"],
-    baseUri: ["'self'"],
-    formAction: ["'self'"],
-    workerSrc: ["'self'", "blob:"], // Required for Next.js
-    childSrc: ["'self'"], // Fallback for older browsers
-    // reportUri: "/api/csp-report", // Uncomment when ready
-    upgradeInsecureRequests: true, //
-    blockAllMixedContent: true
-  }
-};
+/* =======================
+   OPTIONAL: NONCE-BASED APPROACH (commented)
+   =======================
+   If you prefer to use nonces (which is more secure for inline scripts),
+   you must:
 
-// import type { NextRequest } from 'next/server';
-// import { NextResponse } from 'next/server';
+   1) generate a nonce here (e.g. const nonce = crypto.randomUUID();)
+   2) add 'nonce-<value>' to the script-src directive
+   3) ensure every inline script and every <script> tag rendered by your app
+      has the nonce attribute (e.g. <script nonce="{nonce}"> or <NextScript nonce={nonce} />)
+   4) IMPORTANT: when using 'nonce-...' together with 'strict-dynamic', host allowlists
+      are ignored. So do NOT include 'strict-dynamic' if you want host lists to apply.
 
-// interface SecurityHeadersConfig {
-//   frameOptions?: 'DENY' | 'SAMEORIGIN' | string;
-//   contentTypeOptions?: 'nosniff' | string;
-//   referrerPolicy?: 'strict-origin-when-cross-origin' | string;
-//   permissionsPolicy?: string;
-//   csp?: {
-//     defaultSrc?: string[];
-//     scriptSrc?: string[];
-//     styleSrc?: string[];
-//     imgSrc?: string[];
-//     fontSrc?: string[];
-//     connectSrc?: string[];
-//     frameSrc?: string[];
-//     objectSrc?: string[];
-//     baseUri?: string[];
-//     formAction?: string[];
-//     reportUri?: string;
-//     requireTrustedTypesFor?: string[];
-//     sandbox?: string[];
-//     upgradeInsecureRequests?: boolean;
-//   };
-//   reportOnly?: boolean;
-// }
-
-// const defaultConfig: SecurityHeadersConfig = {
-//   frameOptions: 'DENY',
-//   contentTypeOptions: 'nosniff',
-//   referrerPolicy: 'strict-origin-when-cross-origin',
-//   permissionsPolicy: 'camera=(), microphone=(), geolocation=()',
-//   csp: {
-//     defaultSrc: ["'self'"],
-//     scriptSrc: ["'self'", "'unsafe-inline'", "https:"],
-//     styleSrc: ["'self'", "'unsafe-inline'"],
-//     imgSrc: ["'self'", "data:"],
-//     fontSrc: ["'self'"],
-//     connectSrc: ["'self'"],
-//     frameSrc: ["'none'"],
-//     objectSrc: ["'none'"],
-//     baseUri: ["'self'"],
-//     formAction: ["'self'"],
-//   },
-// };
-
-// export async function withSecurityHeaders(
-//   request: NextRequest,
-//   userConfig: Partial<SecurityHeadersConfig> = {}
-// ) {
-//   const config: SecurityHeadersConfig = { ...defaultConfig, ...userConfig };
-//   const response = NextResponse.next();
-
-//   // Set standard security headers
-//   if (config.frameOptions) {
-//     response.headers.set('X-Frame-Options', config.frameOptions);
-//   }
-
-//   if (config.contentTypeOptions) {
-//     response.headers.set('X-Content-Type-Options', config.contentTypeOptions);
-//   }
-
-//   if (config.referrerPolicy) {
-//     response.headers.set('Referrer-Policy', config.referrerPolicy);
-//   }
-
-//   if (config.permissionsPolicy) {
-//     response.headers.set('Permissions-Policy', config.permissionsPolicy);
-//   }
-
-//   // Generate CSP
-//   if (config.csp) {
-//     const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
-//     const cspDirectives: string[] = [];
-
-//     // Helper function to process CSP directives
-//     const processDirective = (directive: string, sources?: string[]) => {
-//       if (sources && sources.length > 0) {
-//         // Add nonce to script-src if it's the directive
-//         if (directive === 'script-src' && !sources.includes(`'nonce-${nonce}'`)) {
-//           sources.push(`'nonce-${nonce}'`);
-//         }
-//         cspDirectives.push(`${directive} ${sources.join(' ')}`);
-//       }
-//     };
-
-//     // Process each CSP directive
-//     Object.entries(config.csp).forEach(([directive, sources]) => {
-//       if (directive === 'reportUri' || directive === 'requireTrustedTypesFor' ||
-//         directive === 'sandbox' || directive === 'upgradeInsecureRequests') {
-//         // Handle special cases
-//         if (directive === 'upgradeInsecureRequests' && sources) {
-//           cspDirectives.push('upgrade-insecure-requests');
-//         } else if (sources) {
-//           cspDirectives.push(`${directive.replace(/([A-Z])/g, '-$1').toLowerCase()} ${sources}`);
-//         }
-//       } else {
-//         processDirective(directive.replace(/([A-Z])/g, '-$1').toLowerCase(), sources as string[]);
-//       }
-//     });
-
-//     const cspHeader = config.reportOnly ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy';
-//     response.headers.set(cspHeader, cspDirectives.join('; '));
-//   }
-
-//   console.log('Security headers applied:', {
-//     'X-Frame-Options': response.headers.get('X-Frame-Options'),
-//     'X-Content-Type-Options': response.headers.get('X-Content-Type-Options'),
-//     'Referrer-Policy': response.headers.get('Referrer-Policy'),
-//     'Permissions-Policy': response.headers.get('Permissions-Policy'),
-//     'Content-Security-Policy': response.headers.get('Content-Security-Policy') ||
-//       response.headers.get('Content-Security-Policy-Report-Only'),
-//   });
-
-//   return response;
-// }
+   I left this out of the default flow because adding nonces requires you to
+   modify your Document/_app to attach the nonce to all relevant script tags.
+*/
