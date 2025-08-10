@@ -49,7 +49,7 @@ const productionConfig: SecurityHeadersConfig = {
     objectSrc: ["'none'"],
     baseUri: ["'self'"],
     formAction: ["'self'"],
-    workerSrc: ["'self'", "blob:"],
+    workerSrc: ["'self'", "blob:"],    
     upgradeInsecureRequests: true
   }
 };
@@ -164,13 +164,7 @@ export const securityHeadersConfig = {
       "https://*.googletagmanager.com",
       "https://*.vercel-insights.com",
       "https://*.vercel.app", // Add if using Vercel
-      "wss://localhost:*", // Local dev server
-      "wss://192.168.0.159:*", // Your local network IP
-      "http://localhost:*", // Fallback
-      "ws://192.168.0.159:3000/_next/webpack-hmr", // Webpack HMR for local development
-      "http://localhost:3000/_next/webpack-hmr", // Webpack HMR for local development
-      "http://192.168.0.159:*" // Fallback
-    ],
+         ],
     styleSrc: [
       "'self'",
       "'unsafe-inline'", // Required for Next.js
@@ -185,7 +179,7 @@ export const securityHeadersConfig = {
       "https://*.googletagmanager.com",
       "https://*.vercel.com",
       "https://*.vercel.app",
-      "https://res.cloudinary.com",
+      "https://*.cloudinary.com",
       "https://ui-avatars.com",
       "https://cdn.prod.website-files.com"
       // Add if using Cloudinary
@@ -202,14 +196,8 @@ export const securityHeadersConfig = {
       "https://*.analytics.google.com",
       "https://*.vercel-insights.com",
       "https://*.vercel.app", // Add if using Vercel
-      "wss://*.vercel.app", // For WebSockets
-      "wss://localhost:*", // Local dev server
-      "wss://192.168.0.159:*", // Your local network IP
-      "http://localhost:*", // Fallback
-      "http://192.168.0.159:*", // Fallback
-      "ws://192.168.0.159:3000/_next/webpack-hmr", // Webpack HMR for local development
-      "http://localhost:3000/_next/webpack-hmr", // Webpack HMR for local development
-    ],
+      "wss://*.vercel.app" // For WebSockets
+         ],
     frameSrc: ["'self'"],
     mediaSrc: ["'self'"],
     manifestSrc: ["'self'"],
