@@ -22,8 +22,11 @@ CREATE TABLE "public"."Agent" (
 -- CreateTable
 CREATE TABLE "public"."AgentProfile" (
     "id" TEXT NOT NULL,
-    "accessCode" TEXT NOT NULL,
     "agentId" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "accessCode" TEXT NOT NULL DEFAULT '',
+    "passwordHash" TEXT NOT NULL,
     "passportUrl" TEXT NOT NULL DEFAULT '',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -78,6 +81,17 @@ CREATE TABLE "public"."Session" (
     CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "public"."OAuthAccount" (
+    "id" TEXT NOT NULL,
+    "provider" TEXT NOT NULL,
+    "providerId" TEXT NOT NULL,
+    "agentId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "OAuthAccount_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Agent_nin_key" ON "public"."Agent"("nin");
 
@@ -94,9 +108,6 @@ CREATE INDEX "Agent_state_idx" ON "public"."Agent"("state");
 CREATE INDEX "Agent_lga_idx" ON "public"."Agent"("lga");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "AgentProfile_accessCode_key" ON "public"."AgentProfile"("accessCode");
-
--- CreateIndex
 CREATE UNIQUE INDEX "AgentProfile_agentId_key" ON "public"."AgentProfile"("agentId");
 
 -- CreateIndex
@@ -104,6 +115,9 @@ CREATE INDEX "AgentProfile_agentId_idx" ON "public"."AgentProfile"("agentId");
 
 -- CreateIndex
 CREATE INDEX "AgentProfile_accessCode_idx" ON "public"."AgentProfile"("accessCode");
+
+-- CreateIndex
+CREATE INDEX "AgentProfile_createdAt_idx" ON "public"."AgentProfile"("createdAt");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_username_key" ON "public"."User"("username");
@@ -168,6 +182,9 @@ CREATE INDEX "Session_userId_idx" ON "public"."Session"("userId");
 -- CreateIndex
 CREATE INDEX "Session_expiresAt_idx" ON "public"."Session"("expiresAt");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "OAuthAccount_provider_providerId_key" ON "public"."OAuthAccount"("provider", "providerId");
+
 -- AddForeignKey
 ALTER TABLE "public"."AgentProfile" ADD CONSTRAINT "AgentProfile_id_fkey" FOREIGN KEY ("id") REFERENCES "public"."Agent"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -176,3 +193,6 @@ ALTER TABLE "public"."UserRole" ADD CONSTRAINT "UserRole_id_fkey" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "public"."Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."OAuthAccount" ADD CONSTRAINT "OAuthAccount_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "public"."Agent"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

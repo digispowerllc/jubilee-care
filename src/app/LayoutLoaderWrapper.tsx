@@ -1,7 +1,7 @@
 // src/app/LayoutLoaderWrapper.tsx
 "use client";
 import { useEffect, useState } from "react";
-import Navigation from "@/components/Navigation";
+import Navigation from "@/components/nav/Navigation";
 import Footer from "@/components/Footer";
 
 export default function LayoutLoaderWrapper({

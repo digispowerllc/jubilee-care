@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { protectData } from "@/lib/security/dataProtection";
 import { z } from "zod";
+import { generateAgentId } from "@/lib/security/generators";
 
 const agentSchema = z.object({
   surname: z.string().min(1).max(100),
@@ -58,6 +59,8 @@ export async function POST(req: Request) {
       );
     }
 
+    const agentUID = generateAgentId();
+
     // Create agent in transaction
     const result = await prisma.$transaction(async (prisma) => {
       // Create agent with encrypted data
@@ -79,8 +82,11 @@ export async function POST(req: Request) {
       await prisma.agentProfile.create({
         data: {
           id: agent.id,
-          agentId: agent.id, // Or generate a separate ID if needed
-          accessCode: await protectData(password, 'system-code') as string
+          agentId: agentUID,
+          email: await protectData(email, 'email') as string,
+          phone: await protectData(phone, 'phone') as string,
+          accessCode: "N0Acc355C0d3",
+          passwordHash: await protectData(password, 'system-code') as string,
         }
       });
 

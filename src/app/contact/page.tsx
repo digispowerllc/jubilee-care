@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Mail, Phone, LocateFixed, ExternalLink } from "lucide-react";
-import { notifySuccess, notifyError } from "@/components/Notification";
+import { handleContactSubmit } from "./handleContactSubmit";
 
 const ContactPage: React.FC = () => {
   const [name, setName] = useState("");
@@ -12,95 +12,20 @@ const ContactPage: React.FC = () => {
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (loading) return; // Prevent multiple submissions
-
-    // Basic validation
-    if (!name) {
-      notifyError("Your name is required.");
-      return;
-    }
-
-    if (!email) {
-      notifyError("Your email is required.");
-      return;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      notifyError("Please enter a valid email address.");
-      return;
-    }
-
-    if (!message) {
-      notifyError("Your message is required.");
-      return;
-    }
-
-    if (message.length < 10) {
-      notifyError("Your message must be at least 10 characters long.");
-      return;
-    }
-
-    if (message.length > 100) {
-      notifyError("Your message cannot exceed 100 characters.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Check email via API
-      const res = await fetch(
-        `/api/check-email?email=${encodeURIComponent(email)}`
-      );
-
-      if (!res.ok) {
-        try {
-          const errorData = await res.json();
-          notifyError(errorData.error || "Failed to verify email.");
-        } catch {
-          notifyError("Failed to verify email. Invalid server response.");
-        }
-        return;
-      }
-
-      const result = await res.json();
-
-      if (result.disposable) {
-        notifyError("Invalid email address provided.");
-        return;
-      }
-
-      // Proceed to WhatsApp
-      const phoneNumber = "+2347039792389";
-      const text = `Hello, my name is ${name}.\nEmail: ${email}\n\n${message}`;
-      const encoded = encodeURIComponent(text);
-      const url = `https://wa.me/${phoneNumber.replace(
-        /\D/g,
-        ""
-      )}?text=${encoded}`;
-
-      window.open(url, "_blank");
-      setName("");
-      setEmail("");
-      setMessage("");
-      setErrors([]);
-      notifySuccess("Redirecting to WhatsApp...");
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        notifyError(error.message);
-      } else {
-        notifyError("Something went wrong. Try again.");
-      }
-    } finally {
-      setLoading(false);
-    }
+    if (loading) return;
+    handleContactSubmit(
+      { name, email, message },
+      setName,
+      setEmail,
+      setMessage,
+      setErrors,
+      setLoading
+    );
   };
 
   useEffect(() => {
-    // Trigger fade-in animation on mount
     requestAnimationFrame(() => setVisible(true));
   }, []);
 
@@ -176,7 +101,7 @@ const ContactPage: React.FC = () => {
               </div>
 
               {/* Contact Form */}
-              <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6">
+              <form onSubmit={onSubmit} className="grid grid-cols-1 gap-6">
                 <div className="grid gap-2">
                   <label
                     htmlFor="name"
@@ -259,30 +184,6 @@ const ContactPage: React.FC = () => {
                     {loading ? "Sending..." : "Send Message"}
                   </button>
                 </div>
-
-                {/* ✅ WhatsApp Button */}
-                {/* <button
-                  type="button"
-                  onClick={() => {
-                    const whatsappMessage = `Hello! You have a new message from Jubilee Care ICT contact form:\n\nName: ${name}\nEmail: ${email}\nMessage: ${message}`;
-                    const encodedMessage = encodeURIComponent(whatsappMessage);
-                    window.open(
-                      `https://wa.me/2347039792389?text=${encodedMessage}`,
-                      "_blank"
-                    );
-                  }}
-                  className="fixed bottom-[-30px] right-6 z-50 rounded-full bg-green-600 p-4 text-white shadow-lg transition hover:bg-green-700 hover:bg-green-700 hover:scale-105"
-                  title="Send message via WhatsApp"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M20.52 3.48A11.88 11.88 0 0012 0C5.37 0 0 5.37 0 12c0 2.11.55 4.13 1.6 5.93L0 24l6.3-1.64a11.86 11.86 0 005.7 1.45h.02c6.63 0 12-5.37 12-12a11.88 11.88 0 00-3.48-8.33zM12 22c-1.64 0-3.24-.4-4.68-1.16l-.34-.18-3.74.97.99-3.64-.22-.37A9.93 9.93 0 012 12c0-5.52 4.48-10 10-10 2.67 0 5.19 1.04 7.07 2.93A9.93 9.93 0 0122 12c0 5.52-4.48 10-10 10zm5.33-7.4c-.29-.15-1.7-.84-1.96-.94-.26-.1-.45-.15-.64.15-.19.29-.74.94-.9 1.13-.17.2-.33.22-.62.07-.29-.15-1.24-.46-2.36-1.46-.87-.77-1.46-1.72-1.63-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.33.43-.5.14-.17.19-.29.29-.48.1-.19.05-.36-.02-.5-.07-.15-.64-1.54-.88-2.11-.23-.55-.47-.48-.64-.49h-.55c-.19 0-.5.07-.76.36s-1 1-1 2.46 1.02 2.85 1.16 3.04c.14.19 2.02 3.09 4.9 4.33.68.29 1.21.46 1.63.59.68.22 1.3.19 1.79.12.55-.08 1.7-.7 1.94-1.37.24-.67.24-1.25.17-1.37-.08-.12-.26-.19-.55-.33z" />
-                  </svg>
-                </button> */}
               </form>
             </div>
           </div>

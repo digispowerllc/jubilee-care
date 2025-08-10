@@ -3,9 +3,17 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
-import { notifySuccess, notifyError } from "@/components/Notification";
-import { protectData, unprotectData } from "@/lib/security/dataProtection";
 import PasswordStrengthMeter from "@/components/PasswordStrengthMeter";
+import {
+  submitAgentSignup,
+  checkEmailAvailability,
+} from "./handleSignupSubmit";
+import {
+  storage,
+  validateStep,
+  fetchStates,
+  fetchCities,
+} from "./signupHandlers";
 
 type AgentData = {
   surname: string;
@@ -31,13 +39,13 @@ const initialData: AgentData = {
   address: "",
 };
 
+// Main component for agent enrollment
 export default function AgentEnroll() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [agentData, setAgentData] = useState<AgentData>({ ...initialData });
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState(0);
   const [states, setStates] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [stateLoading, setStateLoading] = useState(false);
@@ -46,311 +54,125 @@ export default function AgentEnroll() {
   const [emailChecking, setEmailChecking] = useState(false);
   const lgaCache = useMemo(() => new Map<string, string[]>(), []);
 
-  // Storage management with encryption
-  const storage = useMemo(
-    () => ({
-      saveTempData: async (
-        data: AgentData,
-        currentStep: number,
-        pass: string
-      ) => {
-        try {
-          const encryptedData = {
-            surname: data.surname,
-            firstName: data.firstName,
-            otherName: data.otherName || "",
-            email: await protectData(data.email, "email"),
-            phone: await protectData(data.phone, "phone"),
-            nin: await protectData(data.nin, "government"),
-            state: data.state,
-            lga: data.lga,
-            address: data.address,
-          };
-
-          localStorage.setItem(
-            "agent_enrollment",
-            JSON.stringify({
-              data: encryptedData,
-              step: currentStep,
-              password: pass,
-              timestamp: new Date().toISOString(),
-            })
-          );
-        } catch (error) {
-          console.error("Failed to save temporary data:", error);
-        }
-      },
-
-      getTempData: () => {
-        try {
-          const saved = localStorage.getItem("agent_enrollment");
-          if (!saved) return null;
-
-          const parsed = JSON.parse(saved);
-          return {
-            data: {
-              ...parsed.data,
-              email: unprotectData(parsed.data.email, "email"),
-              phone: unprotectData(parsed.data.phone, "phone"),
-              nin: unprotectData(parsed.data.nin, "government"),
-            },
-            step: parsed.step,
-            password: parsed.password,
-          };
-        } catch (error) {
-          console.error("Failed to load temporary data:", error);
-          return null;
-        }
-      },
-
-      clearTempData: () => {
-        localStorage.removeItem("agent_enrollment");
-      },
-    }),
-    []
-  );
-
   // Load saved data on mount
   useEffect(() => {
-    const saved = storage.getTempData();
-    if (saved) {
-      setAgentData(saved.data);
-      setPassword(saved.password);
-      setStep(saved.step);
-    }
-  }, [storage]);
+    const loadData = async () => {
+      try {
+        const saved = await storage.getTempData();
+        if (saved) {
+          setAgentData({
+            surname: saved.data.surname,
+            firstName: saved.data.firstName,
+            otherName: saved.data.otherName,
+            email: saved.data.email,
+            phone: saved.data.phone,
+            nin: saved.data.nin,
+            state: saved.data.state,
+            lga: saved.data.lga,
+            address: saved.data.address,
+          });
+          setPassword(saved.password);
+          setStep(saved.step);
+        }
+      } catch (error) {
+        console.error("Failed to load saved data:", error);
+      }
+
+      // Load states separately
+      const loadStates = async () => {
+        setStateLoading(true);
+        try {
+          const statesData = await fetchStates();
+          setStates(statesData);
+        } finally {
+          setStateLoading(false);
+        }
+      };
+      loadStates();
+    };
+
+    loadData();
+  }, []);
 
   // Auto-save when fields change
   const updateField = useCallback(
     async (field: keyof AgentData, value: string) => {
-      setAgentData((prev) => {
-        const newData = { ...prev, [field]: value };
-        storage.saveTempData(newData, step, password);
-        return newData;
-      });
-      await storage.saveTempData(
-        { ...agentData, [field]: value },
-        step,
-        password
-      );
+      const newData = { ...agentData, [field]: value };
+      setAgentData(newData);
+      await storage.saveTempData(newData, step);
     },
-    [step, password, storage, agentData]
+    [step, agentData]
   );
 
   const updatePassword = useCallback(
     async (value: string) => {
       setPassword(value);
-      await storage.saveTempData(agentData, step, value);
+      await storage.saveTempData(agentData, step);
     },
-    [agentData, step, storage]
+    [agentData, step]
   );
 
   // Field blur handler for auto-saving
   const handleBlur = useCallback(async () => {
-    await storage.saveTempData(agentData, step, password);
-  }, [agentData, step, password, storage]);
+    await storage.saveTempData(agentData, step);
+  }, [agentData, step]);
 
   // Calculate password strength
-  useEffect(() => {
-    const strength = Math.min(Math.max(password.length * 10, 0), 100);
-    setPasswordStrength(strength);
-  }, [password]);
-
-  // Fetch states on mount
-  useEffect(() => {
-    const fetchStates = async () => {
-      setStateLoading(true);
-      try {
-        const cached = sessionStorage.getItem("cachedStates");
-        if (cached) {
-          setStates(JSON.parse(cached));
-        } else {
-          const res = await fetch(
-            "https://apinigeria.vercel.app/api/v1/states"
-          );
-          const data = await res.json();
-          setStates(data.states);
-          sessionStorage.setItem("cachedStates", JSON.stringify(data.states));
-        }
-      } catch {
-        notifyError("Failed to load states");
-      } finally {
-        setStateLoading(false);
-      }
-    };
-    fetchStates();
-  }, []);
-
+  // Calculate password strength
+  // (Removed unused passwordStrength state and effect)
   // Fetch cities when state changes
   useEffect(() => {
     if (agentData.state) {
-      const fetchCities = async () => {
-        if (lgaCache.has(agentData.state)) {
-          setCities(lgaCache.get(agentData.state) ?? []);
-          return;
-        }
-
+      const loadCities = async () => {
         setCityLoading(true);
         try {
-          const res = await fetch(
-            `https://apinigeria.vercel.app/api/v1/lga?state=${encodeURIComponent(
-              agentData.state
-            )}`
-          );
-          const data = await res.json();
-          setCities(data.lgas);
-          lgaCache.set(agentData.state, data.lgas);
-        } catch {
-          notifyError("Failed to load LGAs");
+          const citiesData = await fetchCities(agentData.state, lgaCache);
+          setCities(citiesData);
         } finally {
           setCityLoading(false);
         }
       };
-      fetchCities();
+      loadCities();
     }
   }, [agentData.state, lgaCache]);
-
-  const validateEmail = (email: string): boolean => {
-    const trimmed = email.trim();
-    if (
-      !trimmed ||
-      /\s/.test(trimmed) ||
-      !/^[\w.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(trimmed)
-    ) {
-      notifyError("Enter a valid email address");
-      return false;
-    }
-    return true;
-  };
 
   const checkEmail = useCallback(async (): Promise<boolean> => {
     try {
       setEmailChecking(true);
-      const res = await fetch(
-        `/api/check-email?email=${encodeURIComponent(agentData.email)}`
-      );
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        notifyError(errorData.error || "Failed to verify email");
-        return false;
-      }
-
-      const result = await res.json();
-      if (result.disposable) {
-        notifyError("This email address cannot be used");
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      notifyError("Unable to verify email. Please try again");
-      console.error("Failed to verify email:", error);
-      return false;
+      return await checkEmailAvailability(agentData.email);
     } finally {
       setEmailChecking(false);
     }
   }, [agentData.email]);
 
-  const validateStep = useCallback(async (): Promise<boolean> => {
-    const validateField = (value: string, fieldName: string, minLength = 1) => {
-      if (!value?.trim() || value.trim().length < minLength) {
-        notifyError(`${fieldName} is required`);
-        return false;
-      }
-      return true;
-    };
-
-    switch (step) {
-      case 1:
-        if (!validateField(agentData.surname, "Surname")) return false;
-        if (!validateField(agentData.firstName, "First name")) return false;
-        if (
-          agentData.otherName.trim() &&
-          !/^[A-Za-z]+$/.test(agentData.otherName.trim())
-        ) {
-          notifyError("Other name must contain only letters");
-          return false;
-        }
-        break;
-
-      case 2:
-        if (!validateField(agentData.email, "Email")) return false;
-        if (!validateEmail(agentData.email)) return false;
-        if (!validateField(agentData.phone, "Phone number", 10)) return false;
-        if (!/^\d+$/.test(agentData.phone)) {
-          notifyError("Phone number must contain only digits");
-          return false;
-        }
-        if (password.length < 8) {
-          notifyError("Password must be at least 8 characters");
-          return false;
-        }
-        return await checkEmail();
-
-      case 3:
-        if (!validateField(agentData.nin, "NIN", 11)) return false;
-        if (!/^\d{11}$/.test(agentData.nin)) {
-          notifyError("NIN must be exactly 11 digits");
-          return false;
-        }
-        break;
-
-      case 4:
-        if (!validateField(agentData.state, "State")) return false;
-        if (!validateField(agentData.lga, "LGA")) return false;
-        if (!validateField(agentData.address, "Address", 10)) return false;
-        break;
-    }
-
-    return true;
-  }, [step, agentData, password, checkEmail]);
-
   const nextStep = useCallback(async () => {
-    if (await validateStep()) {
+    if (await validateStep(step, agentData, password, checkEmail)) {
       const newStep = step + 1;
       setStep(newStep);
-      storage.saveTempData(agentData, newStep, password);
+      storage.saveTempData(agentData, newStep);
     }
-  }, [validateStep, step, agentData, password, storage]);
+  }, [step, agentData, password, checkEmail]);
 
   const prevStep = () => {
     const newStep = step - 1;
     setStep(newStep);
-    storage.saveTempData(agentData, newStep, password);
+    storage.saveTempData(agentData, newStep);
   };
 
   const submitForm = useCallback(async () => {
-    if (!(await validateStep())) return;
+    if (!(await validateStep(step, agentData, password, checkEmail))) return;
 
     setFormSubmitted(true);
-
     try {
-      const response = await fetch("/api/agent/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...agentData,
-          password,
-          encryptionVersion: "v2",
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(await response.text());
+      const success = await submitAgentSignup(agentData, password);
+      if (success) {
+        storage.clearTempData();
+        router.push("/agent/signin");
       }
-
-      storage.clearTempData();
-      notifySuccess("Account created successfully!");
-      router.push("/agent/signin");
-    } catch (error) {
-      notifyError(
-        error instanceof Error ? error.message : "Registration failed"
-      );
     } finally {
       setFormSubmitted(false);
     }
-  }, [validateStep, agentData, password, router, storage]);
+  }, [step, agentData, password, router, checkEmail]);
 
   // Handle Enter key navigation
   useEffect(() => {

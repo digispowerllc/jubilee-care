@@ -1,6 +1,6 @@
 export function generateAgentId(): string {
   const yearSuffix = new Date().getFullYear().toString().slice(-2); // "25"
-  const prefix = `JCGNIMC-AC${yearSuffix}`; // "JCGA25"
+  const prefix = `JCGNIMCAC${yearSuffix}`; // "JCGA25"
   const remainingLength = 15 - prefix.length; // 15 - 6 = 9
   // Generate a random alphanumeric string of length 9
   const random = Math.random().toString(36).substring(2).toUpperCase().slice(0, remainingLength);
@@ -19,5 +19,5 @@ export function generateAccessCode(): string {
 export async function generateFEPAgentId(): Promise<string> {
   const year = new Date().getFullYear().toString();
   const random = Math.random().toString(36).substring(2, 15).toUpperCase();
-  return `NIMC-A${year}${random}`;
+  return `NIMCA${year}${random}`;
 }

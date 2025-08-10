@@ -1,17 +1,10 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  // output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("PRISMA_JCG__PRISMA_DATABASE_URL") // or DATABASE_URL
+  url      = env("PRISMA_JCG__PRISMA_DATABASE_URL")
 }
 
 model Agent {
@@ -30,9 +23,8 @@ model Agent {
   isActive      Boolean        @default(true)
   isAdmitted    Boolean        @default(false)
   isDeleted     Boolean        @default(false)
+  profile       AgentProfile?
   oauthAccounts OAuthAccount[]
-
-  profile AgentProfile? // 👈 Just declare relation field here
 
   @@index([email])
   @@index([phone])
@@ -41,17 +33,21 @@ model Agent {
 }
 
 model AgentProfile {
-  id          String    @id // Same as Agent.id
-  accessCode  String    @unique
-  agentId     String    @unique
-  passportUrl String    @default("")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now())
-  deletedAt   DateTime?
-
-  agent Agent @relation(fields: [id], references: [id], onDelete: Cascade)
+  id           String    @id
+  agentId      String    @unique
+  email        String
+  phone        String
+  accessCode   String    @default("")
+  passwordHash String
+  passportUrl  String    @default("")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now())
+  deletedAt    DateTime?
+  agent        Agent     @relation(fields: [id], references: [id], onDelete: Cascade)
 
   @@index([agentId])
+  @@index([phone])
+  @@index([email])
   @@index([accessCode])
   @@index([createdAt])
 }
@@ -77,9 +73,8 @@ model User {
   isBanned          Boolean   @default(false)
   passwordChangedAt DateTime?
   role              String    @default("user")
-
-  roles    UserRole[]
-  sessions Session[]
+  sessions          Session[]
+  roles             UserRole?
 
   @@index([username])
   @@index([email])
@@ -100,8 +95,7 @@ model User {
 model UserRole {
   id   String @id
   role String @default("agent")
-
-  user User @relation(fields: [id], references: [id], onDelete: Cascade)
+  user User   @relation(fields: [id], references: [id], onDelete: Cascade)
 }
 
 model Session {
@@ -111,8 +105,7 @@ model Session {
   refreshToken String   @unique
   createdAt    DateTime @default(now())
   expiresAt    DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
@@ -120,11 +113,11 @@ model Session {
 
 model OAuthAccount {
   id         String   @id @default(cuid())
-  provider   String // 'google', 'facebook', etc.
-  providerId String // Unique ID from the provider
-  agent      Agent    @relation(fields: [agentId], references: [id])
+  provider   String
+  providerId String
   agentId    String
   createdAt  DateTime @default(now())
+  agent      Agent    @relation(fields: [agentId], references: [id])
 
-  @@unique([provider, providerId]) // One account per provider per user
+  @@unique([provider, providerId])
 }
