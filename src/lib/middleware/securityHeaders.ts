@@ -1,7 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-
 interface SecurityHeadersConfig {
   frameOptions?: 'DENY' | 'SAMEORIGIN' | string;
   contentTypeOptions?: 'nosniff' | string;
@@ -34,7 +33,11 @@ const productionConfig: SecurityHeadersConfig = {
   permissionsPolicy: 'camera=(), microphone=(), geolocation=()',
   csp: {
     defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", "'unsafe-inline'", "'report-sample'"],
+    scriptSrc: [
+      "'self'",
+      "'unsafe-inline'",
+      "'report-sample'"
+    ],
     styleSrc: ["'self'", "'unsafe-inline'"],
     imgSrc: ["'self'", "data:", "blob:"],
     fontSrc: ["'self'", "data:"],
@@ -73,38 +76,58 @@ export async function withSecurityHeaders(
 
   const response = NextResponse.next();
 
+  // Generate nonce for CSP
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+
+  // Store nonce in request headers so it can be accessed in pages
+  request.headers.set('x-nonce', nonce);
+
+  // Set standard security headers
   if (config.frameOptions) {
     response.headers.set('X-Frame-Options', config.frameOptions);
   }
+
   if (config.contentTypeOptions) {
     response.headers.set('X-Content-Type-Options', config.contentTypeOptions);
   }
+
   if (config.referrerPolicy) {
     response.headers.set('Referrer-Policy', config.referrerPolicy);
   }
+
   if (config.permissionsPolicy) {
     response.headers.set('Permissions-Policy', config.permissionsPolicy);
   }
 
+  // Generate CSP
   if (config.csp) {
-    const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
-
     const cspDirectives: string[] = [];
 
+    // Helper function to process CSP directives
     const processDirective = (directive: string, sources?: string[]) => {
       if (sources && sources.length > 0) {
-        if (directive === 'script-src' && !sources.some(s => s.startsWith("'nonce-"))) {
+        // Add nonce to script-src and style-src if they're the directives
+        if (directive === 'script-src' && !sources.includes(`'nonce-${nonce}'`)) {
           sources.push(`'nonce-${nonce}'`);
-          // Optional: Add integrity here if precomputed
-          // sources.push(`'sha256-<hash>'`);
         }
+        if (directive === 'style-src' && !sources.includes(`'nonce-${nonce}'`)) {
+          sources.push(`'nonce-${nonce}'`);
+        }
+
+        // Add integrity support for script-src
+        if (directive === 'script-src' && !sources.includes("'strict-dynamic'")) {
+          sources.push("'strict-dynamic'");
+        }
+
         cspDirectives.push(`${directive} ${sources.join(' ')}`);
       }
     };
 
+    // Process each CSP directive
     Object.entries(config.csp).forEach(([directive, sources]) => {
       if (directive === 'reportUri' || directive === 'requireTrustedTypesFor' ||
         directive === 'sandbox' || directive === 'upgradeInsecureRequests') {
+        // Handle special cases
         if (directive === 'upgradeInsecureRequests' && sources) {
           cspDirectives.push('upgrade-insecure-requests');
         } else if (sources) {
@@ -117,11 +140,6 @@ export async function withSecurityHeaders(
 
     const cspHeader = config.reportOnly ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy';
     response.headers.set(cspHeader, cspDirectives.join('; '));
-
-    // Expose nonce for server-side rendered scripts
-    // Extend NextResponse type to include 'locals'
-    type NextResponseWithLocals = NextResponse & { locals?: Record<string, unknown> };
-    (response as NextResponseWithLocals).locals = { ...(response as NextResponseWithLocals).locals, cspNonce: nonce };
   }
 
   if (isDevelopment) {
@@ -201,7 +219,6 @@ export const securityHeadersConfig = {
     blockAllMixedContent: true
   }
 };
-
 
 // import type { NextRequest } from 'next/server';
 // import { NextResponse } from 'next/server';
