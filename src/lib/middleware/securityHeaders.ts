@@ -172,7 +172,8 @@ export const securityHeadersConfig = {
       "'unsafe-eval'", // Required for Next.js in production
       "'report-sample'",
       "https://*.vercel.app", // Add if using Vercel
-      "https://jcic.vercel.app"
+      "https://jcic.vercel.app",
+      "https://jcic.vercel.app/_next/static/chunks/webpack-ebb5f22564f63797.js"
     ],
     styleSrc: [
       "'self'",
