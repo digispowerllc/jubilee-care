@@ -219,7 +219,7 @@ export const securityHeadersConfig = {
     workerSrc: ["'self'", "blob:"], // Required for Next.js
     childSrc: ["'self'"], // Fallback for older browsers
     // reportUri: "/api/csp-report", // Uncomment when ready
-    upgradeInsecureRequests: false, //
+    upgradeInsecureRequests: true, //
     blockAllMixedContent: true
   }
 };
