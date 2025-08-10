@@ -4,7 +4,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Notification } from "@/components/Notification";
 
 import LayoutLoaderWrapper from "./LayoutLoaderWrapper";
-import { AuthProvider } from "@/components/auth-provider";
 
 import "./globals.css";
 
@@ -33,11 +32,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <LayoutLoaderWrapper>{children}</LayoutLoaderWrapper>
-        </AuthProvider>
-        {/* <Notification />
-         */}
+        {" "}
+        <LayoutLoaderWrapper>{children}</LayoutLoaderWrapper>
         <Notification maxNotifications={3} position="top-right" />
       </body>
     </html>

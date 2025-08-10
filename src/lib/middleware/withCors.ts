@@ -1,7 +1,6 @@
-import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-export async function withCors(request: NextRequest) {
+export async function withCors() {
     const response = NextResponse.next();
 
     response.headers.set('Access-Control-Allow-Origin', '*');
