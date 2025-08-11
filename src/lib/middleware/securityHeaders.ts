@@ -1,13 +1,14 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import { v4 as uuidv4 } from 'uuid'
 
 interface SecurityHeadersConfig {
   frameOptions?: string
   contentTypeOptions?: string
   referrerPolicy?: string
   permissionsPolicy?: string
-  csp?: Record<string, string[]>
   strictTransportSecurity?: string
+  csp?: Record<string, string[]>
 }
 
 export const securityHeadersConfig: SecurityHeadersConfig = {
@@ -21,39 +22,17 @@ export const securityHeadersConfig: SecurityHeadersConfig = {
     scriptSrc: [
       "'self'",
       "'report-sample'",
-      'https://*.vercel.app',
-      `'nonce-${crypto.randomUUID()}'` // Dynamic nonce for inline scripts
-    ],
-    scriptSrcElem: [
-      "'self'",
+      `'nonce-${uuidv4()}'`,
       'https://*.vercel.app'
     ],
-    styleSrc: [
-      "'self'",
-      "'unsafe-inline'", // Required for Next.js styles
-      'https://fonts.googleapis.com'
-    ],
-    imgSrc: [
-      "'self'",
-      'data:',
-      'blob:',
-      'https://*.vercel.app'
-    ],
-    fontSrc: [
-      "'self'",
-      'data:',
-      'https://fonts.gstatic.com'
-    ],
-    connectSrc: [
-      "'self'",
-      'https://*.vercel.app'
-    ],
+    styleSrc: ["'self'", "'unsafe-inline'"],
+    imgSrc: ["'self'", 'data:', 'blob:'],
+    fontSrc: ["'self'", 'data:'],
+    connectSrc: ["'self'"],
     frameSrc: ["'self'"],
     objectSrc: ["'none'"],
     baseUri: ["'self'"],
-    formAction: ["'self'"],
-    workerSrc: ["'self'"],
-    manifestSrc: ["'self'"]
+    formAction: ["'self'"]
   }
 }
 
@@ -63,15 +42,15 @@ export function withSecurityHeaders(
 ): NextResponse {
   const response = NextResponse.next()
 
-  // Standard security headers
-  response.headers.set('X-Frame-Options', config.frameOptions!)
-  response.headers.set('X-Content-Type-Options', config.contentTypeOptions!)
-  response.headers.set('Referrer-Policy', config.referrerPolicy!)
-  response.headers.set('Permissions-Policy', config.permissionsPolicy!)
-  response.headers.set('Strict-Transport-Security', config.strictTransportSecurity!)
+  // Set security headers
+  response.headers.set('X-Frame-Options', config.frameOptions || 'DENY')
+  response.headers.set('X-Content-Type-Options', config.contentTypeOptions || 'nosniff')
+  response.headers.set('Referrer-Policy', config.referrerPolicy || 'strict-origin-when-cross-origin')
+  response.headers.set('Permissions-Policy', config.permissionsPolicy || 'camera=(), microphone=(), geolocation=(), payment=()')
+  response.headers.set('Strict-Transport-Security', config.strictTransportSecurity || 'max-age=63072000; includeSubDomains; preload')
   response.headers.set('X-XSS-Protection', '1; mode=block')
 
-  // CSP Header
+  // Build CSP header if configured
   if (config.csp) {
     const directives = Object.entries(config.csp)
       .map(([key, value]) => `${key} ${value.join(' ')}`)

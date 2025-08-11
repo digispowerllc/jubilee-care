@@ -1,24 +1,35 @@
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+// lib/middleware/middlewareChain.ts
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 
-type Middleware = (request: NextRequest) => Promise<NextResponse | void | Response>;
+type Middleware = (
+  request: NextRequest,
+  response?: NextResponse
+) => Promise<NextResponse> | NextResponse
 
 export async function chainMiddlewares(
   request: NextRequest,
   middlewares: Middleware[]
-): Promise<NextResponse | Response> {
-  let response: NextResponse | void | Response = NextResponse.next();
-  
+): Promise<NextResponse> {
+  let response: NextResponse | undefined = undefined
+
   for (const middleware of middlewares) {
-    const result = await middleware(request);
-    if (result) {
-      response = result;
-      // If middleware returns a response, break the chain
-      if (response instanceof NextResponse || response instanceof Response) {
-        break;
+    try {
+      // Handle both async and sync middleware functions
+      const middlewareResult = middleware(request, response)
+      response = middlewareResult instanceof Promise 
+        ? await middlewareResult 
+        : middlewareResult
+      
+      // Ensure we always have a response object
+      if (!response) {
+        response = NextResponse.next()
       }
+    } catch (error) {
+      console.error('Middleware error:', error)
+      return new NextResponse('Middleware Error', { status: 500 })
     }
   }
-  
-  return response || NextResponse.next();
+
+  return response || NextResponse.next()
 }

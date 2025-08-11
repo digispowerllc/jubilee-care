@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { rateLimiter } from '@/lib/rateLimit';
 
-export async function withRateLimiter(request: NextRequest) {
+export async function withRateLimiter(request: NextRequest): Promise<NextResponse> {
     const ip = request.headers.get('x-real-ip') || '127.0.0.1';
     const { isRateLimited, limit, remaining } = await rateLimiter.check(ip);
 
@@ -28,5 +28,5 @@ export async function withRateLimiter(request: NextRequest) {
         'X-RateLimit-Client-IP': ip,
     });
 
-    return isRateLimited ? response : undefined;
+    return response;
 }

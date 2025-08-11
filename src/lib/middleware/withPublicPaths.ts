@@ -15,7 +15,7 @@ const publicPaths = [
     '/sitemap.xml'
 ];
 
-export async function withPublicPaths(request: NextRequest) {
+export async function withPublicPaths(request: NextRequest): Promise<NextResponse> {
     const isPublicPath = publicPaths.some(path =>
         request.nextUrl.pathname === path ||
         request.nextUrl.pathname.startsWith(path)
@@ -27,4 +27,6 @@ export async function withPublicPaths(request: NextRequest) {
         console.log(`Public path accessed: ${request.nextUrl.pathname}`);
         return NextResponse.next();
     }
+    // Default response if not a public path
+    return NextResponse.next();
 }
