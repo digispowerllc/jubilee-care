@@ -40,9 +40,9 @@ export async function POST(req: Request) {
         const agent = await prisma.agent.findFirst({
             where: {
                 OR: [
-                    { profile: { agentId: identifier } }, // agentId is unencrypted
+                    { profile: { agentId: identifier } },
                     { email: identifier }, // Compare with already encrypted email
-                    { phone: identifier } // Compare with already encrypted phone
+                    { phone: identifier }  // Compare with already encrypted phone
                 ]
             },
             include: {
@@ -51,6 +51,7 @@ export async function POST(req: Request) {
         });
 
         if (!agent?.profile) {
+            console.log('No agent found for identifier:', identifier);
             return NextResponse.json(
                 { success: false, error: "Invalid credentials" },
                 { status: 401 }
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
         if (usePassword) {
             // Password authentication (hashed comparison)
             isAuthenticated = await verifyHash(credential, agent.profile.passwordHash);
-            console.log('Password verification result:', isAuthenticated); // Debug log
+            console.log('Password verification:', isAuthenticated);
         } else {
             // Access code authentication (plain text comparison)
             isAuthenticated = credential === agent.profile.accessCode;
@@ -71,9 +72,9 @@ export async function POST(req: Request) {
                 input: credential,
                 stored: agent.profile.accessCode,
                 match: isAuthenticated
-            }); // Debug log
+            });
 
-            // Special case: If default access code is used, force password auth next time
+            // Special case: If default access code is used
             if (isAuthenticated && agent.profile.accessCode === "N0Acc355C0d3") {
                 return NextResponse.json({
                     success: true,
@@ -84,48 +85,36 @@ export async function POST(req: Request) {
         }
 
         if (!isAuthenticated) {
-            console.log('Authentication failed details:', {
-                identifier,
-                usePassword,
-                agentId: agent.profile.agentId
-            }); // Debug log
+            console.log('Authentication failed for agent:', agent.profile.agentId);
             return NextResponse.json(
                 { success: false, error: "Invalid credentials" },
                 { status: 401 }
             );
         }
 
-        // Decrypt sensitive user data according to their protection tiers
-        const [firstName, surname, email, phone] = await Promise.all([
-            unprotectData(agent.firstName, 'name'), // basic encryption
-            unprotectData(agent.surname, 'name'), // basic encryption
-            unprotectData(agent.email, 'email'), // strong encryption
-            unprotectData(agent.phone, 'phone'), // strong encryption
+        // Decrypt user data
+        const [firstName, surname, email] = await Promise.all([
+            unprotectData(agent.firstName, 'name'),
+            unprotectData(agent.surname, 'name'),
+            unprotectData(agent.email, 'email'),
         ]);
-
-        // Generate session token (placeholder - implement your actual token generation)
-        const authToken = generateAuthToken(agent.id);
 
         return NextResponse.json({
             success: true,
-            token: authToken,
+            token: "generated-auth-token",
             user: {
                 id: agent.id,
                 agentId: agent.profile.agentId,
                 firstName,
                 surname,
-                email,
-                phone,
+                email
             }
         });
 
     } catch (error) {
         console.error("SignIn error:", error);
         return NextResponse.json(
-            {
-                success: false,
-                error: "Authentication failed. Please try again."
-            },
+            { success: false, error: "Authentication failed. Please try again." },
             { status: 500 }
         );
     }

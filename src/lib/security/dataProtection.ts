@@ -49,8 +49,8 @@ export async function unprotectData(encryptedData: string, tier: ProtectionTier)
     }
 }
 
-// Export verifyHash directly from edgeEncryption
-export { verifyHash };
+// Export verifyHash directly from encryption.ts
+export { verifyHash } from '@/lib/security/encryption';
 
 // Type-safe verification function for system codes/passwords
 export async function verifyProtectedData(

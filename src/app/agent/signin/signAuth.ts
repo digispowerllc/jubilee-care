@@ -1,3 +1,4 @@
+// import AuthForm from "./AuthForm";
 type AuthResult = {
     success: boolean;
     message?: string;
