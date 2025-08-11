@@ -1,58 +1,85 @@
+// src/lib/security/dataProtection.ts
 import {
     encryptHighestSecurity,
-    encryptStrong,
+    encryptSearchable,
     encryptBasic,
     decryptHighestSecurity,
-    decryptStrong,
+    decryptSearchable,
     decryptBasic,
     hashData,
-    verifyHash
+    verifyHash,
+    generateSearchHash
 } from '@/lib/security/encryption';
 
 type ProtectionTier = 'government' | 'email' | 'phone' | 'location' | 'name' | 'system-code';
 
-export async function protectData(data: string, tier: ProtectionTier): Promise<string> {
-    if (!data) return '';
+export async function protectData(
+    data: string,
+    tier: ProtectionTier
+): Promise<{
+    encrypted: string;
+    searchHash?: string;
+}> {
+    if (!data) return { encrypted: '' };
 
     switch (tier) {
         case 'government':
-            return await encryptHighestSecurity(data);
+            return { encrypted: encryptHighestSecurity(data) };
+
         case 'email':
+            return {
+                encrypted: encryptSearchable(data, 'email'),
+                searchHash: generateSearchHash(data.toLowerCase())
+            };
+
         case 'phone':
-            return await encryptStrong(data);
+            return {
+                encrypted: encryptSearchable(data, 'phone'),
+                searchHash: generateSearchHash(data)
+            };
+
         case 'location':
         case 'name':
-            return await encryptBasic(data);
+            return { encrypted: encryptBasic(data) };
+
         case 'system-code':
-            return await hashData(data);
+            return { encrypted: await hashData(data) };
+
         default:
-            return data;
+            return { encrypted: data };
     }
 }
 
-export async function unprotectData(encryptedData: string, tier: ProtectionTier): Promise<string> {
+export async function unprotectData(
+    encryptedData: string,
+    tier: ProtectionTier
+): Promise<string> {
     if (!encryptedData) return '';
 
     switch (tier) {
         case 'government':
-            return await decryptHighestSecurity(encryptedData);
+            return decryptHighestSecurity(encryptedData);
+
         case 'email':
+            return decryptSearchable(encryptedData, 'email');
+
         case 'phone':
-            return await decryptStrong(encryptedData);
+            return decryptSearchable(encryptedData, 'phone');
+
         case 'location':
         case 'name':
-            return await decryptBasic(encryptedData);
+            return decryptBasic(encryptedData);
+
         case 'system-code':
-            return encryptedData; // Hashes can't be decrypted
+            return encryptedData;
+
         default:
             return encryptedData;
     }
 }
 
-// Export verifyHash directly from encryption.ts
-export { verifyHash } from '@/lib/security/encryption';
+export { verifyHash };
 
-// Type-safe verification function for system codes/passwords
 export async function verifyProtectedData(
     plainText: string,
     protectedData: string,
@@ -61,10 +88,9 @@ export async function verifyProtectedData(
     if (!plainText || !protectedData) return false;
 
     if (tier === 'system-code') {
-        return await verifyHash(plainText, protectedData);
+        return verifyHash(plainText, protectedData);
     }
 
-    // For encrypted data, we need to compare after decryption
     try {
         const decrypted = await unprotectData(protectedData, tier);
         return decrypted === plainText;
