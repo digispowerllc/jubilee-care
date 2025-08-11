@@ -1,24 +1,49 @@
-import type { NextRequest } from 'next/server';
-import { chainMiddlewares } from '@/lib/middleware/middlewareChain';
-
-// Import middlewares
-import { withSecurityHeaders } from '@/lib/middleware/securityHeaders';
-import { securityHeadersConfig } from '@/lib/middleware/securityHeaders';
-import { withRequestLogging } from '@/lib/middleware/requestLogging';
-import { withRateLimiter } from '@/lib/middleware/rateLimiting';
-import { withPublicPaths } from '@/lib/middleware/withPublicPaths';
+import type { NextRequest } from 'next/server'
+import { chainMiddlewares } from '@/lib/middleware/middlewareChain'
+import { securityHeadersConfig } from '@/lib/middleware/securityHeaders'
+import { withRequestLogging } from '@/lib/middleware/requestLogging'
+import { withRateLimiter } from '@/lib/middleware/rateLimiting'
+import { withPublicPaths } from '@/lib/middleware/withPublicPaths'
+import { withAuthentication } from '@/lib/middleware/authentication'
 
 export const config = {
   matcher: [
-    '/((?!api/auth|_next/static|_next/image|favicon.ico|robots.txt).*)',
+    /*
+     * Match all request paths except for:
+     * - API auth routes (api/auth)
+     * - Static files (_next/static, _next/image)
+     * - Public files (favicon.ico, robots.txt)
+     * - Health check endpoint
+     */
+    '/((?!api/auth|_next/static|_next/image|favicon.ico|robots.txt|health).*)',
   ],
-};
-// This matcher applies the middleware to all paths except for API authentication routes, Next.js static files, images, and common public files like favicon and robots.txt.
+}
+
 export async function middleware(request: NextRequest) {
-  return chainMiddlewares(request, [
-    (req) => withSecurityHeaders(req, securityHeadersConfig), // 🛡️ Production security headers
-    withRequestLogging,                                      // 📜 Request logging
-    withRateLimiter,                                        // 🚫 Rate limiting
-    withPublicPaths                                         // 🆓 Public paths
-  ]);
+  try {
+    return await chainMiddlewares(request, [
+      // 1️⃣ Apply security headers first
+      (req) => withSecurityHeaders(req, securityHeadersConfig),
+      
+      // 2️⃣ Log the request
+      withRequestLogging,
+      
+      // 3️⃣ Apply rate limiting
+      withRateLimiter,
+      
+      // 4️⃣ Handle public paths
+      withPublicPaths,
+      
+      // 5️⃣ Authentication check (added new)
+      withAuthentication
+    ])
+  } catch (error) {
+    console.error('Middleware chain error:', error)
+    // Return a generic error response
+    return new NextResponse('Internal Server Error', { status: 500 })
+  }
+}
+
+function withSecurityHeaders(req: NextRequest, securityHeadersConfig: SecurityHeadersConfig): Promise<void | import("next/server").NextResponse<unknown> | Response> {
+  throw new Error('Function not implemented.')
 }
