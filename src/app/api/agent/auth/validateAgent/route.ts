@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { validateAgent } from "../../../../lib/validateAgent";
+import { validateAgent } from "../../../../../lib/validateAgent";
 
 export async function POST(req: Request) {
   try {

@@ -14,7 +14,7 @@ type AgentData = {
 
 export const submitAgentSignup = async (agentData: AgentData, password: string) => {
     try {
-        const response = await fetch("/api/agent/signup", {
+        const response = await fetch("/api/agent/auth/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

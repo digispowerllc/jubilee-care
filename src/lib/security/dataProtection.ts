@@ -5,8 +5,9 @@ import {
     decryptHighestSecurity,
     decryptStrong,
     decryptBasic,
-    hashData
-} from '@/lib/security/edgeEncryption';
+    hashData,
+    verifyHash
+} from '@/lib/security/encryption';
 
 type ProtectionTier = 'government' | 'email' | 'phone' | 'location' | 'name' | 'system-code';
 
@@ -45,5 +46,30 @@ export async function unprotectData(encryptedData: string, tier: ProtectionTier)
             return encryptedData; // Hashes can't be decrypted
         default:
             return encryptedData;
+    }
+}
+
+// Export verifyHash directly from edgeEncryption
+export { verifyHash };
+
+// Type-safe verification function for system codes/passwords
+export async function verifyProtectedData(
+    plainText: string,
+    protectedData: string,
+    tier: ProtectionTier
+): Promise<boolean> {
+    if (!plainText || !protectedData) return false;
+
+    if (tier === 'system-code') {
+        return await verifyHash(plainText, protectedData);
+    }
+
+    // For encrypted data, we need to compare after decryption
+    try {
+        const decrypted = await unprotectData(protectedData, tier);
+        return decrypted === plainText;
+    } catch (error) {
+        console.error('Data verification failed:', error);
+        return false;
     }
 }

@@ -38,11 +38,10 @@ export const signIn = async (
             };
         }
 
-        const response = await fetch("/api/auth/signin", {
+        const response = await fetch("/api/agent/auth/signin", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
-                "X-Requested-With": "XMLHttpRequest"
+                "Content-Type": "application/json", // This header is crucial
             },
             body: JSON.stringify({
                 identifier,
@@ -52,24 +51,28 @@ export const signIn = async (
         });
 
         if (!response.ok) {
-            const error = await response.json();
+            // Handle non-JSON responses
+            let errorData;
+            try {
+                errorData = await response.json();
+            } catch (e) {
+                return {
+                    success: false,
+                    message: `Server error: ${response.status} ${response.statusText}`
+                };
+            }
             return {
                 success: false,
-                message: error.message || "Authentication failed"
+                message: errorData.message || "Authentication failed"
             };
         }
 
-        const data = await response.json();
-        return {
-            success: true,
-            token: data.token,
-            user: data.user
-        };
+        return await response.json();
     } catch (error) {
         console.error("SignIn error:", error);
         return {
             success: false,
-            message: "Network error during authentication"
+            message: error instanceof Error ? error.message : "Network error during authentication"
         };
     }
 };

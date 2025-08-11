@@ -1,9 +1,12 @@
+import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
+
 // Configuration
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
 const IV_LENGTH = 16;
 const SALT_ROUNDS = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS, 10) : 10;
 
-import crypto from 'crypto';
+
 // Tier 1: Highest Security (Government IDs)
 export function encryptHighestSecurity(data: string): string {
   const iv = crypto.randomBytes(IV_LENGTH);
@@ -61,7 +64,7 @@ export function decryptBasic(encryptedData: string): string {
   return decrypted;
 }
 
-import bcrypt from 'bcryptjs';
+
 // Tier 4: Hashing Only (System Codes)
 export async function hashData(data: string): Promise<string> {
   return await bcrypt.hash(data, SALT_ROUNDS);

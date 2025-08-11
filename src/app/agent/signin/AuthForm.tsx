@@ -89,7 +89,7 @@ export const AuthForm = ({
           {/* Access Code Field */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Access Code
+              Access Code / Password
             </label>
             <div className="relative">
               <input
@@ -138,7 +138,7 @@ export const AuthForm = ({
                 href="/agent/forgot-password"
                 className="font-medium text-green-600 hover:text-green-500"
               >
-                Forgot access code?
+                Reset access code/password?
               </Link>
             </div>
           </div>
