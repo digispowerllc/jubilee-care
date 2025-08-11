@@ -41,8 +41,8 @@ export async function POST(req: Request) {
             where: {
                 OR: [
                     { profile: { agentId: identifier } }, // agentId is unencrypted
-                    { email: await protectData(identifier, 'email') }, // email is strongly encrypted
-                    { phone: await protectData(identifier, 'phone') } // phone is strongly encrypted
+                    { email: identifier }, // Compare with already encrypted email
+                    { phone: identifier } // Compare with already encrypted phone
                 ]
             },
             include: {
@@ -63,9 +63,15 @@ export async function POST(req: Request) {
         if (usePassword) {
             // Password authentication (hashed comparison)
             isAuthenticated = await verifyHash(credential, agent.profile.passwordHash);
+            console.log('Password verification result:', isAuthenticated); // Debug log
         } else {
             // Access code authentication (plain text comparison)
             isAuthenticated = credential === agent.profile.accessCode;
+            console.log('Access code comparison:', {
+                input: credential,
+                stored: agent.profile.accessCode,
+                match: isAuthenticated
+            }); // Debug log
 
             // Special case: If default access code is used, force password auth next time
             if (isAuthenticated && agent.profile.accessCode === "N0Acc355C0d3") {
@@ -78,6 +84,11 @@ export async function POST(req: Request) {
         }
 
         if (!isAuthenticated) {
+            console.log('Authentication failed details:', {
+                identifier,
+                usePassword,
+                agentId: agent.profile.agentId
+            }); // Debug log
             return NextResponse.json(
                 { success: false, error: "Invalid credentials" },
                 { status: 401 }
@@ -105,7 +116,6 @@ export async function POST(req: Request) {
                 surname,
                 email,
                 phone,
-                // Include other necessary decrypted fields
             }
         });
 

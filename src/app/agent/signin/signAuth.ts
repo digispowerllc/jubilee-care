@@ -2,7 +2,15 @@ type AuthResult = {
     success: boolean;
     message?: string;
     token?: string;
-    user?: string;
+    user?: {
+        id: string;
+        agentId: string;
+        firstName: string;
+        surname: string;
+        email: string;
+        phone: string;
+    };
+    requiresPassword?: boolean;
 };
 
 type AuthProvider = "google" | "github" | "nimc";
@@ -27,47 +35,81 @@ interface NimcVerificationResult {
 
 export const signIn = async (
     identifier: string,
-    accessCode: string
+    credential: string,
+    usePassword: boolean = false
 ): Promise<AuthResult> => {
     try {
         // Basic validation
-        if (!identifier || !accessCode) {
+        if (!identifier || !credential) {
             return {
                 success: false,
-                message: "Identifier and access code are required"
+                message: "Identifier and credential are required"
             };
         }
 
         const response = await fetch("/api/agent/auth/signin", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json", // This header is crucial
+                "Content-Type": "application/json",
+                "X-Requested-With": "XMLHttpRequest" // Helps identify AJAX requests
             },
             body: JSON.stringify({
                 identifier,
-                accessCode,
+                credential,
+                usePassword,
                 timestamp: new Date().toISOString()
             }),
         });
 
+        // Handle HTTP errors
         if (!response.ok) {
-            // Handle non-JSON responses
-            let errorData;
+            let errorData: unknown;
             try {
                 errorData = await response.json();
+                // Type guard for expected errorData structure
+                if (
+                    typeof errorData === "object" &&
+                    errorData !== null &&
+                    "requiresPassword" in errorData
+                ) {
+                    const err = errorData as { requiresPassword?: boolean; message?: string; error?: { fieldErrors?: string; formErrors?: string; message?: string } };
+                    if (err.requiresPassword) {
+                        return {
+                            success: true,
+                            requiresPassword: true,
+                            message: err.message || "Please authenticate with your password"
+                        };
+                    }
+                    return {
+                        success: false,
+                        message: err.error?.fieldErrors ||
+                            err.error?.formErrors ||
+                            err.message ||
+                            "Authentication failed"
+                    };
+                }
+                return {
+                    success: false,
+                    message: "Authentication failed"
+                };
             } catch (e) {
                 return {
                     success: false,
                     message: `Server error: ${response.status} ${response.statusText}`
                 };
             }
-            return {
-                success: false,
-                message: errorData.message || "Authentication failed"
-            };
         }
 
-        return await response.json();
+        // Successful response
+        const data = await response.json();
+        return {
+            success: data.success,
+            token: data.token,
+            user: data.user,
+            requiresPassword: data.requiresPassword || false,
+            message: data.message || "Authentication successful"
+        };
+
     } catch (error) {
         console.error("SignIn error:", error);
         return {
@@ -197,7 +239,7 @@ const handleNimcVerification = async (
             return {
                 success: false,
                 message: "NIMC verification failed. Details did not match.",
-                user: result.userData ? JSON.stringify(result.userData) : undefined
+                user: undefined
             };
         }
 
