@@ -44,7 +44,7 @@ export const signIn = async (
         if (!identifier || !credential) {
             return {
                 success: false,
-                message: "Identifier and credential are required"
+                message: "Please provide your email or phone."
             };
         }
 
@@ -103,7 +103,7 @@ export const signIn = async (
 
 
         // Successful response
-        const data = await response.json();    
+        const data = await response.json();
 
         return {
             success: data.success,

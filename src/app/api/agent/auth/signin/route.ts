@@ -3,18 +3,15 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import {
     unprotectData,
-    generateSearchableHash
+    generateSearchableHash,
+    verifyHash,
 } from "@/lib/security/dataProtection";
 import { z } from "zod";
 
-// Default credentials
-const DEFAULT_ACCESS_CODE = "N0Acc355C0d3";
-
-
 const signInSchema = z.object({
-    identifier: z.string().min(1, "Identifier is required"),
-    credential: z.string().min(1, "Credential is required"),
-    usePassword: z.boolean().optional().default(false),
+    identifier: z.string().min(1, "Email or phone is required"),
+    credential: z.string().min(1, "Password is required"),
+    usePassword: z.boolean().optional().default(true), // force password usage
 });
 
 export async function POST(req: Request) {
@@ -37,16 +34,13 @@ export async function POST(req: Request) {
             );
         }
 
-        const { identifier, credential, usePassword } = parseResult.data;
+        const { identifier, credential } = parseResult.data;
         const idHash = await generateSearchableHash(identifier);
 
+        // Find agent by emailHash or phoneHash ONLY
         const agent = await prisma.agent.findFirst({
             where: {
-                OR: [
-                    { profile: { agentId: identifier } },
-                    { emailHash: idHash },
-                    { phoneHash: idHash },
-                ],
+                OR: [{ emailHash: idHash }, { phoneHash: idHash }],
             },
             include: { profile: true },
         });
@@ -58,51 +52,34 @@ export async function POST(req: Request) {
             );
         }
 
-        let isAuthenticated = false;
-        let requiresChange = false;
+        // Verify password (hashed)
+        const isPasswordValid = await verifyHash(
+            credential,
+            agent.profile.passwordHash
+        );
 
-        if (usePassword) {
-            // Decrypt stored password then compare
-            const storedPassword = await unprotectData(agent.profile.passwordHash, "phone");
-            if (storedPassword === credential) {
-                isAuthenticated = true;
-
-                // Check if it's the default password
-                if (storedPassword === DEFAULT_ACCESS_CODE) {
-                    requiresChange = true;
-                }
-            }
-        } else {
-            // Compare hashed access code
-            const credentialHash = await generateSearchableHash(credential);
-            if (agent.profile.accessCodeHash && credentialHash === agent.profile.accessCodeHash) {
-                isAuthenticated = true;
-
-                // Check if it's the default access code
-                const defaultHash = await generateSearchableHash(DEFAULT_ACCESS_CODE);
-                if (agent.profile.accessCodeHash === defaultHash) {
-                    requiresChange = true;
-                }
-            }
-        }
-
-        if (!isAuthenticated) {
+        if (!isPasswordValid) {
             return NextResponse.json(
                 { success: false, error: "Invalid credentials" },
                 { status: 401 }
             );
         }
 
-        if (requiresChange) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    requiresPassword: true,
-                    message: "Default access code in use. Please use your password.",
-                    statusCode: 403
-                });
-        }
+        // // Check if password is default and require change
+        // const isDefaultPassword =
+        //     credential === DEFAULT_PASSWORD; // or compare hashes if you store hashed default
 
+        // if (isDefaultPassword) {
+        //     return NextResponse.json({
+        //         success: false,
+        //         requiresPassword: true,
+        //         message:
+        //             "Default password in use. Please log in with your password.",
+        //         statusCode: 403,
+        //     });
+        // }
+
+        // Decrypt profile info
         const [firstName, surname, email] = await Promise.all([
             unprotectData(agent.firstName, "name"),
             unprotectData(agent.surname, "name"),
