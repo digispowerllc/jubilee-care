@@ -95,8 +95,8 @@ export async function POST(req: Request) {
           emailHash,
           phone: (await protectData(phone, "phone")).encrypted,
           phoneHash,
-          accessCode: "N0Acc355C0d3",
-          accessCodeHash: await generateSearchableHash("N0Acc355C0d3"), // ✅ store hash for quick lookup
+          accessCode: (await protectData("N0Acc355C0d3", "phone")).encrypted,
+          accessCodeHash: await generateSearchableHash("N0Acc355C0d3"), 
           passwordHash: (await protectData(password, "system-code")).encrypted,
         },
       });

@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import {
-    protectData,
     unprotectData,
-    verifyHash
+    verifyHash,
+    generateSearchableHash
 } from "@/lib/security/dataProtection";
 import { z } from "zod";
+
+const DEFAULT_ACCESS_CODE = "N0Acc355C0d3";
 
 const signInSchema = z.object({
     identifier: z.string().min(1, "Identifier is required"),
@@ -15,15 +18,16 @@ const signInSchema = z.object({
 
 export async function POST(req: Request) {
     try {
-        // Validate content type
-        const contentType = req.headers.get('content-type');
-        if (!contentType?.includes('application/json')) {
+        // --- Validate content type ---
+        const contentType = req.headers.get("content-type");
+        if (!contentType?.includes("application/json")) {
             return NextResponse.json(
                 { success: false, error: "Content-Type must be application/json" },
                 { status: 415 }
             );
         }
 
+        // --- Parse body ---
         const body = await req.json();
         const parseResult = signInSchema.safeParse(body);
 
@@ -36,81 +40,86 @@ export async function POST(req: Request) {
 
         const { identifier, credential, usePassword } = parseResult.data;
 
-        // Find agent by any identifier (agentId, email, or phone)
+        // --- Searchable hash for email/phone ---
+        const idHash = await generateSearchableHash(identifier);
+
+        // --- Find agent by identifier ---
         const agent = await prisma.agent.findFirst({
             where: {
                 OR: [
                     { profile: { agentId: identifier } },
-                    { email: identifier }, // Compare with already encrypted email
-                    { phone: identifier }  // Compare with already encrypted phone
-                ]
+                    { emailHash: idHash },
+                    { phoneHash: idHash },
+                ],
             },
-            include: {
-                profile: true
-            }
+            include: { profile: true },
         });
 
         if (!agent?.profile) {
-            console.log('No agent found for identifier:', identifier);
             return NextResponse.json(
                 { success: false, error: "Invalid credentials" },
                 { status: 401 }
             );
         }
 
-        // Authentication logic
+        // --- Authentication ---
         let isAuthenticated = false;
 
         if (usePassword) {
-            // Password authentication (hashed comparison)
-            isAuthenticated = await verifyHash(credential, agent.profile.passwordHash);
-            console.log('Password verification:', isAuthenticated);
+            // Compare with hashed password
+            isAuthenticated = await verifyHash(
+                credential,
+                agent.profile.passwordHash
+            );
         } else {
-            // Access code authentication (plain text comparison)
-            isAuthenticated = credential === agent.profile.accessCode;
-            console.log('Access code comparison:', {
-                input: credential,
-                stored: agent.profile.accessCode,
-                match: isAuthenticated
-            });
+            // Compare hashed access code
+            const credentialHash = await generateSearchableHash(credential);
+            isAuthenticated =
+                Boolean(agent.profile.accessCodeHash) &&
+                credentialHash === agent.profile.accessCodeHash;
 
-            // Special case: If default access code is used
-            if (isAuthenticated && agent.profile.accessCode === "N0Acc355C0d3") {
+            // If access code matches and it's the default one — warn
+            if (isAuthenticated && agent.profile.accessCode === DEFAULT_ACCESS_CODE) {
                 return NextResponse.json({
                     success: true,
                     requiresPassword: true,
-                    message: "Please authenticate with your password"
+                    message: "Default access code in use. Please change your access code before continuing.",
+                    user: {
+                        id: agent.id,
+                        agentId: agent.profile.agentId
+                    }
                 });
             }
         }
 
         if (!isAuthenticated) {
-            console.log('Authentication failed for agent:', agent.profile.agentId);
             return NextResponse.json(
                 { success: false, error: "Invalid credentials" },
                 { status: 401 }
             );
         }
 
-        // Decrypt user data
+        // --- Decrypt data ---
         const [firstName, surname, email] = await Promise.all([
-            unprotectData(agent.firstName, 'name'),
-            unprotectData(agent.surname, 'name'),
-            unprotectData(agent.email, 'email'),
+            unprotectData(agent.firstName, "name"),
+            unprotectData(agent.surname, "name"),
+            unprotectData(agent.email, "email"),
         ]);
+
+        // --- Create token ---
+        const token = await generateAuthToken(agent.id, req);
 
         return NextResponse.json({
             success: true,
-            token: "generated-auth-token",
+            token,
             user: {
                 id: agent.id,
                 agentId: agent.profile.agentId,
                 firstName,
                 surname,
-                email
-            }
+                email,
+            },
         });
-
     } catch (error) {
         console.error("SignIn error:", error);
         return NextResponse.json(
@@ -120,8 +129,28 @@ export async function POST(req: Request) {
     }
 }
 
-// Placeholder for your actual token generation
-function generateAuthToken(agentId: string): string {
-    // Implement your JWT or session token generation here
-    return "generated-auth-token";
+export async function generateAuthToken(agentId: string, req?: Request) {
+    const plainToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(plainToken).digest("hex");
+
+    let ipAddress: string | undefined;
+    let userAgent: string | undefined;
+    if (req) {
+        ipAddress = req.headers.get("x-forwarded-for") || undefined;
+        userAgent = req.headers.get("user-agent") || undefined;
+    }
+
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    await prisma.agentSession.create({
+        data: {
+            agentId,
+            token: tokenHash,
+            ipAddress,
+            userAgent,
+            expiresAt,
+        },
+    });
+
+    return plainToken;
 }

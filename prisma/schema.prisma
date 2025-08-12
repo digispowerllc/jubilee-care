@@ -28,6 +28,7 @@ model Agent {
   isDeleted     Boolean        @default(false)
   profile       AgentProfile?
   oauthAccounts OAuthAccount[]
+  AgentSession  AgentSession[]
 
   @@index([emailHash])
   @@index([phoneHash])
@@ -58,6 +59,24 @@ model AgentProfile {
   @@index([emailHash])
   @@index([accessCodeHash])
   @@index([createdAt])
+}
+
+model AgentSession {
+  id      String @id @default(cuid()) // Unique session ID
+  agentId String
+
+  token     String    @unique // Auth token (JWT or random string)
+  ipAddress String? // Optional: store where session came from
+  userAgent String? // Optional: device info
+  createdAt DateTime  @default(now())
+  expiresAt DateTime // Expiration time
+  revokedAt DateTime? // If manually logged out or token invalidated
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@index([token])
+  @@index([expiresAt])
 }
 
 model User {

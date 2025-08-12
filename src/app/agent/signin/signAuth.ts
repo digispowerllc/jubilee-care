@@ -86,12 +86,12 @@ export const signIn = async (
                         message: err.error?.fieldErrors ||
                             err.error?.formErrors ||
                             err.message ||
-                            "Authentication failed"
+                            "Authentication failed. Please try again later."
                     };
                 }
                 return {
                     success: false,
-                    message: "Authentication failed"
+                    message: "Incorrect credentials. Please try again later."
                 };
             } catch (e) {
                 return {
