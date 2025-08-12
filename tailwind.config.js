@@ -1,5 +1,5 @@
 // tailwind.config.js
-export default {
+const config = {
     theme: {
         extend: {
             keyframes: {
@@ -13,4 +13,6 @@ export default {
             },
         },
     },
-}
+};
+
+export default config;
