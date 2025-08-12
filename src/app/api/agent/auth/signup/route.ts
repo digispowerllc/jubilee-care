@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { protectData } from "@/lib/security/dataProtection";
+import { protectData, generateSearchableHash } from "@/lib/security/dataProtection";
 import { z } from "zod";
 import { generateAgentId } from "@/lib/security/generators";
 
@@ -39,75 +39,80 @@ export async function POST(req: Request) {
       state,
       lga,
       address,
-      password
+      password,
     } = parseResult.data;
 
-    // Check if email or phone already exists
+    // Generate normalized searchable hashes
+    const emailHash = await generateSearchableHash(email);
+    const phoneHash = await generateSearchableHash(phone);
+    const ninHash = await generateSearchableHash(nin);
+
+    // Check if already registered
     const existingAgent = await prisma.agent.findFirst({
       where: {
-        OR: [
-          { email: await protectData(email, 'email') as string },
-          { phone: await protectData(phone, 'phone') as string }
-        ]
-      }
+        OR: [{ emailHash }, { phoneHash }, { ninHash }],
+      },
+      select: { id: true },
     });
 
     if (existingAgent) {
       return NextResponse.json(
-        { success: false, error: "Email or phone number already registered" },
+        { success: false, error: "Email, phone, or NIN already registered" },
         { status: 409 }
       );
     }
 
     const agentUID = generateAgentId();
 
-    // Create agent in transaction
-    const result = await prisma.$transaction(async (prisma) => {
-      // Create agent with encrypted data
-      const agent = await prisma.agent.create({
+    // Create agent & profile in a transaction
+    const result = await prisma.$transaction(async (prismaTx) => {
+      const agent = await prismaTx.agent.create({
         data: {
-          surname: await protectData(surname, 'name') as string,
-          firstName: await protectData(firstName, 'name') as string,
-          otherName: otherName ? await protectData(otherName, 'name') as string : "",
-          email: await protectData(email, 'email') as string,
-          phone: await protectData(phone, 'phone') as string,
-          nin: await protectData(nin, 'government') as string,
-          state: await protectData(state, 'location') as string,
-          lga: await protectData(lga, 'location') as string,
-          address: await protectData(address, 'location') as string
-        }
+          surname: (await protectData(surname, "name")).encrypted,
+          firstName: (await protectData(firstName, "name")).encrypted,
+          otherName: otherName
+            ? (await protectData(otherName, "name")).encrypted
+            : "",
+          email: (await protectData(email, "email")).encrypted,
+          phone: (await protectData(phone, "phone")).encrypted,
+          nin: (await protectData(nin, "government")).encrypted,
+          state: (await protectData(state, "location")).encrypted,
+          lga: (await protectData(lga, "location")).encrypted,
+          address: (await protectData(address, "location")).encrypted,
+
+          // store searchable hashes
+          emailHash,
+          phoneHash,
+          ninHash,
+        },
       });
 
-      // Create profile
-      await prisma.agentProfile.create({
+      await prismaTx.agentProfile.create({
         data: {
           id: agent.id,
           agentId: agentUID,
-          email: await protectData(email, 'email') as string,
-          phone: await protectData(phone, 'phone') as string,
+          email: (await protectData(email, "email")).encrypted,
+          emailHash,
+          phone: (await protectData(phone, "phone")).encrypted,
+          phoneHash,
           accessCode: "N0Acc355C0d3",
-          passwordHash: await protectData(password, 'system-code') as string,
-        }
+          accessCodeHash: await generateSearchableHash("N0Acc355C0d3"), // ✅ store hash for quick lookup
+          passwordHash: (await protectData(password, "system-code")).encrypted,
+        },
       });
+
 
       return agent;
     });
 
     return NextResponse.json(
-      {
-        success: true,
-        agentId: result.id
-      },
+      { success: true, agentId: result.id },
       { status: 201 }
     );
-
   } catch (error) {
     console.error("Agent creation error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: "Registration failed. Please try again."
-      },
+      { success: false, error: "Registration failed. Please try again." },
       { status: 500 }
     );
   }

@@ -18,6 +18,9 @@ model Agent {
   state         String
   lga           String
   address       String
+  emailHash     String         @unique
+  phoneHash     String         @unique
+  ninHash       String         @unique
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @default(now())
   isActive      Boolean        @default(true)
@@ -26,29 +29,34 @@ model Agent {
   profile       AgentProfile?
   oauthAccounts OAuthAccount[]
 
-  @@index([email])
-  @@index([phone])
+  @@index([emailHash])
+  @@index([phoneHash])
+  @@index([ninHash])
   @@index([state])
   @@index([lga])
+  @@index([createdAt])
 }
 
 model AgentProfile {
-  id           String    @id
-  agentId      String    @unique
-  email        String
-  phone        String
-  accessCode   String    @default("")
-  passwordHash String
-  passportUrl  String    @default("")
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @default(now())
-  deletedAt    DateTime?
-  agent        Agent     @relation(fields: [id], references: [id], onDelete: Cascade)
+  id             String    @id
+  agentId        String    @unique
+  email          String
+  emailHash      String    @unique
+  phone          String
+  phoneHash      String    @unique
+  accessCode     String    @default("")
+  accessCodeHash String // Optional: hashed access code for quick auth checks
+  passwordHash   String
+  passportUrl    String    @default("")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
+  deletedAt      DateTime?
+  agent          Agent     @relation(fields: [id], references: [id], onDelete: Cascade)
 
   @@index([agentId])
-  @@index([phone])
-  @@index([email])
-  @@index([accessCode])
+  @@index([phoneHash])
+  @@index([emailHash])
+  @@index([accessCodeHash])
   @@index([createdAt])
 }
 

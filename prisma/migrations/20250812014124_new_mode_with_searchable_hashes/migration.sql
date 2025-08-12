@@ -3,10 +3,13 @@ CREATE TABLE "public"."Agent" (
     "id" TEXT NOT NULL,
     "surname" TEXT NOT NULL,
     "firstName" TEXT NOT NULL,
-    "otherName" TEXT NOT NULL,
+    "otherName" TEXT,
     "email" TEXT NOT NULL,
+    "emailHash" TEXT NOT NULL,
     "phone" TEXT NOT NULL,
+    "phoneHash" TEXT NOT NULL,
     "nin" TEXT NOT NULL,
+    "ninHash" TEXT NOT NULL,
     "state" TEXT NOT NULL,
     "lga" TEXT NOT NULL,
     "address" TEXT NOT NULL,
@@ -24,8 +27,11 @@ CREATE TABLE "public"."AgentProfile" (
     "id" TEXT NOT NULL,
     "agentId" TEXT NOT NULL,
     "email" TEXT NOT NULL,
+    "emailHash" TEXT NOT NULL,
     "phone" TEXT NOT NULL,
+    "phoneHash" TEXT NOT NULL,
     "accessCode" TEXT NOT NULL DEFAULT '',
+    "accessCodeHash" TEXT NOT NULL,
     "passwordHash" TEXT NOT NULL,
     "passportUrl" TEXT NOT NULL DEFAULT '',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -96,10 +102,13 @@ CREATE TABLE "public"."OAuthAccount" (
 CREATE UNIQUE INDEX "Agent_nin_key" ON "public"."Agent"("nin");
 
 -- CreateIndex
-CREATE INDEX "Agent_email_idx" ON "public"."Agent"("email");
+CREATE INDEX "Agent_emailHash_idx" ON "public"."Agent"("emailHash");
 
 -- CreateIndex
-CREATE INDEX "Agent_phone_idx" ON "public"."Agent"("phone");
+CREATE INDEX "Agent_phoneHash_idx" ON "public"."Agent"("phoneHash");
+
+-- CreateIndex
+CREATE INDEX "Agent_ninHash_idx" ON "public"."Agent"("ninHash");
 
 -- CreateIndex
 CREATE INDEX "Agent_state_idx" ON "public"."Agent"("state");
@@ -108,13 +117,22 @@ CREATE INDEX "Agent_state_idx" ON "public"."Agent"("state");
 CREATE INDEX "Agent_lga_idx" ON "public"."Agent"("lga");
 
 -- CreateIndex
+CREATE INDEX "Agent_createdAt_idx" ON "public"."Agent"("createdAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "AgentProfile_agentId_key" ON "public"."AgentProfile"("agentId");
 
 -- CreateIndex
 CREATE INDEX "AgentProfile_agentId_idx" ON "public"."AgentProfile"("agentId");
 
 -- CreateIndex
-CREATE INDEX "AgentProfile_accessCode_idx" ON "public"."AgentProfile"("accessCode");
+CREATE INDEX "AgentProfile_phoneHash_idx" ON "public"."AgentProfile"("phoneHash");
+
+-- CreateIndex
+CREATE INDEX "AgentProfile_emailHash_idx" ON "public"."AgentProfile"("emailHash");
+
+-- CreateIndex
+CREATE INDEX "AgentProfile_accessCodeHash_idx" ON "public"."AgentProfile"("accessCodeHash");
 
 -- CreateIndex
 CREATE INDEX "AgentProfile_createdAt_idx" ON "public"."AgentProfile"("createdAt");
