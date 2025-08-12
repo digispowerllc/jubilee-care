@@ -21,10 +21,10 @@ export async function withPublicPaths(request: NextRequest): Promise<NextRespons
         request.nextUrl.pathname.startsWith(path)
     );
 
-    console.log(`Checking public paths for: ${request.nextUrl.pathname}`);
+    // console.log(`Checking public paths for: ${request.nextUrl.pathname}`);
 
     if (isPublicPath) {
-        console.log(`Public path accessed: ${request.nextUrl.pathname}`);
+        // console.log(`Public path accessed: ${request.nextUrl.pathname}`);
         return NextResponse.next();
     }
     // Default response if not a public path

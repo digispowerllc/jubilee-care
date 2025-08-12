@@ -10,5 +10,5 @@ export interface User {
 
 export const generateAuthToken = (user: User): string => {
     // In production, use a proper JWT or session token
-    return 'mock_token_' + Math.random().toString(36).substring(2);
+    return `mock_token_${user.id}_${Math.random().toString(36).substring(2)}`;
 };

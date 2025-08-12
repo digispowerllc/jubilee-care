@@ -1,5 +1,5 @@
 "use client";
-
+  import { useCallback } from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
@@ -93,43 +93,48 @@ export default function AddressUpdateModal({
     }
   };
 
-  const fetchCities = async (state: string) => {
-    setCityLoading(true);
-    try {
-      if (lgaCache.has(state)) {
-        setCities(lgaCache.get(state) || []);
-        return;
+
+
+  const fetchCities = useCallback(
+    async (state: string) => {
+      setCityLoading(true);
+      try {
+        if (lgaCache.has(state)) {
+          setCities(lgaCache.get(state) || []);
+          return;
+        }
+
+        const res = await fetch(
+          `https://apinigeria.vercel.app/api/v1/lga?state=${encodeURIComponent(
+            state
+          )}`
+        );
+        if (!res.ok) throw new Error(`Status: ${res.status}`);
+
+        const data = await res.json();
+        const cities = data.lgas;
+        setCities(cities);
+        lgaCache.set(state, cities);
+      } catch (e) {
+        console.error("Failed to fetch cities", e);
+        setCities([]);
+        alert(`Could not load LGAs for ${state}.`);
+      } finally {
+        setCityLoading(false);
       }
-
-      const res = await fetch(
-        `https://apinigeria.vercel.app/api/v1/lga?state=${encodeURIComponent(
-          state
-        )}`
-      );
-      if (!res.ok) throw new Error(`Status: ${res.status}`);
-
-      const data = await res.json();
-      const cities = data.lgas;
-      setCities(cities);
-      lgaCache.set(state, cities);
-    } catch (e) {
-      console.error("Failed to fetch cities", e);
-      setCities([]);
-      alert(`Could not load LGAs for ${state}.`);
-    } finally {
-      setCityLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadStates();
-  }, []);
-
+    },
+    [lgaCache]
+  );
   useEffect(() => {
     if (formData.state) {
       fetchCities(formData.state);
     }
-  }, [formData.state]);
+  }, [formData.state, fetchCities]);
+  useEffect(() => {
+    if (formData.state) {
+      fetchCities(formData.state);
+    }
+  }, [formData.state, fetchCities]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">

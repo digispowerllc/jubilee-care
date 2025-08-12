@@ -103,17 +103,7 @@ export const signIn = async (
 
 
         // Successful response
-        const data = await response.json();
-
-        // console.log("SignIn response data:", data);
-
-        // if (data.status === 403) {
-        //     return {
-        //         success: false,
-        //         requiresPassword: data.requiresPassword || false,
-        //         message: data.message || "Access denied. Please authenticate with your password."
-        //     };
-        // }
+        const data = await response.json();    
 
         return {
             success: data.success,
