@@ -18,15 +18,15 @@ export async function withRateLimiter(request: NextRequest): Promise<NextRespons
     response.headers.set('X-RateLimit-Policy', '15 minutes');
     response.headers.set('X-RateLimit-Bypass', isRateLimited ? 'true' : 'false');
     response.headers.set('X-RateLimit-Client-IP', ip);
-    console.log(`Rate limiting applied for IP: ${ip}`, {
-        'X-RateLimit-Limit': limit,
-        'X-RateLimit-Remaining': remaining,
-        'X-RateLimit-Reset': new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-        'X-RateLimit-Used': (limit - remaining).toString(),
-        'X-RateLimit-Policy': '15 minutes',
-        'X-RateLimit-Bypass': isRateLimited ? 'true' : 'false',
-        'X-RateLimit-Client-IP': ip,
-    });
+    // console.log(`Rate limiting applied for IP: ${ip}`, {
+    //     'X-RateLimit-Limit': limit,
+    //     'X-RateLimit-Remaining': remaining,
+    //     'X-RateLimit-Reset': new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    //     'X-RateLimit-Used': (limit - remaining).toString(),
+    //     'X-RateLimit-Policy': '15 minutes',
+    //     'X-RateLimit-Bypass': isRateLimited ? 'true' : 'false',
+    //     'X-RateLimit-Client-IP': ip,
+    // });
 
     return response;
 }

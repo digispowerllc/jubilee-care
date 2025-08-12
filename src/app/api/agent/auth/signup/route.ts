@@ -47,6 +47,7 @@ export async function POST(req: Request) {
     const phoneHash = await generateSearchableHash(phone);
     const ninHash = await generateSearchableHash(nin);
 
+
     // Check if already registered
     const existingAgent = await prisma.agent.findFirst({
       where: {
@@ -57,12 +58,14 @@ export async function POST(req: Request) {
 
     if (existingAgent) {
       return NextResponse.json(
-        { success: false, error: "Email, phone, or NIN already registered" },
+        { success: false, error: "e-Mail address, phone, or NIN already registered" },
         { status: 409 }
       );
     }
 
     const agentUID = generateAgentId();
+    const DEFAULT_ACCESS_CODE = "N0Acc355C0d3";
+    // This is the default access code used for agent registration.
 
     // Create agent & profile in a transaction
     const result = await prisma.$transaction(async (prismaTx) => {
@@ -95,8 +98,8 @@ export async function POST(req: Request) {
           emailHash,
           phone: (await protectData(phone, "phone")).encrypted,
           phoneHash,
-          accessCode: (await protectData("N0Acc355C0d3", "phone")).encrypted,
-          accessCodeHash: await generateSearchableHash("N0Acc355C0d3"), 
+          accessCode: (await protectData(DEFAULT_ACCESS_CODE, "phone")).encrypted,
+          accessCodeHash: await generateSearchableHash(DEFAULT_ACCESS_CODE),
           passwordHash: (await protectData(password, "system-code")).encrypted,
         },
       });

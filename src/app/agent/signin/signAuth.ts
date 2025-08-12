@@ -93,7 +93,7 @@ export const signIn = async (
                     success: false,
                     message: "Incorrect credentials. Please try again later."
                 };
-            } catch (e) {
+            } catch {
                 return {
                     success: false,
                     message: `Server error: ${response.status} ${response.statusText}`
@@ -101,8 +101,20 @@ export const signIn = async (
             }
         }
 
+
         // Successful response
         const data = await response.json();
+
+        // console.log("SignIn response data:", data);
+
+        // if (data.status === 403) {
+        //     return {
+        //         success: false,
+        //         requiresPassword: data.requiresPassword || false,
+        //         message: data.message || "Access denied. Please authenticate with your password."
+        //     };
+        // }
+
         return {
             success: data.success,
             token: data.token,

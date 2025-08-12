@@ -3,12 +3,13 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import {
     unprotectData,
-    verifyHash,
     generateSearchableHash
 } from "@/lib/security/dataProtection";
 import { z } from "zod";
 
+// Default credentials
 const DEFAULT_ACCESS_CODE = "N0Acc355C0d3";
+
 
 const signInSchema = z.object({
     identifier: z.string().min(1, "Identifier is required"),
@@ -18,7 +19,6 @@ const signInSchema = z.object({
 
 export async function POST(req: Request) {
     try {
-        // --- Validate content type ---
         const contentType = req.headers.get("content-type");
         if (!contentType?.includes("application/json")) {
             return NextResponse.json(
@@ -27,23 +27,19 @@ export async function POST(req: Request) {
             );
         }
 
-        // --- Parse body ---
         const body = await req.json();
         const parseResult = signInSchema.safeParse(body);
 
         if (!parseResult.success) {
             return NextResponse.json(
-                { success: false, error: parseResult.error.flatten() },
+                { success: false, error: z.treeifyError(parseResult.error) },
                 { status: 400 }
             );
         }
 
         const { identifier, credential, usePassword } = parseResult.data;
-
-        // --- Searchable hash for email/phone ---
         const idHash = await generateSearchableHash(identifier);
 
-        // --- Find agent by identifier ---
         const agent = await prisma.agent.findFirst({
             where: {
                 OR: [
@@ -62,33 +58,31 @@ export async function POST(req: Request) {
             );
         }
 
-        // --- Authentication ---
         let isAuthenticated = false;
+        let requiresChange = false;
 
         if (usePassword) {
-            // Compare with hashed password
-            isAuthenticated = await verifyHash(
-                credential,
-                agent.profile.passwordHash
-            );
+            // Decrypt stored password then compare
+            const storedPassword = await unprotectData(agent.profile.passwordHash, "phone");
+            if (storedPassword === credential) {
+                isAuthenticated = true;
+
+                // Check if it's the default password
+                if (storedPassword === DEFAULT_ACCESS_CODE) {
+                    requiresChange = true;
+                }
+            }
         } else {
             // Compare hashed access code
             const credentialHash = await generateSearchableHash(credential);
-            isAuthenticated =
-                Boolean(agent.profile.accessCodeHash) &&
-                credentialHash === agent.profile.accessCodeHash;
+            if (agent.profile.accessCodeHash && credentialHash === agent.profile.accessCodeHash) {
+                isAuthenticated = true;
 
-            // If access code matches and it's the default one — warn
-            if (isAuthenticated && agent.profile.accessCode === DEFAULT_ACCESS_CODE) {
-                return NextResponse.json({
-                    success: true,
-                    requiresPassword: true,
-                    message: "Default access code in use. Please change your access code before continuing.",
-                    user: {
-                        id: agent.id,
-                        agentId: agent.profile.agentId
-                    }
-                });
+                // Check if it's the default access code
+                const defaultHash = await generateSearchableHash(DEFAULT_ACCESS_CODE);
+                if (agent.profile.accessCodeHash === defaultHash) {
+                    requiresChange = true;
+                }
             }
         }
 
@@ -99,14 +93,22 @@ export async function POST(req: Request) {
             );
         }
 
-        // --- Decrypt data ---
+        if (requiresChange) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    requiresPassword: true,
+                    message: "Default access code in use. Please use your password.",
+                    statusCode: 403
+                });
+        }
+
         const [firstName, surname, email] = await Promise.all([
             unprotectData(agent.firstName, "name"),
             unprotectData(agent.surname, "name"),
             unprotectData(agent.email, "email"),
         ]);
 
-        // --- Create token ---
         const token = await generateAuthToken(agent.id, req);
 
         return NextResponse.json({
@@ -140,7 +142,7 @@ export async function generateAuthToken(agentId: string, req?: Request) {
         userAgent = req.headers.get("user-agent") || undefined;
     }
 
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     await prisma.agentSession.create({
         data: {

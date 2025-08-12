@@ -24,9 +24,31 @@ export const submitAgentSignup = async (agentData: AgentData, password: string) 
             }),
         });
 
+        if (response.status === 400) {
+            const errorData = await response.json();
+            notifyError(errorData.error || "Invalid request");
+            return false;
+        }
+
+        // Validate response content type
+        if (response.status === 409) {
+            const errorData = await response.json();
+            notifyError(errorData.error || "e-Mail address, phone, or NIN already registered");
+            return false;
+        }
+
+        if (response.status === 500) {
+            const errorData = await response.json();
+            notifyError(errorData.error || "Internal server error");
+            return false;
+        }
+
+        // Check if the response is OK
         if (!response.ok) {
             throw new Error(await response.text());
         }
+
+
 
         notifySuccess("Account created successfully!");
         return true;
