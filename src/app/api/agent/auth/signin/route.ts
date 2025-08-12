@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { generateAuthToken } from "@/lib/security/generators";
 import {
     unprotectData,
     generateSearchableHash,
@@ -108,28 +108,4 @@ export async function POST(req: Request) {
     }
 }
 
-export async function generateAuthToken(agentId: string, req?: Request) {
-    const plainToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = crypto.createHash("sha256").update(plainToken).digest("hex");
 
-    let ipAddress: string | undefined;
-    let userAgent: string | undefined;
-    if (req) {
-        ipAddress = req.headers.get("x-forwarded-for") || undefined;
-        userAgent = req.headers.get("user-agent") || undefined;
-    }
-
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-    await prisma.agentSession.create({
-        data: {
-            agentId,
-            token: tokenHash,
-            ipAddress,
-            userAgent,
-            expiresAt,
-        },
-    });
-
-    return plainToken;
-}
