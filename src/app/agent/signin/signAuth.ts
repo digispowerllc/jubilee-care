@@ -36,15 +36,14 @@ interface NimcVerificationResult {
 
 export const signIn = async (
     identifier: string,
-    credential: string,
-    usePassword: boolean = false
+    password: string
 ): Promise<AuthResult> => {
     try {
         // Basic validation
-        if (!identifier || !credential) {
+        if (!identifier || !password) {
             return {
                 success: false,
-                message: "Please provide your email or phone."
+                message: "Please provide your email or phone, and your password."
             };
         }
 
@@ -52,12 +51,12 @@ export const signIn = async (
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "X-Requested-With": "XMLHttpRequest" // Helps identify AJAX requests
+                "X-Requested-With": "XMLHttpRequest"
             },
             body: JSON.stringify({
                 identifier,
-                credential,
-                usePassword,
+                password: password,
+                usePassword: true, // Explicitly indicate password usage
                 timestamp: new Date().toISOString()
             }),
         });
@@ -67,13 +66,20 @@ export const signIn = async (
             let errorData: unknown;
             try {
                 errorData = await response.json();
-                // Type guard for expected errorData structure
                 if (
                     typeof errorData === "object" &&
                     errorData !== null &&
                     "requiresPassword" in errorData
                 ) {
-                    const err = errorData as { requiresPassword?: boolean; message?: string; error?: { fieldErrors?: string; formErrors?: string; message?: string } };
+                    const err = errorData as {
+                        requiresPassword?: boolean;
+                        message?: string;
+                        error?: {
+                            fieldErrors?: string;
+                            formErrors?: string;
+                            message?: string;
+                        };
+                    };
                     if (err.requiresPassword) {
                         return {
                             success: true,
@@ -83,15 +89,16 @@ export const signIn = async (
                     }
                     return {
                         success: false,
-                        message: err.error?.fieldErrors ||
+                        message:
+                            err.error?.fieldErrors ||
                             err.error?.formErrors ||
                             err.message ||
-                            "Authentication failed. Please try again later."
+                            "Authentication failed. Please try again."
                     };
                 }
                 return {
                     success: false,
-                    message: "Incorrect credentials. Please try again later."
+                    message: "Incorrect credentials. Please try again."
                 };
             } catch {
                 return {
@@ -100,7 +107,6 @@ export const signIn = async (
                 };
             }
         }
-
 
         // Successful response
         const data = await response.json();
@@ -117,10 +123,14 @@ export const signIn = async (
         console.error("SignIn error:", error);
         return {
             success: false,
-            message: error instanceof Error ? error.message : "Network error during authentication"
+            message:
+                error instanceof Error
+                    ? error.message
+                    : "Network error during authentication"
         };
     }
 };
+
 
 export const providerSignIn = async (
     provider: AuthProvider,

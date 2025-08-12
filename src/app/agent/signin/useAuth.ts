@@ -10,10 +10,10 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(false);
   const [nimcLoading, setNimcLoading] = useState(false);
 
-  const handleSignIn = async (identifier: string, accessCode: string) => {
+  const handleSignIn = async (identifier: string, password: string) => {
     setLoading(true);
     try {
-      const result = await signIn(identifier, accessCode);
+      const result = await signIn(identifier, password);
       if (result.success) {
         router.push(redirectTo);
       }

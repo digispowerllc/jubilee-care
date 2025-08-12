@@ -1,111 +1,77 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { generateAuthToken } from "@/lib/security/generators";
-import {
-    unprotectData,
-    generateSearchableHash,
-    verifyHash,
-} from "@/lib/security/dataProtection";
+import { generateSearchableHash, verifyProtectedData } from "@/lib/security/dataProtection";
 import { z } from "zod";
 
 const signInSchema = z.object({
-    identifier: z.string().min(1, "Email or phone is required"),
-    credential: z.string().min(1, "Password is required"),
-    usePassword: z.boolean().optional().default(true), // force password usage
+    identifier: z.string().min(3).max(100), // email or phone
+    password: z.string().min(8),
 });
 
 export async function POST(req: Request) {
     try {
-        const contentType = req.headers.get("content-type");
-        if (!contentType?.includes("application/json")) {
-            return NextResponse.json(
-                { success: false, error: "Content-Type must be application/json" },
-                { status: 415 }
-            );
-        }
-
         const body = await req.json();
         const parseResult = signInSchema.safeParse(body);
 
         if (!parseResult.success) {
             return NextResponse.json(
-                { success: false, error: z.treeifyError(parseResult.error) },
+                { success: false, error: parseResult.error.flatten() },
                 { status: 400 }
             );
         }
 
-        const { identifier, credential } = parseResult.data;
-        const idHash = await generateSearchableHash(identifier);
+        const { identifier, password } = parseResult.data;
 
-        // Find agent by emailHash or phoneHash ONLY
-        const agent = await prisma.agent.findFirst({
+        // Generate normalized searchable hash for identifier
+        const identifierHash = await generateSearchableHash(identifier);
+
+        // Look up by either emailHash or phoneHash
+        const agentProfile = await prisma.agentProfile.findFirst({
             where: {
-                OR: [{ emailHash: idHash }, { phoneHash: idHash }],
+                OR: [
+                    { emailHash: identifierHash },
+                    { phoneHash: identifierHash }
+                ],
             },
-            include: { profile: true },
+            select: {
+                id: true,
+                agentId: true,
+                passwordHash: true,
+            },
         });
 
-        if (!agent?.profile) {
+        if (!agentProfile) {
             return NextResponse.json(
-                { success: false, error: "Invalid credentials" },
+                { success: false, error: "Invalid email/phone or password" },
                 { status: 401 }
             );
         }
 
-        // Verify password (hashed)
-        const isPasswordValid = await verifyHash(
-            credential,
-            agent.profile.passwordHash
+        // Verify password
+        const passwordMatch = await verifyProtectedData(password, agentProfile.passwordHash, "system-code");
+
+        if (!passwordMatch) {
+            return NextResponse.json(
+                { success: false, error: "Invalid email/phone or password" },
+                { status: 401 }
+            );
+        }
+
+        // ✅ Authentication successful — you can set cookies or return session data here
+        return NextResponse.json(
+            {
+                success: true,
+                message: "Login successful",
+                agentId: agentProfile.agentId,
+            },
+            { status: 200 }
         );
 
-        if (!isPasswordValid) {
-            return NextResponse.json(
-                { success: false, error: "Invalid credentials" },
-                { status: 401 }
-            );
-        }
-
-        // // Check if password is default and require change
-        // const isDefaultPassword =
-        //     credential === DEFAULT_PASSWORD; // or compare hashes if you store hashed default
-
-        // if (isDefaultPassword) {
-        //     return NextResponse.json({
-        //         success: false,
-        //         requiresPassword: true,
-        //         message:
-        //             "Default password in use. Please log in with your password.",
-        //         statusCode: 403,
-        //     });
-        // }
-
-        // Decrypt profile info
-        const [firstName, surname, email] = await Promise.all([
-            unprotectData(agent.firstName, "name"),
-            unprotectData(agent.surname, "name"),
-            unprotectData(agent.email, "email"),
-        ]);
-
-        const token = await generateAuthToken(agent.id, req);
-
-        return NextResponse.json({
-            success: true,
-            token,
-            user: {
-                id: agent.id,
-                agentId: agent.profile.agentId,
-                firstName,
-                surname,
-                email,
-            },
-        });
     } catch (error) {
-        console.error("SignIn error:", error);
+        console.error("Sign in error:", error);
         return NextResponse.json(
-            { success: false, error: "Authentication failed. Please try again." },
+            { success: false, error: "Login failed. Please try again." },
             { status: 500 }
         );
     }
 }
-
-

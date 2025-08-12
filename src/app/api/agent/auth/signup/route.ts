@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     }
 
     const agentUID = generateAgentId();
-    const DEFAULT_ACCESS_CODE = "N0Acc355C0d3";
+    const DEFAULT_ACCESS_CODE = "";
     // This is the default access code used for agent registration.
 
     // Create agent & profile in a transaction
@@ -98,8 +98,10 @@ export async function POST(req: Request) {
           emailHash,
           phone: (await protectData(phone, "phone")).encrypted,
           phoneHash,
-          accessCode: (await protectData(DEFAULT_ACCESS_CODE, "phone")).encrypted,
-          accessCodeHash: await generateSearchableHash(DEFAULT_ACCESS_CODE),
+          accessCode: DEFAULT_ACCESS_CODE,
+          accessCodeHash: DEFAULT_ACCESS_CODE,
+          // accessCode: (await protectData(DEFAULT_ACCESS_CODE, "phone")).encrypted,
+          // accessCodeHash: await generateSearchableHash(DEFAULT_ACCESS_CODE),
           passwordHash: (await protectData(password, "system-code")).encrypted,
         },
       });

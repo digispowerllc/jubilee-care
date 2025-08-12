@@ -6,7 +6,7 @@ import Link from "next/link";
 type AuthFormProps = {
   loading: boolean;
   nimcLoading: boolean;
-  onSubmit: (identifier: string, accessCode: string) => void;
+  onSubmit: (identifier: string, password: string) => void;
   onProviderSignIn: (provider: "google" | "github") => void;
   onNimcVerify: (nin: string) => void;
 };
@@ -19,15 +19,15 @@ export const AuthForm = ({
   onNimcVerify,
 }: AuthFormProps) => {
   const [identifier, setIdentifier] = useState("");
-  const [accessCode, setAccessCode] = useState("");
-  const [showAccessCode, setShowAccessCode] = useState(false);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [nimcNin, setNimcNin] = useState("");
   const [activeTab, setActiveTab] = useState<"standard" | "nimc">("standard");
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(identifier, accessCode);
+    onSubmit(identifier, password);
   };
 
   const handleNimcSubmit = (e: React.FormEvent) => {
@@ -161,9 +161,9 @@ export const AuthForm = ({
             </label>
             <div className="relative">
               <input
-                type={showAccessCode ? "text" : "password"}
-                value={accessCode}
-                onChange={(e) => setAccessCode(e.target.value)}
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 pr-12"
                 placeholder="Enter your password"
                 disabled={loading}
@@ -171,10 +171,10 @@ export const AuthForm = ({
               <button
                 type="button"
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                onClick={() => setShowAccessCode(!showAccessCode)}
+                onClick={() => setShowPassword(!showPassword)}
                 disabled={loading}
               >
-                {showAccessCode ? (
+                {showPassword ? (
                   <EyeOff className="h-5 w-5" />
                 ) : (
                   <Eye className="h-5 w-5" />

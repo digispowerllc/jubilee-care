@@ -46,7 +46,7 @@ model AgentProfile {
   phone          String
   phoneHash      String    @unique
   accessCode     String    @default("")
-  accessCodeHash String // Optional: hashed access code for quick auth checks
+  accessCodeHash String    @default("")
   passwordHash   String
   passportUrl    String    @default("")
   createdAt      DateTime  @default(now())
