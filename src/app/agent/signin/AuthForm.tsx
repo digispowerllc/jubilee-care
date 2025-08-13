@@ -39,7 +39,15 @@ export const AuthForm = ({
     e.preventDefault();
     setValidationError(null);
 
-   
+   if (!validateIdentifier(identifier)) {
+      setValidationError("Please enter a valid email or phone number");
+      return;
+    }
+
+    if (!password) {
+      setValidationError("Please enter your password");
+      return;
+    }
 
     onSubmit(identifier, password);
   };
@@ -66,7 +74,12 @@ export const AuthForm = ({
           <div className="inline-flex rounded-md shadow-sm" role="group">
             <button
               type="button"
-              onClick={() => setActiveTab("standard")}
+              onClick={() => {
+                setActiveTab("standard");
+                setIdentifier("");
+                setPassword("");
+                setValidationError(null);
+              }}
               className={`px-4 py-2 text-sm font-medium rounded-l-lg border ${
                 activeTab === "standard"
                   ? "bg-green-600 text-white border-green-600"
@@ -77,7 +90,11 @@ export const AuthForm = ({
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab("nimc")}
+              onClick={() => {
+                setActiveTab("nimc");
+                setNimcNin("");
+                setValidationError(null);
+              }}
               className={`px-4 py-2 text-sm font-medium rounded-r-lg border ${
                 activeTab === "nimc"
                   ? "bg-green-600 text-white border-green-600"

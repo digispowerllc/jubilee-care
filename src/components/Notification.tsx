@@ -1,7 +1,7 @@
 // components/Notification.tsx
 "use client";
 
-import { useCallback } from "react";
+import React, { useCallback } from "react";
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -117,10 +117,10 @@ export function Notification({
   };
 
   const positionClasses = {
-    "top-right": "right-4",
-    "top-left": "left-4",
-    "bottom-right": "right-4",
-    "bottom-left": "left-4",
+    "top-right": "right-4 top-16",
+    "top-left": "left-4 top-16",
+    "bottom-right": "right-4 bottom-16",
+    "bottom-left": "left-4 bottom-16",
   };
 
   const dismissNotification = (id: string) => {
@@ -151,18 +151,20 @@ export function Notification({
               top: `${positionStyle?.top || calculateTopPosition(0)}px`,
             }}
           >
-            <div className="flex items-start gap-3 p-4">
-              <div className="flex-shrink-0">{iconMap[notification.type]}</div>
+            <div className="flex items-start gap-2 p-2">
+              <div className="flex-shrink-0">
+                {React.cloneElement(iconMap[notification.type], {
+                  className: "w-4 h-4",
+                })}
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium break-words">
-                  {notification.message}
-                </p>
+                <p className="text-sm break-words">{notification.message}</p>
               </div>
               <button
                 onClick={() => dismissNotification(notification.id)}
                 className="flex-shrink-0 text-current opacity-50 hover:opacity-100 transition-opacity"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3 h-3" />
               </button>
             </div>
 
