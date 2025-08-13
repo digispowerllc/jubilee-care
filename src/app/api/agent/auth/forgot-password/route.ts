@@ -13,7 +13,7 @@ import { subHours } from 'date-fns';
 // Security configuration
 const SECURITY_CONFIG = {
   RATE_LIMIT: {
-    WINDOW_MS: 60 * 60 * 5000, // 5 hour
+    WINDOW_MS: 60 * 60 * 5000, // 5 hour window
     MAX_ATTEMPTS: 5,
   },
   RESET_TOKEN: {
@@ -38,6 +38,10 @@ export async function POST(req: Request) {
   let agentProfileId: string | null = null;
 
   try {
+    // Clone the request to read body multiple times if needed
+    const clonedRequest = req.clone();
+    const body = await clonedRequest.json();
+
     // Rate limiting by IP
     const ip = getClientIp(req) || 'unknown';
     const rateLimitResult = await rateLimit({
@@ -57,13 +61,12 @@ export async function POST(req: Request) {
         },
         {
           status: 429,
-          headers: { 'Retry-After': String((rateLimitResult.reset - Date.now()) / 1000) } // in seconds
+          headers: { 'Retry-After': String(Math.floor((rateLimitResult.reset - Date.now()) / 1000)) }
         }
       );
     }
 
     // Validate request body
-    const body = await req.json();
     const parseResult = forgotPasswordSchema.safeParse(body);
 
     if (!parseResult.success) {
@@ -94,8 +97,6 @@ export async function POST(req: Request) {
       select: {
         id: true,
         email: true,
-        passwordResetAttempts: true,
-        lastPasswordResetAt: true,
         accountLockedUntil: true,
       },
     });
@@ -130,7 +131,7 @@ export async function POST(req: Request) {
     });
 
     if (recentAttempts >= SECURITY_CONFIG.ACCOUNT_LOCKOUT.MAX_ATTEMPTS) {
-      // Lock account for 1 hour
+      // Lock account for the rate limit window duration
       const lockoutUntil = new Date(Date.now() + SECURITY_CONFIG.RATE_LIMIT.WINDOW_MS);
 
       await prisma.agentProfile.update({
@@ -143,7 +144,7 @@ export async function POST(req: Request) {
         {
           success: false,
           error: "account_temporarily_locked",
-          message: "Too many reset attempts. Account temporarily locked for 1 hour."
+          message: `Too many reset attempts. Account temporarily locked for ${SECURITY_CONFIG.RATE_LIMIT.WINDOW_MS / (60 * 60 * 1000)} hours.`
         },
         { status: 429 }
       );
@@ -151,7 +152,8 @@ export async function POST(req: Request) {
 
     // Generate secure reset token
     const { token: resetToken } = await generateResetToken(
-      agentProfile.id
+      agentProfile.id,
+      SECURITY_CONFIG.RESET_TOKEN.EXPIRY_HOURS
     );
 
     const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/reset-password?token=${resetToken}`;
@@ -174,21 +176,13 @@ export async function POST(req: Request) {
     ]);
 
     // Send email (async with error handling)
-    sendPasswordResetEmail({
+    await sendPasswordResetEmail({
       email: agentProfile.email,
       name: agentProfile.email.split('@')[0],
       resetLink,
       expiryHours: SECURITY_CONFIG.RESET_TOKEN.EXPIRY_HOURS,
       ipAddress: ip,
-    })
-      .then(() => writeToLogger('info', `Password reset email sent to ${agentProfile.email}`))
-      .catch((err: unknown) => {
-        if (err instanceof Error) {
-          writeToLogger('error', `Failed to send password reset email: ${err.message}`);
-        } else {
-          writeToLogger('error', 'Failed to send password reset email: Unknown error');
-        }
-      });
+    });
 
     writeToLogger('info', `Password reset initiated for user ${agentProfile.id}`);
     return NextResponse.json(successResponse, { status: 200 });

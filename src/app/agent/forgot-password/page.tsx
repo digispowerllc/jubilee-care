@@ -22,8 +22,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      // Replace this with your actual password reset API call
-      const response = await fetch("/api/auth/forgot-password", {
+      const response = await fetch("/api/agent/auth/forgot-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -31,17 +30,28 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
-
+      // First check if the response is OK
       if (!response.ok) {
-        throw new Error(data.message || "Failed to send reset email");
+        // Try to parse error response as JSON, fallback to text if it fails
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to send reset email");
+        } catch {
+          const textError = await response.text();
+          throw new Error(textError || "Failed to send reset email");
+        }
       }
 
+      // If response is OK, parse the JSON
+      const data = await response.json();
       setSubmitted(true);
+      return data;
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "An unknown error occurred"
       );
+      // Return null or throw the error depending on your needs
+      return null;
     } finally {
       setLoading(false);
     }

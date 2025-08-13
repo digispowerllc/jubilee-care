@@ -3,6 +3,7 @@ import { randomBytes, timingSafeEqual, createHash } from 'crypto';
 import { createClient } from 'redis';
 import { prisma } from './prisma';
 import { addHours, isAfter } from 'date-fns';
+import { writeToLogger } from './logger';
 
 // Initialize Redis client
 const redis = createClient({
@@ -38,27 +39,46 @@ export const validateApiKey = (apiKey: string | undefined): boolean => {
     return inputBuffer.length === envBuffer.length &&
         timingSafeEqual(inputBuffer, envBuffer);
 };
+/**
+ * Generate a secure password reset token.
+ * 
+ * @param userId - The ID of the user requesting the reset.
+ * @param expiryHours - How long before the token expires.
+ * @returns { token, expiresAt }
+ */
+export async function generateResetToken(
+  userId: string,
+  expiryHours: number
+): Promise<{ token: string; expiresAt: Date }> {
+  // Generate random 32-byte token
+  const token = randomBytes(32).toString('hex');
 
-// Password Reset System
-export const generateResetToken = async (userId: string): Promise<{ token: string; expiresAt: Date }> => {
-    const token = randomBytes(32).toString('hex');
-    const expiresAt = addHours(new Date(), PASSWORD_RESET_TOKEN_EXPIRY_HOURS);
-    const tokenHash = createHash('sha256').update(token).digest('hex');
+  // Compute expiry timestamp
+  const expiresAt = addHours(new Date(), expiryHours);
 
-    // Store in Redis with TTL
-    await redis.setEx(`reset:${tokenHash}`, PASSWORD_RESET_TOKEN_EXPIRY_HOURS * 3600, userId);
+  // SHA-256 hash for secure storage
+  const tokenHash = createHash('sha256').update(token).digest('hex');
 
-    // Store in database
-    await prisma.passwordResetToken.create({
-        data: {
-            tokenHash,
-            agentId: userId,
-            expiresAt,
-        },
-    });
+  // Redis key for quick verification & rate-limiting checks
+  const redisKey = `reset:${tokenHash}`;
 
-    return { token, expiresAt };
-};
+  // Store token in Redis with TTL for fast access
+  await redis.set(redisKey, userId, { EX: expiryHours * 3600 });
+
+  // Persist token in DB (for audit + fallback if Redis fails)
+  await prisma.passwordResetToken.create({
+    data: {
+      tokenHash,
+      agentId: userId,
+      expiresAt,
+    },
+  });
+
+  writeToLogger('debug', `Generated password reset token for user: ${userId}`);
+
+  return { token, expiresAt };
+}
+
 
 export const verifyResetToken = async (token: string): Promise<{ isValid: boolean; userId?: string; error?: string }> => {
     const tokenHash = createHash('sha256').update(token).digest('hex');
