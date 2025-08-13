@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 export default function VerifyAccountPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
-  const email = searchParams.get("email");
+  const sid = searchParams.get("sid");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export default function VerifyAccountPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ token, email }),
+        body: JSON.stringify({ token, sid }),
       });
 
       const data = await response.json();

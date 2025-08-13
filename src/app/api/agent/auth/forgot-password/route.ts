@@ -12,20 +12,12 @@ import { subHours } from "date-fns";
 
 // ===== Security Config =====
 const SECURITY_CONFIG = {
-  BASE_LOCK_HOURS: 3,       // first-time lockout length
-  PENALTY_MONTHS: 1,        // extra months added per retry while locked
-  MAX_LOCK_DAYS: 365,       // cap lockout to 1 year
-  ACCOUNT_LOCKOUT: {
-    MAX_ATTEMPTS: 3,
-    WINDOW_HOURS: 1,
-  },
-  RATE_LIMIT: {
-    WINDOW_MS: 1000 * 60 * 60, // 1 hour IP rate limit
-    MAX_ATTEMPTS: 10,
-  },
-  RESET_TOKEN: {
-    EXPIRY_HOURS: 1,
-  },
+  BASE_LOCK_HOURS: 3,
+  PENALTY_MONTHS: 1,
+  MAX_LOCK_DAYS: 365,
+  ACCOUNT_LOCKOUT: { MAX_ATTEMPTS: 3, WINDOW_HOURS: 1 },
+  RATE_LIMIT: { WINDOW_MS: 1000 * 60 * 60, MAX_ATTEMPTS: 10 },
+  RESET_TOKEN: { EXPIRY_HOURS: 1 },
 };
 
 // ===== Helpers =====
@@ -93,17 +85,13 @@ export async function POST(req: Request) {
       message: "If an account exists with this email, you'll receive a reset link shortly",
     };
 
-    if (!agentProfile) {
-      // Always return success to avoid email enumeration
-      return NextResponse.json(successResponse, { status: 200 });
-    }
+    if (!agentProfile) return NextResponse.json(successResponse, { status: 200 });
 
     // ===== Persistent Lockout Check =====
     if (agentProfile.accountLockedUntil && new Date() < agentProfile.accountLockedUntil) {
       let newLockoutUntil = agentProfile.accountLockedUntil;
       let newLockoutCount = agentProfile.lockoutCount ?? 0;
 
-      // Every retry adds months to the lock, capped at 1 year
       newLockoutCount += 1;
       const addedMs = SECURITY_CONFIG.PENALTY_MONTHS * 30 * 24 * 60 * 60 * 1000;
       newLockoutUntil = new Date(
@@ -165,13 +153,26 @@ export async function POST(req: Request) {
     }
 
     // ===== Generate Token and Send Email =====
-    // Generate token
-    const { token: resetToken, expiresAt } = await generateResetToken(agentProfile.id);
-    const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/agent/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
+    // 1️⃣ Delete all previous tokens first
+    await prisma.passwordResetToken.deleteMany({
+      where: { agentId: agentProfile.id },
+    });
+
+    // 2️⃣ Generate a new reset token
+    const { token: resetToken, expiresAt } = await generateResetToken(agentProfile.id);
+
+    // Use agentId (sid) instead of email
+    const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/agent/reset-password?token=${resetToken}&sid=${agentProfile.id}`;
+
+    // 3️⃣ Log the reset attempt and update lastPasswordResetAt in a transaction
     await prisma.$transaction([
       prisma.passwordResetEvent.create({
-        data: { agentId: agentProfile.id, ipAddress: ip, userAgent: req.headers.get("user-agent") || undefined },
+        data: {
+          agentId: agentProfile.id,
+          ipAddress: ip,
+          userAgent: req.headers.get("user-agent") || undefined,
+        },
       }),
       prisma.agentProfile.update({
         where: { id: agentProfile.id },

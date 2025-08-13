@@ -90,6 +90,7 @@ export const markTokenAsUsed = async (token: string): Promise<void> => {
   });
 };
 
+
 // Session Management
 export const createSession = async (
   userId: string,
@@ -130,6 +131,13 @@ export const invalidateAllSessions = async (
 export const cleanupExpiredSessions = async (): Promise<number> => {
   const { count } = await prisma.agentSession.deleteMany({
     where: { expiresAt: { lt: new Date() } },
+  });
+  return count;
+};
+
+export const cleanupTokens = async (agentId: string): Promise<number> => {
+  const { count } = await prisma.passwordResetToken.deleteMany({
+    where: { agentId, expiresAt: { lt: new Date() }, usedAt: null },
   });
   return count;
 };
