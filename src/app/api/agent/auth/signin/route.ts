@@ -4,8 +4,15 @@ import { generateSearchableHash, verifyProtectedData } from "@/lib/security/data
 import { z } from "zod";
 
 const signInSchema = z.object({
-    identifier: z.string().min(3).max(100), // email or phone
-    password: z.string().min(8),
+    identifier: z.string().min(1, "Email or phone is required")
+        .refine(val => {
+            // Validate as either email or phone number
+            const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+            const isPhone = /^\+?[\d\s-]{10,}$/.test(val);
+            return isEmail || isPhone;
+        }, "Must be a valid email or phone number"),
+    password: z.string().min(1, "Password is required")
+        .min(8, "Password must be at least 8 characters"),
 });
 
 export async function POST(req: Request) {

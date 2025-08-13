@@ -47,6 +47,17 @@ export const signIn = async (
             };
         }
 
+        // Validate identifier format (either email or phone)
+        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+        const isPhone = /^\+?[\d\s-]{10,}$/.test(identifier);
+        
+        if (!isEmail && !isPhone) {
+            return {
+                success: false,
+                message: "Please enter a valid email address or phone number"
+            };
+        }
+
         const response = await fetch("/api/agent/auth/signin", {
             method: "POST",
             headers: {
