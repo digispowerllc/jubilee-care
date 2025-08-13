@@ -1,7 +1,7 @@
+// File: src/app/api/auth/verify-account/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createHash } from "crypto";
-import { verifyResetToken, markTokenAsUsed } from "@/lib/auth";
+import { verifyResetToken, markTokenAsUsed } from "@/lib/auth-utils";
 import { writeToLogger } from "@/lib/logger";
 
 export async function POST(req: Request) {
@@ -13,22 +13,18 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: "Missing token or email" }, { status: 400 });
         }
 
-        // Verify token
         const { isValid, userId, email: tokenEmail, error } = await verifyResetToken(token);
 
         if (!isValid) {
             return NextResponse.json({ success: false, message: error || "Invalid token" }, { status: 400 });
         }
 
-        // Ensure email matches
         if (tokenEmail !== email.toLowerCase()) {
             return NextResponse.json({ success: false, message: "Token does not match the provided email" }, { status: 400 });
         }
 
-        // Mark token as used
         await markTokenAsUsed(token);
 
-        // Mark account as verified
         await prisma.agentProfile.update({
             where: { id: userId },
             data: { emailVerified: true },
