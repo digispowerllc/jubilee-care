@@ -160,7 +160,7 @@ export async function POST(req: Request) {
     });
 
     // 2️⃣ Generate a new reset token
-    const { token: resetToken, expiresAt } = await generateResetToken(agentProfile.id);
+    const { token: resetToken } = await generateResetToken(agentProfile.id);
 
     // Use agentId (sid) instead of email
     const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/agent/reset-password?token=${resetToken}&sid=${agentProfile.id}`;
