@@ -8,27 +8,29 @@ datasource db {
 }
 
 model Agent {
-  id            String         @id @default(uuid())
-  surname       String
-  firstName     String
-  otherName     String
-  email         String
-  phone         String
-  nin           String         @unique
-  state         String
-  lga           String
-  address       String
-  emailHash     String         @unique
-  phoneHash     String         @unique
-  ninHash       String         @unique
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @default(now())
-  isActive      Boolean        @default(true)
-  isAdmitted    Boolean        @default(false)
-  isDeleted     Boolean        @default(false)
-  profile       AgentProfile?
-  oauthAccounts OAuthAccount[]
-  AgentSession  AgentSession[]
+  id                 String               @id @default(uuid())
+  surname            String
+  firstName          String
+  otherName          String
+  email              String
+  phone              String
+  nin                String               @unique
+  state              String
+  lga                String
+  address            String
+  emailHash          String               @unique
+  phoneHash          String               @unique
+  ninHash            String               @unique
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @default(now())
+  isActive           Boolean              @default(true)
+  isAdmitted         Boolean              @default(false)
+  isDeleted          Boolean              @default(false)
+  profile            AgentProfile?
+  oauthAccounts      OAuthAccount[]
+  AgentSession       AgentSession[]
+  PasswordResetToken PasswordResetToken[]
+  PasswordResetEvent PasswordResetEvent[]
 
   @@index([emailHash])
   @@index([phoneHash])
@@ -39,20 +41,24 @@ model Agent {
 }
 
 model AgentProfile {
-  id             String    @id
-  agentId        String    @unique
-  email          String
-  emailHash      String    @unique
-  phone          String
-  phoneHash      String    @unique
-  accessCode     String    @default("")
-  accessCodeHash String    @default("")
-  passwordHash   String
-  passportUrl    String    @default("")
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @default(now()) @updatedAt
-  deletedAt      DateTime?
-  agent          Agent     @relation(fields: [id], references: [id], onDelete: Cascade)
+  id                    String               @id
+  agentId               String               @unique
+  email                 String
+  emailHash             String               @unique
+  phone                 String
+  phoneHash             String               @unique
+  accessCode            String               @default("")
+  accessCodeHash        String               @default("")
+  passwordHash          String
+  passportUrl           String               @default("")
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @default(now()) @updatedAt
+  deletedAt             DateTime?
+  passwordResetAttempts Int?
+  accountLockedUntil    DateTime?
+  lastPasswordResetAt   DateTime?
+  agent                 Agent                @relation(fields: [id], references: [id], onDelete: Cascade)
+  PasswordResetToken    PasswordResetToken[]
 
   @@index([agentId])
   @@index([phoneHash])
@@ -62,21 +68,44 @@ model AgentProfile {
 }
 
 model AgentSession {
-  id      String @id @default(cuid()) // Unique session ID
-  agentId String
-
-  token     String    @unique // Auth token (JWT or random string)
-  ipAddress String? // Optional: store where session came from
-  userAgent String? // Optional: device info
+  id        String    @id @default(cuid())
+  token     String    @unique
+  agentId   String
+  agent     Agent     @relation(fields: [agentId], references: [id])
+  ipAddress String?
+  userAgent String?
   createdAt DateTime  @default(now())
-  expiresAt DateTime // Expiration time
-  revokedAt DateTime? // If manually logged out or token invalidated
-
-  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
 
   @@index([agentId])
-  @@index([token])
   @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id             String        @id @default(cuid())
+  tokenHash      String        @unique
+  agentId        String
+  agent          Agent         @relation(fields: [agentId], references: [id])
+  createdAt      DateTime      @default(now())
+  expiresAt      DateTime
+  usedAt         DateTime?
+  AgentProfile   AgentProfile? @relation(fields: [agentProfileId], references: [id])
+  agentProfileId String?
+
+  @@index([agentId])
+  @@index([expiresAt])
+}
+
+model PasswordResetEvent {
+  id        String   @id @default(cuid())
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id])
+  createdAt DateTime @default(now())
+  ipAddress String
+  userAgent String?
+
+  @@index([agentId, createdAt])
 }
 
 model User {
@@ -126,13 +155,15 @@ model UserRole {
 }
 
 model Session {
-  id           String   @id @default(uuid())
-  userId       String
-  token        String   @unique
-  refreshToken String   @unique
-  createdAt    DateTime @default(now())
-  expiresAt    DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  userAgent String?
+  ipAddress String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])

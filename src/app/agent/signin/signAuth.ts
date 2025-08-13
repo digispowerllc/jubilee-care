@@ -40,17 +40,35 @@ export const signIn = async (
 ): Promise<AuthResult> => {
     try {
         // Basic validation
-        if (!identifier || !password) {
+        if (!identifier) {
             return {
                 success: false,
-                message: "Please provide your email or phone, and your password."
+                message: "Please provide your email or phone."
+            };
+        }
+        if (!password) {
+            return {
+                success: false,
+                message: "Please enter your password."
+            };
+        }
+        // Trim whitespace
+        identifier = identifier.trim();
+        password = password.trim();
+
+        identifier = identifier.toLowerCase(); // Normalize email to lowercase
+        // Check if identifier is empty after trimming
+        if (!identifier) {
+            return {
+                success: false,
+                message: "Identifier cannot be empty."
             };
         }
 
         // Validate identifier format (either email or phone)
         const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
         const isPhone = /^\+?[\d\s-]{10,}$/.test(identifier);
-        
+
         if (!isEmail && !isPhone) {
             return {
                 success: false,
