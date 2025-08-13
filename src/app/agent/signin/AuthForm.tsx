@@ -213,7 +213,7 @@ export const AuthForm = ({
               type="text"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:outline-none focus-visible:outline-none"
               placeholder="Enter your email or phone number"
               disabled={loading}
             />
@@ -330,7 +330,7 @@ export const AuthForm = ({
               type="tel"
               value={nimcNin}
               onChange={(e) => setNimcNin(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:outline-none focus-visible:outline-none"
               placeholder="Enter your 11-digit NIN"
               maxLength={11}
               disabled={nimcLoading}
