@@ -25,29 +25,29 @@ export const AuthForm = ({
   const [rememberMe, setRememberMe] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const validateIdentifier = (value: string): boolean => {
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-    const isPhone = /^\+?[\d\s-]{10,}$/.test(value);
-    return isEmail || isPhone;
-  };
+  // const validateIdentifier = (value: string): boolean => {
+  //   const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  //   const isPhone = /^\+?[\d\s-]{10,}$/.test(value);
+  //   return isEmail || isPhone;
+  // };
 
-  const validateNIN = (value: string): boolean => {
-    return /^\d{11}$/.test(value);
-  };
+  // const validateNIN = (value: string): boolean => {
+  //   return /^\d{11}$/.test(value);
+  // };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setValidationError(null);
 
-   if (!validateIdentifier(identifier)) {
-      setValidationError("Please enter a valid email or phone number");
-      return;
-    }
+    //  if (!validateIdentifier(identifier)) {
+    //     setValidationError("Please enter a valid email or phone number");
+    //     return;
+    //   }
 
-    if (!password) {
-      setValidationError("Please enter your password");
-      return;
-    }
+    //   if (!password) {
+    //     setValidationError("Please enter your password");
+    //     return;
+    //   }
 
     onSubmit(identifier, password);
   };
@@ -56,10 +56,10 @@ export const AuthForm = ({
     e.preventDefault();
     setValidationError(null);
 
-    if (!validateNIN(nimcNin)) {
-      setValidationError("Please enter a valid 11-digit NIN");
-      return;
-    }
+    // if (!validateNIN(nimcNin)) {
+    //   setValidationError("Please enter a valid 11-digit NIN");
+    //   return;
+    // }
 
     onNimcVerify(nimcNin);
   };
@@ -213,7 +213,7 @@ export const AuthForm = ({
               type="text"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               placeholder="Enter your email or phone number"
               disabled={loading}
             />
@@ -232,7 +232,7 @@ export const AuthForm = ({
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 pr-12"
+                className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 pr-12"
                 placeholder="Enter your password"
                 disabled={loading}
               />
@@ -329,7 +329,7 @@ export const AuthForm = ({
               type="tel"
               value={nimcNin}
               onChange={(e) => setNimcNin(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               placeholder="Enter your 11-digit NIN"
               maxLength={11}
               disabled={nimcLoading}

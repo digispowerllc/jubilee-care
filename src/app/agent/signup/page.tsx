@@ -206,7 +206,7 @@ export default function AgentEnroll() {
         value={agentData[field]}
         onChange={(e) => updateField(field, e.target.value)}
         onBlur={handleBlur}
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+        className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
         placeholder={`Enter your ${label.toLowerCase()}`}
         required={required}
         maxLength={options?.maxLength}
@@ -238,7 +238,7 @@ export default function AgentEnroll() {
                 }`}
               >
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-gray-700 ${
                     stepNumber <= step
                       ? "bg-green-100 border-2 border-green-500"
                       : "bg-gray-100 border-2 border-gray-300"
@@ -286,7 +286,7 @@ export default function AgentEnroll() {
                       value={password}
                       onChange={(e) => updatePassword(e.target.value)}
                       onBlur={handleBlur}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all pr-12"
+                      className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all pr-12"
                       placeholder="At least 8 characters"
                       minLength={8}
                     />
@@ -331,7 +331,7 @@ export default function AgentEnroll() {
                       onChange={(e) => updateField("state", e.target.value)}
                       onBlur={handleBlur}
                       disabled={stateLoading}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                      className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                       required
                     >
                       <option value="">Select State</option>
@@ -352,7 +352,7 @@ export default function AgentEnroll() {
                       onChange={(e) => updateField("lga", e.target.value)}
                       onBlur={handleBlur}
                       disabled={!cities.length || cityLoading}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                      className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                       required
                     >
                       <option value="">Select LGA</option>
@@ -373,7 +373,7 @@ export default function AgentEnroll() {
                     value={agentData.address}
                     onChange={(e) => updateField("address", e.target.value)}
                     onBlur={handleBlur}
-                    className="w-full min-h-[100px] px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    className="w-full min-h-[100px] px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                     placeholder="Street, Area, Landmark..."
                     minLength={10}
                     maxLength={200}
