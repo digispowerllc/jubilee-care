@@ -87,8 +87,8 @@ export const LoginNotificationEmail = ({
   name = 'User',
   loginTime,
   deviceInfo,
-  companyName = 'Our Service',
-  supportLink = 'https://support.ourservice.com'
+  companyName = process.env.EMAIL_FROM_NAME,
+  supportLink = process.env.SUPPORT_LINK,
 }: LoginNotificationProps) => (
   <Html>
     <Head />

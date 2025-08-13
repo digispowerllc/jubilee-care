@@ -67,8 +67,8 @@ export const ForgotPasswordEmail = ({
   name = 'User',
   resetLink,
   expiryHours = 1,
-  companyName = 'Our App',
-  supportEmail = 'support@ourapp.com'
+  companyName = process.env.EMAIL_FROM_NAME || 'Jubilee Care ICT Innovations and Consult',
+  supportEmail = process.env.SUPPORT_EMAIL || 'support@jubileecare.com',
 }: ForgotPasswordProps) => (
   <Html>
     <Head />

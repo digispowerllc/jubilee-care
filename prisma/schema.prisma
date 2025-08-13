@@ -56,6 +56,7 @@ model AgentProfile {
   deletedAt             DateTime?
   passwordResetAttempts Int?
   accountLockedUntil    DateTime?
+  lockoutCount          Int                  @default(0)
   lastPasswordResetAt   DateTime?
   agent                 Agent                @relation(fields: [id], references: [id], onDelete: Cascade)
   PasswordResetToken    PasswordResetToken[]
@@ -80,6 +81,11 @@ model AgentSession {
 
   @@index([agentId])
   @@index([expiresAt])
+}
+
+model Lockout {
+  id    String   @id // could be IP or account ID
+  until DateTime
 }
 
 model PasswordResetToken {

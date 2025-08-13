@@ -21,29 +21,36 @@ interface EmailConfig {
 }
 
 const getEmailConfig = (): EmailConfig => {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+  const { SMTP_HOST, SMTP_USER, SMTP_PASSWORD, SMTP_PORT, EMAIL_FROM, EMAIL_FROM_NAME } = process.env;
+
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASSWORD) {
     throw new Error('SMTP configuration is missing');
   }
+
+  const port = parseInt(SMTP_PORT || '465', 10);
+  const secure = port === 465 ? true : false; // auto-set based on port
+
   return {
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
-    from: process.env.EMAIL_FROM || '<>',
-    fromName: process.env.EMAIL_FROM_NAME || 'Jubilee Care',
+    host: SMTP_HOST,
+    port,
+    secure: secure,
+    auth: { user: SMTP_USER, pass: SMTP_PASSWORD },
+    from: EMAIL_FROM || '<>',
+    fromName: EMAIL_FROM_NAME || 'Jubilee Care',
   };
 };
+
 
 const transporter = nodemailer.createTransport(getEmailConfig());
 
 export const sendEmail = async (to: string, subject: string, html: string) => {
   try {
     const config = getEmailConfig();
-    await transporter.sendMail({ 
-      from: `"${config.fromName}" <${config.from}>`, 
-      to, 
-      subject, 
-      html 
+    await transporter.sendMail({
+      from: `"${config.fromName}" <${config.from}>`,
+      to,
+      subject,
+      html
     });
     logger.info(`Email sent to ${to}`);
     return true;

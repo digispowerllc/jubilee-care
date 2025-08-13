@@ -12,6 +12,8 @@ type AuthResult = {
         phone: string;
     };
     requiresPassword?: boolean;
+    lockout?: boolean;
+    retryAfter?: number | string | null;
 };
 
 type AuthProvider = "google" | "github" | "nimc";
@@ -41,39 +43,26 @@ export const signIn = async (
     try {
         // Basic validation
         if (!identifier) {
-            return {
-                success: false,
-                message: "Please provide your email or phone."
-            };
+            return { success: false, message: "Please provide your email or phone." };
         }
         if (!password) {
-            return {
-                success: false,
-                message: "Please enter your password."
-            };
+            return { success: false, message: "Please enter your password." };
         }
-        // Trim whitespace
-        identifier = identifier.trim();
+
+        // Trim & normalize
+        identifier = identifier.trim().toLowerCase();
         password = password.trim();
 
-        identifier = identifier.toLowerCase(); // Normalize email to lowercase
-        // Check if identifier is empty after trimming
         if (!identifier) {
-            return {
-                success: false,
-                message: "Identifier cannot be empty."
-            };
+            return { success: false, message: "Identifier cannot be empty." };
         }
 
-        // Validate identifier format (either email or phone)
+        // Validate identifier format (email or phone)
         const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
         const isPhone = /^\+?[\d\s-]{10,}$/.test(identifier);
 
         if (!isEmail && !isPhone) {
-            return {
-                success: false,
-                message: "Please enter a valid email address or phone number"
-            };
+            return { success: false, message: "Please enter a valid email address or phone number" };
         }
 
         const response = await fetch("/api/agent/auth/signin", {
@@ -82,64 +71,30 @@ export const signIn = async (
                 "Content-Type": "application/json",
                 "X-Requested-With": "XMLHttpRequest"
             },
-            body: JSON.stringify({
-                identifier,
-                password: password,
-                usePassword: true, // Explicitly indicate password usage
-                timestamp: new Date().toISOString()
-            }),
+            body: JSON.stringify({ identifier, password, usePassword: true, timestamp: new Date().toISOString() }),
         });
 
-        // Handle HTTP errors
-        if (!response.ok) {
-            let errorData: unknown;
-            try {
-                errorData = await response.json();
-                if (
-                    typeof errorData === "object" &&
-                    errorData !== null &&
-                    "requiresPassword" in errorData
-                ) {
-                    const err = errorData as {
-                        requiresPassword?: boolean;
-                        message?: string;
-                        error?: {
-                            fieldErrors?: string;
-                            formErrors?: string;
-                            message?: string;
-                        };
-                    };
-                    if (err.requiresPassword) {
-                        return {
-                            success: true,
-                            requiresPassword: true,
-                            message: err.message || "Please authenticate with your password"
-                        };
-                    }
-                    return {
-                        success: false,
-                        message:
-                            err.error?.fieldErrors ||
-                            err.error?.formErrors ||
-                            err.message ||
-                            "Authentication failed. Please try again."
-                    };
-                }
-                return {
-                    success: false,
-                    message: "Incorrect credentials. Please try again."
-                };
-            } catch {
-                return {
-                    success: false,
-                    message: `Server error: ${response.status} ${response.statusText}`
-                };
-            }
-        }
-
-        // Successful response
         const data = await response.json();
 
+        // Handle 429 separately to show lockout info
+        if (response.status === 429) {
+            return {
+                success: false,
+                lockout: true,
+                message: data.message || "Account temporarily locked due to too many attempts",
+                retryAfter: data.retryAfter || null // optional: you can send milliseconds or formatted time from backend
+            };
+        }
+
+        // Handle other non-OK responses
+        if (!response.ok) {
+            return {
+                success: false,
+                message: data?.error?.formErrors || data?.error?.fieldErrors || data?.message || "Authentication failed"
+            };
+        }
+
+        // Successful login
         return {
             success: data.success,
             token: data.token,
@@ -152,13 +107,11 @@ export const signIn = async (
         console.error("SignIn error:", error);
         return {
             success: false,
-            message:
-                error instanceof Error
-                    ? error.message
-                    : "Network error during authentication"
+            message: error instanceof Error ? error.message : "Network error during authentication"
         };
     }
 };
+
 
 
 export const providerSignIn = async (

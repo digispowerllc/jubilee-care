@@ -1,204 +1,122 @@
-// File: src/app/api/auth/forgot-password/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { generateSearchableHash } from "@/lib/security/dataProtection";
+import { generateSearchableHash, unprotectData } from "@/lib/security/dataProtection";
 import { z } from "zod";
 import { generateResetToken } from "@/lib/auth-utils";
 import { sendPasswordResetEmail } from "@/lib/email-utils";
-import { rateLimit } from '@/lib/middleware/rateLimit';
-import { getClientIp } from '@/lib/client-ip';
-import { writeToLogger } from '@/lib/logger';
-import { subHours } from 'date-fns';
+import { rateLimit } from "@/lib/middleware/rateLimit";
+import { getClientIp } from "@/lib/client-ip";
+import { writeToLogger } from "@/lib/logger";
+import { subHours } from "date-fns";
 
-// Security configuration
 const SECURITY_CONFIG = {
-  RATE_LIMIT: {
-    WINDOW_MS: 60 * 60 * 5000, // 5 hour window
-    MAX_ATTEMPTS: 5,
-  },
-  RESET_TOKEN: {
-    EXPIRY_HOURS: 1,
-  },
-  ACCOUNT_LOCKOUT: {
-    MAX_ATTEMPTS: 3,
-    WINDOW_HOURS: 1,
-  }
+  BASE_LOCK_HOURS: 3,
+  PENALTY_MONTHS: 1,
+  MAX_LOCK_DAYS: 365,
+  ACCOUNT_LOCKOUT: { MAX_ATTEMPTS: 3, WINDOW_HOURS: 1 },
+  RATE_LIMIT: { WINDOW_MS: 1000 * 60 * 60, MAX_ATTEMPTS: 10 },
+  RESET_TOKEN: { EXPIRY_HOURS: 1 },
+};
+
+const formatTimeRemaining = (ms: number): string => {
+  if (ms <= 0) return "0s";
+  const sec = Math.floor(ms / 1000);
+  const years = Math.floor(sec / (365 * 24 * 60 * 60));
+  const months = Math.floor((sec % (365 * 24 * 60 * 60)) / (30 * 24 * 60 * 60));
+  const days = Math.floor((sec % (30 * 24 * 60 * 60)) / (24 * 60 * 60));
+  const hours = Math.floor((sec % (24 * 60 * 60)) / (60 * 60));
+  const minutes = Math.floor((sec % (60 * 60)) / 60);
+  const seconds = sec % 60;
+
+  return [years ? `${years}y` : null, months ? `${months}mo` : null, days ? `${days}d` : null,
+  hours ? `${hours}h` : null, minutes ? `${minutes}m` : null, seconds ? `${seconds}s` : null]
+    .filter(Boolean)
+    .join(" ");
 };
 
 const forgotPasswordSchema = z.object({
-  email: z.string()
-    .min(1, "Email is required")
-    .email("Must be a valid email")
-    .max(100, "Email too long")
-    .transform(email => email.toLowerCase().trim()),
+  email: z.string().min(1).email().max(100).transform(e => e.toLowerCase().trim()),
 });
 
 export async function POST(req: Request) {
-  const startTime = Date.now();
-  let agentProfileId: string | null = null;
+  let body: { email: string };
+  try { body = await req.json(); }
+  catch { return NextResponse.json({ success: false, error: "invalid_request", message: "Invalid request body" }, { status: 400 }); }
+
+  const ip = getClientIp(req) || "unknown";
 
   try {
-    // Clone the request to read body multiple times if needed
-    const clonedRequest = req.clone();
-    const body = await clonedRequest.json();
-
-    // Rate limiting by IP
-    const ip = getClientIp(req) || 'unknown';
-    const rateLimitResult = await rateLimit({
-      interval: SECURITY_CONFIG.RATE_LIMIT.WINDOW_MS,
-      limit: SECURITY_CONFIG.RATE_LIMIT.MAX_ATTEMPTS,
-      uniqueId: ip,
-      namespace: 'ip',
-    });
-
-    if (!rateLimitResult.success) {
-      writeToLogger('warn', `Rate limit exceeded for IP: ${ip}`);
-      return NextResponse.json(
-        {
-          success: false,
-          error: "rate_limit_exceeded",
-          message: "Too many requests. Please try again later."
-        },
-        {
-          status: 429,
-          headers: { 'Retry-After': String(Math.floor((rateLimitResult.reset - Date.now()) / 1000)) }
-        }
-      );
-    }
-
-    // Validate request body
     const parseResult = forgotPasswordSchema.safeParse(body);
-
     if (!parseResult.success) {
-      writeToLogger('debug', 'Invalid email format received');
-      return NextResponse.json(
-        {
-          success: false,
-          error: "invalid_email_format",
-          message: "Please provide a valid email address",
-          details: parseResult.error.flatten()
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "invalid_email_format", message: "Please provide a valid email address" }, { status: 400 });
     }
 
     const { email } = parseResult.data;
     const emailHash = await generateSearchableHash(email);
 
-    // Security: Always return success to prevent email enumeration
-    const successResponse = {
-      success: true,
-      message: "If an account exists with this email, you'll receive a reset link shortly",
-    };
-
-    // Find user without exposing existence
+    // Find agentProfile and join agent for names
     const agentProfile = await prisma.agentProfile.findUnique({
       where: { emailHash },
       select: {
         id: true,
         email: true,
         accountLockedUntil: true,
+        lockoutCount: true,
+        agent: { select: { firstName: true, surname: true, otherName: true } }
       },
     });
 
-    agentProfileId = agentProfile?.id || null;
+    const successResponse = { success: true, message: "If an account exists with this email, you'll receive a reset link shortly" };
+    if (!agentProfile) return NextResponse.json(successResponse, { status: 200 });
 
-    if (!agentProfile) {
-      writeToLogger('debug', `Password reset requested for non-existent email: ${email}`);
-      return NextResponse.json(successResponse, { status: 200 });
-    }
-
-    // Check if account is temporarily locked
+    // Lockout checks (persistent & attempts) remain unchanged...
     if (agentProfile.accountLockedUntil && new Date() < agentProfile.accountLockedUntil) {
-      writeToLogger('warn', `Account locked for user: ${agentProfile.id}`);
-      return NextResponse.json(
-        {
-          success: false,
-          error: "account_temporarily_locked",
-          message: "Account is temporarily locked due to too many reset attempts."
-        },
-        { status: 429 }
-      );
+      let newLockoutUntil = agentProfile.accountLockedUntil;
+      let newLockoutCount = agentProfile.lockoutCount ?? 0;
+      newLockoutCount += 1;
+      const addedMs = SECURITY_CONFIG.PENALTY_MONTHS * 30 * 24 * 60 * 60 * 1000;
+      newLockoutUntil = new Date(Math.min(newLockoutUntil.getTime() + addedMs, Date.now() + SECURITY_CONFIG.MAX_LOCK_DAYS * 24 * 60 * 60 * 1000));
+      await prisma.agentProfile.update({ where: { id: agentProfile.id }, data: { accountLockedUntil: newLockoutUntil, lockoutCount: newLockoutCount } });
+      const remaining = newLockoutUntil.getTime() - Date.now();
+      return NextResponse.json({ success: false, error: "account_temporarily_locked", message: `Account is temporarily locked. Try again in ${formatTimeRemaining(remaining)}.` }, { status: 429 });
     }
 
-    // Check reset attempt frequency
+    const rateLimitResult = await rateLimit({ interval: SECURITY_CONFIG.RATE_LIMIT.WINDOW_MS, limit: SECURITY_CONFIG.RATE_LIMIT.MAX_ATTEMPTS, uniqueId: ip, namespace: "ip" });
+    if (!rateLimitResult.success) return NextResponse.json(successResponse, { status: 200 });
+
     const attemptWindowStart = subHours(new Date(), SECURITY_CONFIG.ACCOUNT_LOCKOUT.WINDOW_HOURS);
-    const recentAttempts = await prisma.passwordResetEvent.count({
-      where: {
-        agentId: agentProfile.id,
-        createdAt: { gte: attemptWindowStart }
-      }
-    });
-
+    const recentAttempts = await prisma.passwordResetEvent.count({ where: { agentId: agentProfile.id, createdAt: { gte: attemptWindowStart } } });
     if (recentAttempts >= SECURITY_CONFIG.ACCOUNT_LOCKOUT.MAX_ATTEMPTS) {
-      // Lock account for the rate limit window duration
-      const lockoutUntil = new Date(Date.now() + SECURITY_CONFIG.RATE_LIMIT.WINDOW_MS);
-
-      await prisma.agentProfile.update({
-        where: { id: agentProfile.id },
-        data: { accountLockedUntil: lockoutUntil }
-      });
-
-      writeToLogger('warn', `Account locked due to too many reset attempts for user: ${agentProfile.id}`);
-      return NextResponse.json(
-        {
-          success: false,
-          error: "account_temporarily_locked",
-          message: `Too many reset attempts. Account temporarily locked for ${SECURITY_CONFIG.RATE_LIMIT.WINDOW_MS / (60 * 60 * 1000)} hours.`
-        },
-        { status: 429 }
-      );
+      const newLockoutUntil = new Date(Date.now() + SECURITY_CONFIG.BASE_LOCK_HOURS * 60 * 60 * 1000);
+      await prisma.agentProfile.update({ where: { id: agentProfile.id }, data: { accountLockedUntil: newLockoutUntil, lockoutCount: (agentProfile.lockoutCount ?? 0) + 1 } });
+      const remaining = newLockoutUntil.getTime() - Date.now();
+      return NextResponse.json({ success: false, error: "account_temporarily_locked", message: `Too many reset attempts. Your account is locked for ${formatTimeRemaining(remaining)}.` }, { status: 429 });
     }
 
-    // Generate secure reset token
-    const { token: resetToken } = await generateResetToken(
-      agentProfile.id,
-      SECURITY_CONFIG.RESET_TOKEN.EXPIRY_HOURS
-    );
+    // Unprotect names from agent table
+    const firstName = agentProfile.agent.firstName ? await unprotectData(agentProfile.agent.firstName, "name") : "";
+    const surname = agentProfile.agent.surname ? await unprotectData(agentProfile.agent.surname, "name") : "";
+    const otherName = agentProfile.agent.otherName ? await unprotectData(agentProfile.agent.otherName, "name") : "";
+    const firstInitial = firstName ? firstName[0].toUpperCase() : "";
+    const otherInitial = otherName ? otherName[0].toUpperCase() : "";
+    const displayName = `${surname} ${firstInitial}${otherInitial}`.trim() || email.split("@")[0];
+    if (!displayName) {
+      return NextResponse.json({ success: false, error: "invalid_display_name", message: "Unable to generate display name for the account" }, { status: 400 });
+    }
 
+    const { token: resetToken } = await generateResetToken(agentProfile.id);
     const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/reset-password?token=${resetToken}`;
 
-    // Record the attempt
     await prisma.$transaction([
-      prisma.passwordResetEvent.create({
-        data: {
-          agentId: agentProfile.id,
-          ipAddress: ip,
-          userAgent: req.headers.get('user-agent') || undefined,
-        },
-      }),
-      prisma.agentProfile.update({
-        where: { id: agentProfile.id },
-        data: {
-          lastPasswordResetAt: new Date(),
-        },
-      }),
+      prisma.passwordResetEvent.create({ data: { agentId: agentProfile.id, ipAddress: ip, userAgent: req.headers.get("user-agent") || undefined } }),
+      prisma.agentProfile.update({ where: { id: agentProfile.id }, data: { lastPasswordResetAt: new Date() } }),
     ]);
 
-    // Send email (async with error handling)
-    await sendPasswordResetEmail({
-      email: agentProfile.email,
-      name: agentProfile.email.split('@')[0],
-      resetLink,
-      expiryHours: SECURITY_CONFIG.RESET_TOKEN.EXPIRY_HOURS,
-      ipAddress: ip,
-    });
-
-    writeToLogger('info', `Password reset initiated for user ${agentProfile.id}`);
+    await sendPasswordResetEmail({ email, name: displayName, resetLink, expiryHours: SECURITY_CONFIG.RESET_TOKEN.EXPIRY_HOURS, ipAddress: ip });
     return NextResponse.json(successResponse, { status: 200 });
 
   } catch (error) {
-    writeToLogger('error', `Forgot password error for user ${agentProfileId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: "server_error",
-        message: "An unexpected error occurred. Our team has been notified."
-      },
-      { status: 500 }
-    );
-  } finally {
-    writeToLogger('debug', `Forgot password request processed in ${Date.now() - startTime}ms`);
+    writeToLogger("error", `Forgot password error: ${error}`);
+    return NextResponse.json({ success: false, error: "server_error", message: "An unexpected error occurred. Please try again later." }, { status: 500 });
   }
 }
