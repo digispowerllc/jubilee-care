@@ -188,7 +188,10 @@ export default function AgentEnroll() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [step, nextStep, submitForm]);
 
-  // Render field helper
+  // Field Renderer
+
+  // Updated renderField helper with improved styling
+  // Field Renderer
   const renderField = (
     field: keyof AgentData,
     label: string,
@@ -196,17 +199,17 @@ export default function AgentEnroll() {
     required = true,
     options?: { maxLength?: number; minLength?: number }
   ) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+    <div className="flex flex-col gap-1">
+      <label className="text-sm font-medium text-gray-700">
         {label}
-        {required && "*"}
+        {required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       <input
         type={type}
         value={agentData[field]}
         onChange={(e) => updateField(field, e.target.value)}
         onBlur={handleBlur}
-       className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all focus:outline-none focus-visible:outline-none"
+        className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all focus:outline-none focus-visible:outline-none hover:shadow-sm"
         placeholder={`Enter your ${label.toLowerCase()}`}
         required={required}
         maxLength={options?.maxLength}
@@ -216,9 +219,10 @@ export default function AgentEnroll() {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-12">
-      <div className="w-full max-w-3xl bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="p-8 space-y-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-10">
+      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="p-8 space-y-8">
+          {/* Header */}
           <div className="text-center">
             <h1 className="text-3xl font-bold text-[#008751]">
               Agent Enrollment
@@ -228,34 +232,38 @@ export default function AgentEnroll() {
             </p>
           </div>
 
-          {/* Progress Steps */}
-          <div className="flex justify-between mb-8">
-            {[1, 2, 3, 4].map((stepNumber) => (
-              <div
-                key={stepNumber}
-                className={`flex flex-col items-center ${
-                  stepNumber < step ? "text-green-600" : "text-gray-400"
-                }`}
-              >
+          {/* Step Progress */}
+          <div className="relative mb-8">
+            {/* Gray base line */}
+            <div className="absolute top-5 left-0 w-full h-1 bg-gray-200 rounded-full" />
+
+            {/* Green animated line */}
+            <div
+              className="absolute top-5 left-0 h-1 bg-green-500 rounded-full transition-[width] duration-[1500ms] ease-in-out"
+              style={{ width: `${((step - 1) / 3) * 100}%` }}
+            />
+
+            {/* Step circles */}
+            <div className="flex justify-between relative">
+              {[1, 2, 3, 4].map((n) => (
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-gray-700 ${
-                    stepNumber <= step
-                      ? "bg-green-100 border-2 border-green-500"
-                      : "bg-gray-100 border-2 border-gray-300"
+                  key={n}
+                  className={`w-10 h-10 flex items-center justify-center rounded-full text-sm font-medium ${
+                    n <= step
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-200 text-gray-500"
                   }`}
                 >
-                  {stepNumber < step ? "✓" : stepNumber}
+                  {n < step ? "✓" : n}
                 </div>
-                <span className="text-xs mt-1">Step {stepNumber}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
-          {/* Form Steps */}
-          <form onSubmit={(e) => e.preventDefault()} className="space-y-5">
-            {/* Step 1: Personal Info */}
+          {/* Form */}
+          <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
             {step === 1 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {renderField("surname", "Surname")}
                 {renderField("firstName", "First Name")}
                 {renderField(
@@ -267,18 +275,18 @@ export default function AgentEnroll() {
               </div>
             )}
 
-            {/* Step 2: Contact Info */}
             {step === 2 && (
-              <div className="space-y-5">
+              <div className="space-y-6">
                 {renderField("email", "Email Address", "email")}
                 {renderField("phone", "Phone Number", "tel", true, {
                   minLength: 10,
                   maxLength: 11,
                 })}
+
                 {/* Password */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Create Password*
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-gray-700">
+                    Create Password<span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -286,8 +294,7 @@ export default function AgentEnroll() {
                       value={password}
                       onChange={(e) => updatePassword(e.target.value)}
                       onBlur={handleBlur}
-                    className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 pr-12 focus:outline-none focus-visible:outline-none"
-
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all focus:outline-none focus-visible:outline-none hover:shadow-sm pr-12"
                       placeholder="At least 8 characters"
                       minLength={8}
                     />
@@ -303,13 +310,11 @@ export default function AgentEnroll() {
                       )}
                     </button>
                   </div>
-                  {/* Password Strength Meter */}
                   <PasswordStrengthMeter password={password} />
                 </div>
               </div>
             )}
 
-            {/* Step 3: Identification */}
             {step === 3 &&
               renderField(
                 "nin",
@@ -319,20 +324,20 @@ export default function AgentEnroll() {
                 { minLength: 11, maxLength: 11 }
               )}
 
-            {/* Step 4: Location */}
             {step === 4 && (
-              <div className="space-y-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      State*
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* State */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium text-gray-700">
+                      State<span className="text-red-500">*</span>
                     </label>
                     <select
                       value={agentData.state}
                       onChange={(e) => updateField("state", e.target.value)}
                       onBlur={handleBlur}
                       disabled={stateLoading}
-                      className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all focus:outline-none focus-visible:outline-none"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-700 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all focus:outline-none focus-visible:outline-none hover:shadow-sm"
                       required
                     >
                       <option value="">Select State</option>
@@ -344,16 +349,17 @@ export default function AgentEnroll() {
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      LGA*
+                  {/* LGA */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium text-gray-700">
+                      LGA<span className="text-red-500">*</span>
                     </label>
                     <select
                       value={agentData.lga}
                       onChange={(e) => updateField("lga", e.target.value)}
                       onBlur={handleBlur}
                       disabled={!cities.length || cityLoading}
-                      className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all focus:outline-none focus-visible:outline-none"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-700 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all focus:outline-none focus-visible:outline-none hover:shadow-sm"
                       required
                     >
                       <option value="">Select LGA</option>
@@ -366,15 +372,16 @@ export default function AgentEnroll() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Address*
+                {/* Address */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-gray-700">
+                    Full Address<span className="text-red-500">*</span>
                   </label>
                   <textarea
                     value={agentData.address}
                     onChange={(e) => updateField("address", e.target.value)}
                     onBlur={handleBlur}
-                    className="w-full min-h-[100px] px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all focus:outline-none focus-visible:outline-none"
+                    className="w-full min-h-[100px] px-4 py-3 rounded-lg border border-gray-300 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all focus:outline-none focus-visible:outline-none hover:shadow-sm"
                     placeholder="Street, Area, Landmark..."
                     minLength={10}
                     maxLength={200}
@@ -384,13 +391,13 @@ export default function AgentEnroll() {
               </div>
             )}
 
-            {/* Navigation Buttons */}
-            <div className="flex items-center justify-between pt-4">
+            {/* Navigation */}
+            <div className="flex items-center justify-between pt-6">
               {step > 1 ? (
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="text-green-600 hover:text-green-800 text-sm font-medium"
+                  className="text-green-600 hover:text-green-800 text-sm font-medium transition-colors"
                 >
                   ← Back
                 </button>
@@ -402,86 +409,33 @@ export default function AgentEnroll() {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="flex items-center justify-center rounded-lg bg-green-600 hover:bg-green-700 px-6 py-3 text-white font-medium disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg px-6 py-3 shadow-md transition-transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
                   disabled={step === 2 && emailChecking}
                 >
-                  {step === 2 && emailChecking ? (
-                    <>
-                      <svg
-                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Verifying...
-                    </>
-                  ) : (
-                    "Continue →"
-                  )}
+                  {step === 2 && emailChecking ? "Verifying..." : "Continue →"}
                 </button>
               ) : (
                 <button
                   type="button"
                   onClick={submitForm}
                   disabled={formSubmitted}
-                  className="flex items-center justify-center rounded-lg bg-green-600 hover:bg-green-700 px-6 py-3 text-white font-medium disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg px-6 py-3 shadow-md transition-transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {formSubmitted ? (
-                    <>
-                      <svg
-                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Submitting...
-                    </>
-                  ) : (
-                    "Complete Enrollment"
-                  )}
+                  {formSubmitted ? "Submitting..." : "Complete Enrollment"}
                 </button>
               )}
             </div>
           </form>
 
+          {/* Footer */}
           <div className="text-center text-sm text-gray-500 pt-4 border-t border-gray-200">
-            <p>
-              Already have an account?{" "}
-              <a
-                href="/agent/signin"
-                className="font-medium text-green-600 hover:text-green-500"
-              >
-                Sign in here
-              </a>
-            </p>
+            Already have an account?{" "}
+            <a
+              href="/agent/signin"
+              className="font-medium text-green-600 hover:text-green-500"
+            >
+              Sign in here
+            </a>
           </div>
         </div>
       </div>
