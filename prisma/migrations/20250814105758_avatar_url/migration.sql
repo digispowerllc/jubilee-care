@@ -21,6 +21,7 @@ CREATE TABLE "public"."Agent" (
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "isAdmitted" BOOLEAN NOT NULL DEFAULT false,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "avatarUrl" TEXT NOT NULL DEFAULT '',
 
     CONSTRAINT "Agent_pkey" PRIMARY KEY ("id")
 );
@@ -36,7 +37,6 @@ CREATE TABLE "public"."AgentProfile" (
     "accessCode" TEXT NOT NULL DEFAULT '',
     "accessCodeHash" TEXT NOT NULL DEFAULT '',
     "passwordHash" TEXT NOT NULL,
-    "passportUrl" TEXT NOT NULL DEFAULT '',
     "emailVerified" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -45,6 +45,7 @@ CREATE TABLE "public"."AgentProfile" (
     "accountLockedUntil" TIMESTAMP(3),
     "lockoutCount" INTEGER NOT NULL DEFAULT 0,
     "lastPasswordResetAt" TIMESTAMP(3),
+    "avatarUrl" TEXT NOT NULL DEFAULT '',
 
     CONSTRAINT "AgentProfile_pkey" PRIMARY KEY ("id")
 );

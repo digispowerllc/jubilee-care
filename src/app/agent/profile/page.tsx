@@ -1,9 +1,11 @@
-// File: src/app/agent/profile/page.tsx
 import { cookies } from "next/headers";
 import { getAgentFromSession } from "@/lib/auth-utils";
 import { redirect } from "next/navigation";
 import { unprotectData } from "@/lib/security/dataProtection";
 import { prisma } from "@/lib/prisma";
+import Image from "next/image";
+import { FiUser } from "react-icons/fi";
+import { ProfileTabs } from "./ProfileTabs";
 
 export default async function AgentProfilePage() {
   const cookieStore = await cookies();
@@ -30,6 +32,7 @@ export default async function AgentProfilePage() {
         select: {
           emailVerified: true,
           createdAt: true,
+          avatarUrl: true,
         },
       },
     },
@@ -52,87 +55,57 @@ export default async function AgentProfilePage() {
     state: await unprotectData(agentData.state, "location"),
     lga: await unprotectData(agentData.lga, "location"),
     address: await unprotectData(agentData.address, "location"),
-    emailVerified: agentData.profile?.emailVerified,
+    emailVerified: !!agentData.profile?.emailVerified,
     memberSince: agentData.profile?.createdAt,
+    avatarUrl: agentData.profile?.avatarUrl,
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
-          Welcome, {unprotectedData.firstName} {unprotectedData.surname}
-        </h1>
-        <p className="text-gray-600">
-          {unprotectedData.emailVerified
-            ? "Verified Account"
-            : "Account Not Verified"}
-        </p>
+    <div className="max-w-6xl mx-auto p-4 sm:p-6">
+      <header className="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+        <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-100 overflow-hidden border-2 border-primary">
+          {unprotectedData.avatarUrl ? (
+            <Image
+              src={unprotectedData.avatarUrl}
+              alt="Profile"
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 80px, 96px"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-2xl sm:text-3xl text-gray-400">
+              <FiUser />
+            </div>
+          )}
+          <button className="absolute bottom-0 right-0 bg-primary text-white p-1 rounded-full">
+            <FiUser className="w-3 h-3 sm:w-4 sm:h-4" />
+          </button>
+        </div>
+
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            {unprotectedData.firstName} {unprotectedData.surname}
+          </h1>
+          <div className="flex flex-wrap items-center gap-2 mt-1 sm:mt-2">
+            <span
+              className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${
+                unprotectedData.emailVerified
+                  ? "bg-green-100 text-green-800"
+                  : "bg-yellow-100 text-yellow-800"
+              }`}
+            >
+              {unprotectedData.emailVerified
+                ? "Verified"
+                : "Pending Verification"}
+            </span>
+            <span className="text-gray-500 text-xs sm:text-sm">
+              Member since {unprotectedData.memberSince?.toLocaleDateString()}
+            </span>
+          </div>
+        </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <section className="bg-white p-6 rounded-lg shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
-          <div className="space-y-3">
-            <div>
-              <p className="text-sm text-gray-500">Full Name</p>
-              <p className="font-medium">
-                {unprotectedData.firstName} {unprotectedData.surname}
-                {unprotectedData.otherName && ` ${unprotectedData.otherName}`}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Email</p>
-              <p className="font-medium">{unprotectedData.email}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Phone Number</p>
-              <p className="font-medium">{unprotectedData.phone}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">NIN</p>
-              <p className="font-medium">{unprotectedData.nin}</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-white p-6 rounded-lg shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Address Information</h2>
-          <div className="space-y-3">
-            <div>
-              <p className="text-sm text-gray-500">State</p>
-              <p className="font-medium">{unprotectedData.state}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">LGA</p>
-              <p className="font-medium">{unprotectedData.lga}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Full Address</p>
-              <p className="font-medium">{unprotectedData.address}</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-white p-6 rounded-lg shadow-sm md:col-span-2">
-          <h2 className="text-xl font-semibold mb-4">Account Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Member Since</p>
-              <p className="font-medium">
-                {unprotectedData.memberSince?.toLocaleDateString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Account Status</p>
-              <p className="font-medium">
-                {unprotectedData.emailVerified
-                  ? "Verified"
-                  : "Pending Verification"}
-              </p>
-            </div>
-          </div>
-        </section>
-      </div>
+      <ProfileTabs unprotectedData={unprotectedData} />
     </div>
   );
 }

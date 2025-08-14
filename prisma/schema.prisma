@@ -29,6 +29,7 @@ model Agent {
   isActive           Boolean   @default(true)
   isAdmitted         Boolean   @default(false)
   isDeleted          Boolean   @default(false)
+  avatarUrl          String    @default("")
 
   profile            AgentProfile?
   sessions           AgentSession[]
@@ -54,7 +55,6 @@ model AgentProfile {
   accessCode            String    @default("")
   accessCodeHash        String    @default("")
   passwordHash          String
-  passportUrl           String    @default("")
   emailVerified         DateTime?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @default(now()) @updatedAt
@@ -63,6 +63,7 @@ model AgentProfile {
   accountLockedUntil    DateTime?
   lockoutCount          Int       @default(0)
   lastPasswordResetAt   DateTime?
+  avatarUrl             String    @default("")
 
   agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
