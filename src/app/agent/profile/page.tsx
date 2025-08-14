@@ -5,8 +5,9 @@ import { redirect } from "next/navigation";
 import { unprotectData } from "@/lib/security/dataProtection";
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
-import { FiUser } from "react-icons/fi";
+import { FiUser, FiLogOut } from "react-icons/fi";
 import { ProfileTabs } from "./ProfileTabs";
+import LogoutButton from "./LogoutButton";
 
 export default async function AgentProfilePage() {
   const cookieStore = await cookies();
@@ -102,6 +103,8 @@ export default async function AgentProfilePage() {
             <span className="text-gray-500 text-xs sm:text-sm">
               Member since {unprotectedData.memberSince?.toLocaleDateString()}
             </span>
+            {/* Logout Button */}
+            <LogoutButton />
           </div>
         </div>
       </header>

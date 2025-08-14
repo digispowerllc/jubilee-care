@@ -17,6 +17,7 @@ import {
   FiChevronRight,
   FiCheckCircle,
   FiPhone,
+  FiLogOut,
   FiCreditCard,
 } from "react-icons/fi";
 import { useState } from "react";
@@ -34,7 +35,7 @@ interface UnprotectedData {
   address: string;
   emailVerified: boolean;
   memberSince?: Date;
-  profilePicture?: string;
+  avatarUrl?: string;
   clients?: Array<{
     id: string;
     name: string;
