@@ -25,7 +25,7 @@ export const AuthForm = ({
   const [showPassword, setShowPassword] = useState(false);
   const [nimcNin, setNimcNin] = useState("");
   const [activeTab, setActiveTab] = useState<"standard" | "nimc">("standard");
-    const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState<"identifier" | "password">("identifier");
 
@@ -259,19 +259,6 @@ export const AuthForm = ({
             </>
           )}
 
-          {/* Forgot Password */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center"></div>
-            <div className="text-sm">
-              <Link
-                href="/agent/forgot-password"
-                className="font-medium text-green-600 hover:text-green-500"
-              >
-                Forgot password?
-              </Link>
-            </div>
-          </div>
-
           {/* Sign In Button */}
           <div>
             <button
@@ -323,6 +310,18 @@ export const AuthForm = ({
                 "Sign In"
               )}
             </button>
+          </div>
+          {/* Forgot Password */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center"></div>
+            <div className="text-sm">
+              <Link
+                href="/agent/forgot-password"
+                className="font-medium text-green-600 hover:text-green-500"
+              >
+                Forgot password?
+              </Link>
+            </div>
           </div>
         </form>
       ) : (
