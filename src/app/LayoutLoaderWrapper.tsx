@@ -58,7 +58,7 @@ export default function LayoutLoaderWrapper({
     <div className="min-h-screen flex flex-col">
       <Navigation authenticated={authenticated} />
       <main
-        className={`flex-grow transition-all duration-700 ease-out transform ${
+        className={`flex-grow ${
           contentVisible
             ? "opacity-100 translate-y-0"
             : "opacity-0 translate-y-6"

@@ -4,15 +4,13 @@ import type { NextConfig } from "next";
 const isDev = process.env.NODE_ENV === "development";
 
 const nextConfig: NextConfig = {
-  // ✅ Enable TurboPack only in dev
   turbopack: isDev
     ? {
-        // Example: add custom aliases or loaders
-        resolveAlias: {
-          underscore: "lodash",
-        },
-        resolveExtensions: [".mdx", ".tsx", ".ts", ".jsx", ".js", ".json"],
-      }
+      resolveAlias: {
+        underscore: "lodash",
+      },
+      resolveExtensions: [".mdx", ".tsx", ".ts", ".jsx", ".js", ".json"],
+    }
     : undefined,
 
   reactStrictMode: true,
@@ -56,12 +54,17 @@ const nextConfig: NextConfig = {
   },
 
   images: {
-    domains: [],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "ui-avatars.com",
+        pathname: "/api/**",
+      },
+    ],
     disableStaticImages: false,
     minimumCacheTTL: 60,
   },
 
-  // ✅ Only keep Webpack fallback for prod builds
   webpack: (config) => {
     if (!isDev) {
       config.resolve.fallback = { fs: false, net: false, tls: false };

@@ -38,6 +38,18 @@ html {
   overflow: hidden;
 }
 
+/*WAVING UPLOAD*/
+.wave-animation {
+  animation: wave 1.5s linear infinite;
+  border-radius: 100% 100% 0 0;
+}
+
+@keyframes wave {
+  0% { transform: translateX(-50%) scaleY(1) }
+  50% { transform: translateX(50%) scaleY(0.8) }
+  100% { transform: translateX(-50%) scaleY(1) }
+}
+/*WAVING UPLOAD*/
 
 @keyframes fade-in {
   from {
