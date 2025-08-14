@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { unprotectData } from "@/lib/security/dataProtection";
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
-import { FiUser, FiLogOut } from "react-icons/fi";
+import { FiUser } from "react-icons/fi";
 import { ProfileTabs } from "./ProfileTabs";
 import LogoutButton from "./LogoutButton";
 
