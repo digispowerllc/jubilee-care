@@ -62,15 +62,17 @@ export const AuthForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
-    
+
     setValidationError(null);
     setSubmitting(true);
 
     try {
       const result = await signIn(identifier, password);
-      
+
       if (!result.success) {
-        setValidationError(result.message || "Sign in failed. Please try again.");
+        setValidationError(
+          result.message || "Sign in failed. Please try again."
+        );
         return;
       }
 
@@ -272,7 +274,7 @@ export const AuthForm = ({
               />
               <label
                 htmlFor="remember-me"
-                className="ml-2 block text-sm text-gray-700"
+                className="ml-2 block text-sm text-green-700 hover:text-green-600"
               >
                 Remember me
               </label>
