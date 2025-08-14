@@ -1,3 +1,4 @@
+// File: src/app/agent/profile/page.tsx
 import { cookies } from "next/headers";
 import { getAgentFromSession } from "@/lib/auth-utils";
 import { redirect } from "next/navigation";
