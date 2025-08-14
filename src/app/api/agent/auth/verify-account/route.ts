@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyResetToken, generateResetToken } from "@/lib/auth-utils";
 import { writeToLogger } from "@/lib/logger";
-import { createHash } from 'crypto';
+
 
 export async function POST(req: Request) {
     try {
