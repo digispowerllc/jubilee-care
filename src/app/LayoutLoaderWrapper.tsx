@@ -1,7 +1,7 @@
+// File: src/app/LayoutLoaderWrapper.tsx
 "use client";
 import { useEffect, useState } from "react";
 import Navigation from "@/components/nav/Navigation";
-import Footer from "@/components/Footer";
 
 export default function LayoutLoaderWrapper({
   children,
@@ -66,7 +66,7 @@ export default function LayoutLoaderWrapper({
       >
         {children}
       </main>
-      <Footer />
+      {/* Footer has been removed from here */}
     </div>
   );
 }

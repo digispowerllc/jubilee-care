@@ -1,4 +1,4 @@
-// app/layout.tsx
+// File: src/app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Notification } from "@/components/Notification";
