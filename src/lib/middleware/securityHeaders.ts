@@ -36,7 +36,7 @@ export const securityHeadersConfig: SecurityHeadersConfig = (() => {
         'https://*.vercel.app'
       ],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", 'data:', 'blob:'],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https://ui-avatars.com', 'https://res.cloudinary.com', 'https://*.cloudinary.com/'],
       fontSrc: ["'self'", 'data:'],
       connectSrc: ["'self'", 'https://*.vercel.app'],
       frameSrc: ["'self'"],
@@ -46,6 +46,7 @@ export const securityHeadersConfig: SecurityHeadersConfig = (() => {
     }
   }
 })()
+
 
 export function withSecurityHeaders(
   request: NextRequest,

@@ -4,8 +4,7 @@ import { getAgentFromSession } from "@/lib/auth-utils";
 import { redirect } from "next/navigation";
 import { unprotectData } from "@/lib/security/dataProtection";
 import { prisma } from "@/lib/prisma";
-import Image from "next/image";
-import { FiUser } from "react-icons/fi";
+import UserAvatar from "@/components/UserAvatar";
 import { ProfileTabs } from "./ProfileTabs";
 import LogoutButton from "./LogoutButton";
 
@@ -62,31 +61,21 @@ export default async function AgentProfilePage() {
     avatarUrl: agentData.profile?.avatarUrl,
   };
 
+  const fullName = `${unprotectedData.firstName} ${unprotectedData.surname}`;
+
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <header className="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-        <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-100 overflow-hidden border-2 border-primary">
-          {unprotectedData.avatarUrl ? (
-            <Image
-              src={unprotectedData.avatarUrl}
-              alt="Profile"
-              fill
-              className="object-cover"
-              sizes="(max-width: 640px) 80px, 96px"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-2xl sm:text-3xl text-gray-400">
-              <FiUser />
-            </div>
-          )}
-          <button className="absolute bottom-0 right-0 bg-primary text-white p-1 rounded-full">
-            <FiUser className="w-3 h-3 sm:w-4 sm:h-4" />
-          </button>
-        </div>
+        <UserAvatar
+          fullName={fullName}
+          size={96}
+          profilePicture={unprotectedData.avatarUrl}
+          className="w-20 h-20 sm:w-24 sm:h-24"
+        />
 
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            {unprotectedData.firstName} {unprotectedData.surname}
+            {fullName}
           </h1>
           <div className="flex flex-wrap items-center gap-2 mt-1 sm:mt-2">
             <span
@@ -103,7 +92,6 @@ export default async function AgentProfilePage() {
             <span className="text-gray-500 text-xs sm:text-sm">
               Member since {unprotectedData.memberSince?.toLocaleDateString()}
             </span>
-            {/* Logout Button */}
             <LogoutButton />
           </div>
         </div>
