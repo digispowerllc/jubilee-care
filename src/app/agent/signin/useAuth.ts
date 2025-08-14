@@ -15,7 +15,8 @@ export const useAuth = () => {
     try {
       const result = await signIn(identifier, password);
       if (result.success) {
-        router.push(redirectTo);
+        // router.push(redirectTo);
+        window.location.href = redirectTo;
       }
       return result;
     } finally {
