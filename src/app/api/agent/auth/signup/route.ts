@@ -63,7 +63,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const agentUID = generateAgentId();
+    const fieldId = generateAgentId();
     const DEFAULT_ACCESS_CODE = "";
     // This is the default access code used for agent registration.
 
@@ -71,6 +71,7 @@ export async function POST(req: Request) {
     const result = await prisma.$transaction(async (prismaTx) => {
       const agent = await prismaTx.agent.create({
         data: {
+          fieldId: fieldId,
           surname: (await protectData(surname, "name")).encrypted,
           firstName: (await protectData(firstName, "name")).encrypted,
           otherName: otherName
@@ -93,16 +94,14 @@ export async function POST(req: Request) {
       await prismaTx.agentProfile.create({
         data: {
           id: agent.id,
-          agentId: agentUID,
+          agentId: agent.id,
           email: (await protectData(email, "email")).encrypted,
           emailHash,
           phone: (await protectData(phone, "phone")).encrypted,
           phoneHash,
           accessCode: DEFAULT_ACCESS_CODE,
           accessCodeHash: DEFAULT_ACCESS_CODE,
-          // accessCode: (await protectData(DEFAULT_ACCESS_CODE, "phone")).encrypted,
-          // accessCodeHash: await generateSearchableHash(DEFAULT_ACCESS_CODE),
-          passwordHash: (await protectData(password, "system-code")).encrypted,
+                   passwordHash: (await protectData(password, "system-code")).encrypted,
         },
       });
 

@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateSearchableHash, verifyProtectedData } from "@/lib/security/dataProtection";
+import { createSession } from "@/lib/auth-utils"; // adjust path
 import { z } from "zod";
 
 // ===== Security Config =====
@@ -56,7 +57,6 @@ export async function POST(req: Request) {
     const { identifier, password } = parseResult.data;
     const identifierHash = await generateSearchableHash(identifier);
 
-    // Look up user by email or phone
     const agentProfile = await prisma.agentProfile.findFirst({
       where: { OR: [{ emailHash: identifierHash }, { phoneHash: identifierHash }] },
       select: {
@@ -72,24 +72,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Invalid email/phone or password" }, { status: 401 });
     }
 
-    // ===== Persistent lockout (from forgot-password spam) =====
+    // ===== Persistent lockout logic =====
     if (agentProfile.accountLockedUntil && new Date() < agentProfile.accountLockedUntil) {
-      let newLockoutUntil = agentProfile.accountLockedUntil;
-      let newLockoutCount = agentProfile.lockoutCount ?? 0;
-
-      // Increment lockout count if trying during lock
-      newLockoutCount += 1;
+      const newLockoutCount = (agentProfile.lockoutCount ?? 0) + 1;
       const penaltyMs = SECURITY_CONFIG.PENALTY_DAYS * newLockoutCount * 24 * 60 * 60 * 1000;
-      newLockoutUntil = new Date(
+      const newLockoutUntil = new Date(
         Math.min(Date.now() + penaltyMs, Date.now() + SECURITY_CONFIG.MAX_LOCK_DAYS * 24 * 60 * 60 * 1000)
       );
 
       await prisma.agentProfile.update({
         where: { id: agentProfile.id },
-        data: {
-          accountLockedUntil: newLockoutUntil,
-          lockoutCount: newLockoutCount,
-        },
+        data: { accountLockedUntil: newLockoutUntil, lockoutCount: newLockoutCount },
       });
 
       const remaining = newLockoutUntil.getTime() - Date.now();
@@ -107,14 +100,31 @@ export async function POST(req: Request) {
     }
 
     // ✅ Authentication successful
-    return NextResponse.json({
+    const sessionToken = await createSession(agentProfile.agentId, {
+      ip: req.headers.get("x-forwarded-for") || undefined,
+      userAgent: req.headers.get("user-agent") || undefined,
+    });
+
+    const response = NextResponse.json({
       success: true,
       message: "Login successful",
-      agentId: agentProfile.agentId,
-    }, { status: 200 });
+      redirectTo: "/agent/profile",
+    });
+
+    response.cookies.set({
+      name: "agent_session",
+      value: sessionToken,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
+    });
+
+    return response;
 
   } catch (error) {
     console.error("Sign in error:", error);
     return NextResponse.json({ success: false, error: "Login failed. Please try again." }, { status: 500 });
   }
 }
+

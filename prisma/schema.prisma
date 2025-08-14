@@ -8,27 +8,29 @@ datasource db {
 }
 
 model Agent {
-  id                 String               @id @default(uuid())
-  surname            String
-  firstName          String
-  otherName          String
-  email              String
-  phone              String
-  nin                String               @unique
-  state              String
-  lga                String
-  address            String
-  emailHash          String               @unique
-  phoneHash          String               @unique
-  ninHash            String               @unique
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @default(now())
-  isActive           Boolean              @default(true)
-  isAdmitted         Boolean              @default(false)
-  isDeleted          Boolean              @default(false)
+  id         String   @id @default(uuid())
+  fieldId    String
+  surname    String
+  firstName  String
+  otherName  String
+  email      String
+  phone      String
+  nin        String   @unique
+  state      String
+  lga        String
+  address    String
+  emailHash  String   @unique
+  phoneHash  String   @unique
+  ninHash    String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+  isActive   Boolean  @default(true)
+  isAdmitted Boolean  @default(false)
+  isDeleted  Boolean  @default(false)
+
   profile            AgentProfile?
+  sessions           AgentSession[]
   oauthAccounts      OAuthAccount[]
-  AgentSession       AgentSession[]
   PasswordResetToken PasswordResetToken[]
   PasswordResetEvent PasswordResetEvent[]
 
@@ -41,26 +43,28 @@ model Agent {
 }
 
 model AgentProfile {
-  id                    String               @id
-  agentId               String               @unique
+  id                    String    @id @default(uuid())
+  agentId               String    @unique
   email                 String
-  emailHash             String               @unique
+  emailHash             String    @unique
   phone                 String
-  phoneHash             String               @unique
-  accessCode            String               @default("")
-  accessCodeHash        String               @default("")
+  phoneHash             String    @unique
+  accessCode            String    @default("")
+  accessCodeHash        String    @default("")
   passwordHash          String
-  passportUrl           String               @default("")
+  passportUrl           String    @default("")
   emailVerified         DateTime?
-  createdAt             DateTime             @default(now())
-  updatedAt             DateTime             @default(now()) @updatedAt
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @default(now()) @updatedAt
   deletedAt             DateTime?
   passwordResetAttempts Int?
   accountLockedUntil    DateTime?
-  lockoutCount          Int                  @default(0)
+  lockoutCount          Int       @default(0)
   lastPasswordResetAt   DateTime?
-  agent                 Agent                @relation(fields: [id], references: [id], onDelete: Cascade)
-  PasswordResetToken    PasswordResetToken[]
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  PasswordResetToken PasswordResetToken[]
 
   @@index([agentId])
   @@index([phoneHash])
