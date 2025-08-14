@@ -1,8 +1,9 @@
+// src/components/HeroClient.tsx
 "use client";
 
 import React from "react";
 
-const Hero: React.FC = () => {
+const HeroClient: React.FC = () => {
   return (
     <section className="bg-white px-4 py-20 text-center sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
@@ -21,10 +22,10 @@ const Hero: React.FC = () => {
             Agent Onboarding
           </a>
           <a
-            href="#services"
+            href="/agent/signin"
             className="inline-block rounded-lg border border-green-700 px-8 py-3 text-green-700 font-semibold hover:bg-green-50"
           >
-            Explore
+            Sign In
           </a>
         </div>
       </div>
@@ -32,4 +33,4 @@ const Hero: React.FC = () => {
   );
 };
 
-export default Hero;
+export default HeroClient;

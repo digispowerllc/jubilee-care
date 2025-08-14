@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import AgentEnrollmentModal from "../components/global/AgentEnrollmentModal";
-import Hero from "@/components/Hero";
+import HeroWrapper from "@/components/HeroWrapper";
 import CoreServices from "@/components/CoreServices";
 import Testimonials from "@/components/Testimonials";
 import ImpactSection from "@/components/ImpactSection";
@@ -12,9 +13,35 @@ import SocialHandles from "@/components/SocialHandles";
 
 export default function HomePage() {
   const [showModal, setShowModal] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [contentVisible, setContentVisible] = useState(false);
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
 
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const res = await fetch("/api/agent/auth/check-session", {
+          method: "GET",
+          credentials: "include",
+        });
+        const data = await res.json();
+
+        if (data.valid) {
+          // ✅ Redirect to profile if already logged in
+          router.replace("/agent/profile");
+        } else {
+          setAuthenticated(false);
+        }
+      } catch (err) {
+        console.error("Session check failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSession();
+  }, [router]);
   useEffect(() => {
     const now = new Date();
     const cutoff = new Date();
@@ -36,8 +63,8 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-8 h-8 border-4 border-[#008751] border-t-transparent rounded-full" />
+      <div className="min-h-[300px] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-green-700 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -57,7 +84,7 @@ export default function HomePage() {
               : "opacity-0 translate-y-6"
           }`}
         >
-          <Hero />
+          <HeroWrapper />
           <CoreServices />
           <ImpactSection />
           <Testimonials />
