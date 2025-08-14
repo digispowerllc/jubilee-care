@@ -113,17 +113,19 @@ export default function PasswordResetPage() {
     }
   };
 
-  // Render loading state
-  if (status.phase === "verifying") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-           <div className="animate-spin h-8 w-8 border-b-2 border-green-600 rounded-full"></div>
-          <p className="text-gray-600">Verifying your reset link...</p>
+ // Render loading state
+if (status.phase === "verifying") {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <div className="animate-spin h-8 w-8 border-b-2 border-green-600 rounded-full mx-auto" 
+             style={{ transformOrigin: '50% 50%' }}>
         </div>
+        <p className="text-gray-600">Verifying your reset link...</p>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // Render error state
   if (status.phase === "error") {
