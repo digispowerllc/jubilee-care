@@ -82,7 +82,6 @@ export const verifyResetToken = async (
   };
 };
 
-
 export const markTokenAsUsed = async (token: string): Promise<void> => {
   const tokenHash = createHash('sha256').update(token).digest('hex');
   await prisma.passwordResetToken.updateMany({
@@ -149,3 +148,19 @@ export const cleanupExpiredResetTokens = async (): Promise<number> => {
   });
   return count;
 };
+
+export async function getAgentFromSession(token?: string) {
+  if (!token) return null;
+
+  const session = await prisma.agentSession.findFirst({
+    where: {
+      token,
+      revokedAt: null,
+      expiresAt: { gte: new Date() },
+    },
+    include: { agent: true },
+  });
+
+  if (!session) return null;
+  return session.agent;
+}

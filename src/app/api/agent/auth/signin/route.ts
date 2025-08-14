@@ -85,6 +85,11 @@ export async function POST(req: Request) {
         data: { accountLockedUntil: newLockoutUntil, lockoutCount: newLockoutCount },
       });
 
+      await prisma.agent.update({
+        where: { id: agentProfile.agentId },
+        data: { lastLoginAt: new Date(), lastLoginAttemptIp: req.headers.get("x-forwarded-for") || undefined },
+      })
+
       const remaining = newLockoutUntil.getTime() - Date.now();
       return NextResponse.json({
         success: false,

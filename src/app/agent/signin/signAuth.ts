@@ -90,7 +90,7 @@ export const signIn = async (
         if (!response.ok) {
             return {
                 success: false,
-                message: data?.error?.formErrors || data?.error?.fieldErrors || data?.message || "Authentication failed"
+                message: data?.error?.formErrors || data?.error?.fieldErrors || data?.message || "Incorrect e-Mail address, phone number, or password"
             };
         }
 
@@ -100,7 +100,8 @@ export const signIn = async (
             token: data.token,
             user: data.user,
             requiresPassword: data.requiresPassword || false,
-            message: data.message || "Authentication successful"
+            message: data.message || "Login successful - Welcome back!",
+            lockout: data.lockout || false,
         };
 
     } catch (error) {

@@ -8,25 +8,27 @@ datasource db {
 }
 
 model Agent {
-  id         String   @id @default(uuid())
-  fieldId    String
-  surname    String
-  firstName  String
-  otherName  String
-  email      String
-  phone      String
-  nin        String   @unique
-  state      String
-  lga        String
-  address    String
-  emailHash  String   @unique
-  phoneHash  String   @unique
-  ninHash    String   @unique
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
-  isActive   Boolean  @default(true)
-  isAdmitted Boolean  @default(false)
-  isDeleted  Boolean  @default(false)
+  id                 String    @id @default(uuid())
+  fieldId            String
+  surname            String
+  firstName          String
+  otherName          String
+  email              String
+  phone              String
+  nin                String    @unique
+  state              String
+  lga                String
+  address            String
+  emailHash          String    @unique
+  phoneHash          String    @unique
+  ninHash            String    @unique
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @default(now()) @updatedAt
+  lastLoginAt        DateTime?
+  lastLoginAttemptIp String?
+  isActive           Boolean   @default(true)
+  isAdmitted         Boolean   @default(false)
+  isDeleted          Boolean   @default(false)
 
   profile            AgentProfile?
   sessions           AgentSession[]
