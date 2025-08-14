@@ -15,11 +15,10 @@ export default function SignInPage() {
     handleNimcVerification,
   } = useAuth();
 
-  
   const handleSubmit = async (identifier: string, password: string) => {
     const result = await handleSignIn(identifier, password);
     if (result.success) {
-      notifySuccess("Login successful!");
+      // notifySuccess("Login successful!");
     } else if (result.message) {
       notifyError(result.message);
     }
