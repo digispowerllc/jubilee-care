@@ -1,4 +1,3 @@
-// src/app/LayoutLoaderWrapper.tsx
 "use client";
 import { useEffect, useState } from "react";
 import Navigation from "@/components/nav/Navigation";
@@ -12,13 +11,29 @@ export default function LayoutLoaderWrapper({
   const [loading, setLoading] = useState(true);
   const [visible, setVisible] = useState(false);
   const [contentVisible, setContentVisible] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const res = await fetch("/api/agent/auth/check-session", {
+          method: "GET",
+          credentials: "include",
+        });
+        const data = await res.json();
+        setAuthenticated(data.valid);
+      } catch (err) {
+        console.error("Session check failed:", err);
+      }
+    };
+    checkSession();
+  }, []);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
       setLoading(false);
       requestAnimationFrame(() => setVisible(true));
     }, 500);
-
     return () => clearTimeout(timeout);
   }, []);
 
@@ -41,7 +56,7 @@ export default function LayoutLoaderWrapper({
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navigation />
+      <Navigation authenticated={authenticated} />
       <main
         className={`flex-grow transition-all duration-700 ease-out transform ${
           contentVisible
