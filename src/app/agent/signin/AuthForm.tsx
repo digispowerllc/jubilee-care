@@ -25,8 +25,7 @@ export const AuthForm = ({
   const [showPassword, setShowPassword] = useState(false);
   const [nimcNin, setNimcNin] = useState("");
   const [activeTab, setActiveTab] = useState<"standard" | "nimc">("standard");
-  const [rememberMe, setRememberMe] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
+    const [validationError, setValidationError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState<"identifier" | "password">("identifier");
 
