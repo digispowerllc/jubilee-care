@@ -40,18 +40,18 @@ export default function LayoutLoaderWrapper({
   }
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <Navigation />
-      <div
-        className={`transition-all duration-700 ease-out transform ${
+      <main
+        className={`flex-grow transition-all duration-700 ease-out transform ${
           contentVisible
             ? "opacity-100 translate-y-0"
             : "opacity-0 translate-y-6"
         }`}
       >
         {children}
-      </div>
+      </main>
       <Footer />
-    </>
+    </div>
   );
 }
