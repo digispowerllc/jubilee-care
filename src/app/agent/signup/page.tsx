@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff } from "lucide-react";
-import PasswordStrengthMeter from "@/components/PasswordStrengthMeter";
+import { Eye, EyeOff, CheckCircle } from "lucide-react";
 import {
   submitAgentSignup,
   checkEmailAvailability,
@@ -53,7 +52,7 @@ export default function AgentEnroll() {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [emailChecking, setEmailChecking] = useState(false);
   const lgaCache = useMemo(() => new Map<string, string[]>(), []);
-
+const [isPasswordValid, setIsPasswordValid] = useState(false);
   // Load saved data on mount
   useEffect(() => {
     const loadData = async () => {
@@ -94,6 +93,14 @@ export default function AgentEnroll() {
     loadData();
   }, []);
 
+   // Password strength indicators
+  const passwordStrength = {
+    hasMinLength: password.length >= 8,
+    hasNumber: /\d/.test(password),
+    hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    hasUppercase: /[A-Z]/.test(password),
+  };
+
   // Auto-save when fields change
   const updateField = useCallback(
     async (field: keyof AgentData, value: string) => {
@@ -118,8 +125,14 @@ export default function AgentEnroll() {
   }, [agentData, step]);
 
   // Calculate password strength
-  // Calculate password strength
-  // (Removed unused passwordStrength state and effect)
+useEffect(() => {
+  const isValid = (
+    password.length >= 8 &&
+    /\d/.test(password) &&
+    /[!@#$%^&*(),.?":{}|<>]/.test(password)
+  );
+  setIsPasswordValid(isValid);
+}, [password]);
   // Fetch cities when state changes
   useEffect(() => {
     if (agentData.state) {
@@ -310,7 +323,26 @@ export default function AgentEnroll() {
                       )}
                     </button>
                   </div>
-                  <PasswordStrengthMeter password={password} />
+
+                  {/* Password Requirements - matches reset page */}
+                  <div className="mt-2 space-y-1">
+                    <PasswordRequirement
+                      met={passwordStrength.hasMinLength}
+                      text="At least 8 characters"
+                    />
+                    <PasswordRequirement
+                      met={passwordStrength.hasNumber}
+                      text="Contains a number"
+                    />
+                    <PasswordRequirement
+                      met={passwordStrength.hasSpecialChar}
+                      text="Contains a special character"
+                    />
+                    <PasswordRequirement
+                      met={passwordStrength.hasUppercase}
+                      text="Contains an uppercase letter"
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -410,7 +442,7 @@ export default function AgentEnroll() {
                   type="button"
                   onClick={nextStep}
                   className="bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg px-6 py-3 shadow-md transition-transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
-                  disabled={step === 2 && emailChecking}
+                  disabled={step === 2 && (emailChecking || !isPasswordValid) ? true : false}
                 >
                   {step === 2 && emailChecking ? "Verifying..." : "Continue →"}
                 </button>
@@ -439,6 +471,19 @@ export default function AgentEnroll() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function PasswordRequirement({ met, text }: { met: boolean; text: string }) {
+  return (
+    <div className="flex items-center text-xs">
+      {met ? (
+        <CheckCircle className="h-4 w-4 text-green-500 mr-1.5" />
+      ) : (
+        <div className="h-4 w-4 rounded-full border border-gray-300 mr-1.5" />
+      )}
+      <span className={met ? "text-gray-600" : "text-gray-400"}>{text}</span>
     </div>
   );
 }

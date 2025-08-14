@@ -87,6 +87,17 @@ export const validateStep = async (
                 notifyError("Phone number must contain only digits");
                 return false;
             }
+            // Check password requirements
+            const isPasswordValid = (
+                password.length >= 8 &&
+                /\d/.test(password) &&
+                /[!@#$%^&*(),.?":{}|<>]/.test(password)
+            );
+
+            if (!isPasswordValid) {
+                notifyError("Please meet all password requirements");
+                return false;
+            }
             if (password.length < 8) {
                 notifyError("Password must be at least 8 characters");
                 return false;
