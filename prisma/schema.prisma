@@ -51,7 +51,7 @@ model AgentProfile {
   accessCodeHash        String               @default("")
   passwordHash          String
   passportUrl           String               @default("")
-  emailVerified         Boolean              @default(false)
+  emailVerified         DateTime?
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @default(now()) @updatedAt
   deletedAt             DateTime?

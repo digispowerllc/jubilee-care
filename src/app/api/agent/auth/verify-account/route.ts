@@ -1,8 +1,9 @@
 // File: src/app/api/auth/verify-account/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyResetToken } from "@/lib/auth-utils";
+import { verifyResetToken, generateResetToken } from "@/lib/auth-utils";
 import { writeToLogger } from "@/lib/logger";
+import { createHash } from 'crypto';
 
 export async function POST(req: Request) {
     try {
@@ -11,45 +12,74 @@ export async function POST(req: Request) {
 
         if (!token || !sid) {
             return NextResponse.json(
-                { success: false, message: "Missing token or sid" },
+                { success: false, message: "Missing verification token or account identifier" },
                 { status: 400 }
             );
         }
 
-        // Verify token (checks existence, expiry, and usedAt)
+        // Verify the existing token first
         const { isValid, userId, error } = await verifyResetToken(token);
-
-        if (!isValid || !userId || userId !== sid) {
+        if (!isValid || !userId) {
             return NextResponse.json(
-                { success: false, message: error || "Invalid token" },
+                {
+                    success: false,
+                    message: error || "Invalid or expired verification token",
+                    code: "INVALID_TOKEN"
+                },
                 { status: 400 }
             );
         }
 
-        // Ensure the token belongs to the provided sid
+        // Additional account matching verification
         if (userId !== sid) {
             return NextResponse.json(
-                { success: false, message: "Token does not match the provided account" },
-                { status: 400 }
+                {
+                    success: false,
+                    message: "Verification token does not exist. It may have been used already or does not match the account.",
+                    code: "ACCOUNT_MISMATCH"
+                },
+                { status: 403 }
             );
         }
 
-        // Delete all tokens for this agent (invalidate all outstanding tokens)
+        // Invalidate all existing tokens for this user first
         await prisma.passwordResetToken.deleteMany({
-            where: { agentId: userId },
+            where: {
+                agentId: userId,
+                // Optional: Add type filter if you have different token types
+                // type: 'verification'
+            }
         });
+
+        // Generate fresh password reset token (1 hour expiry)
+        const { token: formToken, expiresAt } = await generateResetToken(userId);
 
         // Mark account as verified
         await prisma.agentProfile.update({
-            where: { id: userId },
-            data: { emailVerified: true },
+            where: { id: sid },
+            data: {
+                emailVerified: new Date(), // Timestamp verification
+                accountLockedUntil: null, // Clear any lockouts
+                lockoutCount: 0           // Reset attempt counter
+            }
         });
 
-        return NextResponse.json({ success: true, message: "Account verified successfully" });
+        return NextResponse.json({
+            success: true,
+            message: "Account verified successfully. You may now reset your password.",
+            formToken,    // The new token for password reset
+            agentId: sid,  // The verified account ID
+            expiresAt: expiresAt.toISOString() // Token expiry
+        });
+
     } catch (err) {
-        writeToLogger("error", `Verify account error: ${err}`);
+        writeToLogger("error", `Account verification error: ${err}`);
         return NextResponse.json(
-            { success: false, message: "Server error occurred" },
+            {
+                success: false,
+                message: "An unexpected error occurred during verification",
+                code: "SERVER_ERROR"
+            },
             { status: 500 }
         );
     }

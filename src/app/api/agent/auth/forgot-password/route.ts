@@ -163,7 +163,7 @@ export async function POST(req: Request) {
     const { token: resetToken } = await generateResetToken(agentProfile.id);
 
     // Use agentId (sid) instead of email
-    const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/agent/reset-password?token=${resetToken}&sid=${agentProfile.id}`;
+    const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/agent/verify?token=${resetToken}&sid=${agentProfile.id}&auto=true&reset=true`;
 
     // 3️⃣ Log the reset attempt and update lastPasswordResetAt in a transaction
     await prisma.$transaction([
