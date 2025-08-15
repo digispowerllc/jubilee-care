@@ -1,3 +1,4 @@
+// File: src/app/api/auth/password-reset/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { protectData } from "@/lib/security/dataProtection";
@@ -7,7 +8,7 @@ import { z } from "zod";
 
 const resetPasswordSchema = z.object({
   token: z.string().min(1),
-  sid: z.string().min(1),
+  sid: z.string().min(1), // This is agentId
   password: z.string().min(8)
     .regex(/[A-Z]/, "Must contain at least one uppercase letter")
     .regex(/[0-9]/, "Must contain at least one number")
@@ -21,11 +22,11 @@ export async function POST(req: Request) {
 
     if (!parseResult.success) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: "Password requirements not met",
           code: "PASSWORD_REQUIREMENTS",
-          error: parseResult.error.flatten() 
+          error: parseResult.error.flatten()
         },
         { status: 400 }
       );
@@ -33,10 +34,10 @@ export async function POST(req: Request) {
 
     const { token, sid, password } = parseResult.data;
 
-    // Verify token using your existing auth-utils function
-    const { isValid, userId, error } = await verifyResetToken(token);
-    
-    if (!isValid || !userId) {
+    // Verify reset token
+    const { isValid, agentId, error } = await verifyResetToken(token, sid);
+
+    if (!isValid || !agentId) {
       return NextResponse.json(
         {
           success: false,
@@ -47,8 +48,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verify token belongs to the requested account
-    if (userId !== sid) {
+    // Ensure token matches the account
+    if (agentId !== sid) {
       return NextResponse.json(
         {
           success: false,
@@ -61,7 +62,7 @@ export async function POST(req: Request) {
 
     // Check if account is locked
     const profile = await prisma.agentProfile.findUnique({
-      where: { id: sid },
+      where: { agentId: sid }, // ✅ match by agentId
       select: { accountLockedUntil: true }
     });
 
@@ -76,14 +77,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Update password and security records in transaction
+    // Update password and security records
     const result = await prisma.$transaction(async (prismaTx) => {
-      // Generate secure password hash
       const passwordHash = (await protectData(password, "system-code")).encrypted;
 
-      // Update password and reset security fields
       const updatedProfile = await prismaTx.agentProfile.update({
-        where: { id: sid },
+        where: { agentId: sid }, // ✅ match by agentId
         data: {
           passwordHash,
           updatedAt: new Date(),
@@ -98,12 +97,10 @@ export async function POST(req: Request) {
         }
       });
 
-      // Invalidate all existing reset tokens for this user
       await prismaTx.passwordResetToken.deleteMany({
         where: { agentId: sid }
       });
 
-      // Invalidate all sessions
       await prismaTx.agentSession.deleteMany({
         where: { agentId: sid }
       });
@@ -111,7 +108,6 @@ export async function POST(req: Request) {
       return updatedProfile;
     });
 
-    // Log the password reset event
     writeToLogger("info", `Password reset for agent ${result.agentId}`);
 
     return NextResponse.json({

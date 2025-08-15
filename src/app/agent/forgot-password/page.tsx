@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/agent/auth/forgot-password", {
+      const response = await fetch("/api/agent/auth/verify-email-account", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -59,11 +59,11 @@ export default function ForgotPasswordPage() {
 
       // Special handling for rate limits
       if (response.status === 429) {
-        errorMessage = errorMessage || "Too many attempts. Please try again later.";
+        errorMessage =
+          errorMessage || "Too many attempts. Please try again later.";
       }
 
       throw new Error(errorMessage);
-
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "An unknown error occurred"
@@ -89,7 +89,7 @@ export default function ForgotPasswordPage() {
           <p className="mt-2 text-sm text-gray-600">
             {submitted
               ? "If an account exists with this email, you'll receive a reset link shortly."
-              : "Enter your email to receive a password reset link"}
+              : "Enter your email and let's get you back into your account!"}
           </p>
         </div>
 

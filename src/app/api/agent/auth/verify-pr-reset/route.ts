@@ -16,9 +16,9 @@ export async function POST(req: Request) {
         }
 
         // Verify the password reset token
-        const { isValid, userId, error } = await verifyResetToken(token);
+        const { isValid, agentId, error } = await verifyResetToken(token, sid);
 
-        if (!isValid || !userId) {
+        if (!isValid || !agentId) {
             return NextResponse.json(
                 {
                     success: false,
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
         }
 
         // Verify token belongs to the specified account
-        if (userId !== sid) {
+        if (agentId !== sid) {
             return NextResponse.json(
                 {
                     success: false,
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
         return NextResponse.json({
             success: true,
             message: "Password reset token is valid",
-            agentId: userId
+            agentId: agentId
         });
 
     } catch (err) {

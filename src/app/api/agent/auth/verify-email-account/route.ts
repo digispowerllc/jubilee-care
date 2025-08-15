@@ -12,7 +12,7 @@ import { subHours } from "date-fns";
 
 // ===== Security Config =====
 const SECURITY_CONFIG = {
-  BASE_LOCK_HOURS: 3,
+  BASE_LOCK_HOURS: 50,
   PENALTY_MONTHS: 1,
   MAX_LOCK_DAYS: 365,
   ACCOUNT_LOCKOUT: { MAX_ATTEMPTS: 3, WINDOW_HOURS: 1 },
@@ -163,7 +163,7 @@ export async function POST(req: Request) {
     const { token: resetToken } = await generateResetToken(agentProfile.id);
 
     // Use agentId (sid) instead of email
-    const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/agent/verify?token=${resetToken}&sid=${agentProfile.id}&auto=true&reset=true`;
+    const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/agent/verify-e-token?token=${resetToken}&sid=${agentProfile.id}&auto=true&reset=true`;
 
     // 3️⃣ Log the reset attempt and update lastPasswordResetAt in a transaction
     await prisma.$transaction([

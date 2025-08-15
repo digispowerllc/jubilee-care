@@ -1,4 +1,4 @@
-// File: api/agent/verify-account/page.tsx
+// File: api/agent/verify-r-token/page.tsx
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -7,8 +7,12 @@ import { useSearchParams, useRouter } from "next/navigation";
 export default function VerifyAccountPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
-  const sid = searchParams.get("sid");
+
+  // Decode token & sid safely
+  const rawToken = searchParams.get("token");
+  const token = rawToken ? decodeURIComponent(rawToken) : null;
+  const sidRaw = searchParams.get("sid");
+  const sid = sidRaw ? decodeURIComponent(sidRaw) : null;
   const autoVerify = searchParams.get("auto") === "true";
   const isPasswordReset = searchParams.get("reset") === "true";
 
@@ -18,6 +22,7 @@ export default function VerifyAccountPage() {
   const [formToken, setFormToken] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(5);
 
+  // ---------------- HANDLE VERIFICATION ----------------
   const handleVerification = useCallback(async () => {
     if (!token || !sid) {
       setError("Invalid verification link");
@@ -28,7 +33,9 @@ export default function VerifyAccountPage() {
     setError(null);
 
     try {
-      const res = await fetch("/api/agent/auth/verify-account", {
+      console.log("Verifying token:", token, "sid:", sid);
+
+      const res = await fetch("/api/agent/auth/verify-e-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, sid }),
@@ -38,23 +45,28 @@ export default function VerifyAccountPage() {
 
       if (!res.ok) throw new Error(data.message || "Verification failed");
 
+      console.log("Verification response:", data);
+
       setVerified(true);
 
       // Capture temporary form token for password reset
       if (data.formToken) setFormToken(data.formToken);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unexpected verification error");
+      console.error("Verification error:", err);
+      setError(
+        err instanceof Error ? err.message : "Unexpected verification error"
+      );
     } finally {
       setLoading(false);
     }
   }, [token, sid]);
 
-  // Auto-verify if auto=true
+  // ---------------- AUTO VERIFY ----------------
   useEffect(() => {
     if (autoVerify && token && sid && !verified && !error) handleVerification();
   }, [autoVerify, token, sid, verified, error, handleVerification]);
 
-  // Countdown timer for redirects
+  // ---------------- COUNTDOWN TIMER ----------------
   useEffect(() => {
     if ((!verified && !error) || countdown <= 0) return;
 
@@ -62,22 +74,24 @@ export default function VerifyAccountPage() {
     return () => clearTimeout(timer);
   }, [verified, error, countdown]);
 
-  // Redirect after countdown
+  // ---------------- REDIRECT AFTER COUNTDOWN ----------------
   useEffect(() => {
     if (countdown > 0) return;
 
     if (verified) {
-      router.push(
-        formToken
-          ? `/agent/reset-password?token=${formToken}&sid=${sid}`
-          : `/agent/reset-password?token=${formToken}&sid=${sid}`
-      );
-    } else if (error || !token) {
-      router.push("/");
+      if (formToken) {
+        router.push(
+          `/agent/password-reset?token=${encodeURIComponent(formToken)}&sid=${encodeURIComponent(sid!)}`
+        );
+      } else {
+         router.push(`/agent/sign-in`);
+      }
+    } else {
+       router.push("/");
     }
-  }, [countdown, verified, error, router, formToken, sid, token]);
+  }, [countdown, verified, error, router, formToken, sid]);
 
-  // Immediate redirect if token is missing
+  // ---------------- IMMEDIATE REDIRECT IF MISSING TOKEN ----------------
   useEffect(() => {
     if (!token) {
       const timer = setTimeout(() => router.push("/"), 3000);
@@ -85,13 +99,15 @@ export default function VerifyAccountPage() {
     }
   }, [token, router]);
 
-  // ===== UI Rendering =====
+  // ---------------- UI ----------------
   if (!token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md text-center space-y-4">
           <h1 className="text-3xl font-bold text-gray-900">Invalid Link</h1>
-          <p className="text-sm text-gray-600">Redirecting to home in 3 seconds...</p>
+          <p className="text-sm text-gray-600">
+            Redirecting to home in 3 seconds...
+          </p>
         </div>
       </div>
     );
@@ -111,11 +127,11 @@ export default function VerifyAccountPage() {
           <p className="mt-2 text-sm text-gray-600">
             {verified
               ? isPasswordReset
-                ? `Redirecting to password reset in ${countdown}s...`
-                : `Redirecting to sign in in ${countdown}s...`
+                ? `You're being redirected to password reset in ${countdown}s.. Click the button if you are not redirected.`
+                : `You're being redirected to sign in in ${countdown}s...`
               : error
-              ? "Redirecting to home page..."
-              : "Please wait while we verify your account"}
+                ? "You're being redirected to home page..."
+                : "Please wait while we verify your account"}
           </p>
         </div>
 
@@ -134,20 +150,29 @@ export default function VerifyAccountPage() {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
             <button
-              onClick={() =>
-                router.push(
-                  formToken
-                    ? `/agent/reset-password?token=${formToken}&sid=${sid}`
-                    : `/agent/reset-password?token=${formToken}&sid=${sid}`
-                )
-              }
+              onClick={() => {
+                if (formToken) {
+                  router.push(
+                    `/agent/password-reset?token=${encodeURIComponent(formToken)}&sid=${encodeURIComponent(sid!)}`
+                  );
+                } else {
+                  router.push("/agent/sign-in");
+                }
+              }}
               className="inline-flex items-center px-4 py-2 text-white bg-green-600 hover:bg-green-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
             >
-              {isPasswordReset ? "Continue to Password Reset" : "Continue to Sign In"}
+              {isPasswordReset
+                ? "Continue to Password Reset"
+                : "Continue to Sign In"}
             </button>
           </div>
         )}

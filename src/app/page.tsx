@@ -9,6 +9,7 @@ import ImpactSection from "@/components/ImpactSection";
 import VisualInsight from "@/components/VisualInsight";
 import AboutUs from "@/components/AboutUs";
 import SocialHandles from "@/components/SocialHandles";
+import { JSX } from "react/jsx-runtime";
 
 export default function HomePage() {
   const [showModal, setShowModal] = useState(false);
@@ -41,6 +42,21 @@ export default function HomePage() {
         <AboutUs />
         <SocialHandles />
       </main>
+
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        .animate-fade-in {
+          animation: fadeIn 0.5s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 }

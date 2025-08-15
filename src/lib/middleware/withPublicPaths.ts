@@ -6,7 +6,7 @@ const publicPaths = [
     '/auth/signin',
     '/auth/signup',
     '/auth/forgot-password',
-    '/auth/reset-password',
+    '/auth/password-reset',
     '/api/auth',
     '/_next/static',
     '_next/image',
