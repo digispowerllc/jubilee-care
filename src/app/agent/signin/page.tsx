@@ -4,7 +4,7 @@
 
 import { useAuth } from "./useAuth";
 import { AuthForm } from "./AuthForm";
-import { notifySuccess, notifyError } from "@/components/Notification";
+import { notifySuccess, notifyError } from "@/components/global/Notification";
 
 export default function SignInPage() {
   const {

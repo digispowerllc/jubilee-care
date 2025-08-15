@@ -27,7 +27,7 @@ export default function LogoutButton() {
       <motion.button
         onClick={() => setIsOpen(true)}
         disabled={loading}
-        className="fixed top-4 right-4 flex items-center gap-2 px-3 py-2 bg-red-500 text-white rounded-md shadow-md hover:bg-red-600 transition-colors z-50 disabled:opacity-70"
+        className="fixed top-4 right-4 flex items-center gap-2 px-3 py-2 bg-white text-red-500 rounded-md shadow-md hover:bg-red-600 hover:text-white transition-colors z-50 disabled:opacity-70"
         aria-label="Logout"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -97,7 +97,7 @@ export default function LogoutButton() {
                   <motion.button
                     onClick={handleLogout}
                     disabled={loading}
-                    className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:opacity-70"
+                    className="px-4 py-2 bg-white-500 text-red-500 rounded-md hover:bg-red-500 hover:outline-red-600 hover:text-white transition-colors disabled:opacity-70"
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                   >

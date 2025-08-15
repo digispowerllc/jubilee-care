@@ -1,4 +1,4 @@
-import { notifySuccess, notifyError } from "@/components/Notification";
+import { notifySuccess, notifyError } from "@/components/global/Notification";
 
 type AgentData = {
     surname: string;

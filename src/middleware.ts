@@ -1,5 +1,5 @@
-// middleware.ts
-import type { NextRequest } from 'next/server'
+// File: middleware.ts
+import { NextRequest, NextResponse } from 'next/server'
 import { chainMiddlewares } from '@/lib/middleware/middlewareChain'
 import { securityHeadersConfig, withSecurityHeaders } from '@/lib/middleware/securityHeaders'
 import { withRequestLogging } from '@/lib/middleware/requestLogging'
@@ -16,20 +16,27 @@ export const config = {
 export async function middleware(request: NextRequest): Promise<Response> {
   try {
     const result = await chainMiddlewares(request, [
+      // 1. CORS headers first
       withCors,
+
+      // 2. Security headers
       (req) => withSecurityHeaders(req, securityHeadersConfig),
+
+      // 3. Request logging
       async (req) => {
         await withRequestLogging(req);
-        // Pass through to next middleware, returning the request as a NextResponse
-        // or you can return NextResponse.next() if that's the convention in your chain
-        // Assuming NextResponse.next() is correct:
-        const { NextResponse } = await import('next/server');
         return NextResponse.next();
       },
+
+      // 4. Rate limiting
       (req) => withRateLimiter(req),
-      withPublicPaths
+
+      // 5. Public paths handling
+      withPublicPaths,
+
+
     ])
-    
+
     return result
   } catch (error) {
     console.error('Middleware chain error:', error)

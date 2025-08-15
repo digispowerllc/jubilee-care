@@ -1,102 +1,97 @@
-// File: src/lib/auth.ts
-
-import { randomBytes, timingSafeEqual, createHash } from 'crypto';
-import { prisma } from './prisma';
-import { addHours, isAfter } from 'date-fns';
+// File: src/lib/auth-edge.ts
+import { prisma } from "./prisma";
+import { addHours, isAfter } from "date-fns";
 
 const PASSWORD_RESET_TOKEN_EXPIRY_HOURS = 1;
-const SESSION_EXPIRY_HOURS = 24 * 7; // 1 week
+const SESSION_EXPIRY_HOURS = 24 * 7;
 
-export interface User {
-  id: string;
-  name: string;
-  email?: string;
-}
-
-// API Key Validation
-export const validateApiKey = (apiKey: string | undefined): boolean => {
-  if (!apiKey || !process.env.NIMC_API_KEY) return false;
-  const inputBuffer = Buffer.from(apiKey);
-  const envBuffer = Buffer.from(process.env.NIMC_API_KEY);
-  return (
-    inputBuffer.length === envBuffer.length &&
-    timingSafeEqual(inputBuffer, envBuffer)
-  );
+// ----------------- Helpers -----------------
+export const generateRandomHex = async (length: number) => {
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return Array.from(array)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 };
 
-// Password Reset System
-export const generateResetToken = async (
-  userId: string
-): Promise<{ token: string; expiresAt: Date; email: string }> => {
-  const token = randomBytes(32).toString('hex');
-  const expiresAt = addHours(new Date(), PASSWORD_RESET_TOKEN_EXPIRY_HOURS);
-  const tokenHash = createHash('sha256').update(token).digest('hex');
+export const sha256Hex = async (input: string) => {
+  const data = new TextEncoder().encode(input);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+};
 
-  // Get the user's email so we can attach it to the link
+export const timingSafeEqual = (a: string, b: string): boolean => {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++)
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return result === 0;
+};
+
+// ----------------- API Key Validation -----------------
+export const validateApiKey = (apiKey?: string): boolean => {
+  if (!apiKey || !process.env.NIMC_API_KEY) return false;
+  return timingSafeEqual(apiKey, process.env.NIMC_API_KEY);
+};
+
+// ----------------- Password Reset System -----------------
+export const generateResetToken = async (userId: string) => {
+  const token = await generateRandomHex(32);
+  const expiresAt = addHours(new Date(), PASSWORD_RESET_TOKEN_EXPIRY_HOURS);
+  const tokenHash = await sha256Hex(token);
+
   const agent = await prisma.agentProfile.findUnique({
     where: { id: userId },
     select: { email: true },
   });
 
-  if (!agent?.email) {
-    throw new Error("User email not found");
-  }
+  if (!agent?.email) throw new Error("User email not found");
 
   await prisma.passwordResetToken.create({
-    data: {
-      tokenHash,
-      agentId: userId,
-      expiresAt,
-    },
+    data: { tokenHash, agentId: userId, expiresAt },
   });
 
   return { token, expiresAt, email: agent.email };
 };
 
-export const verifyResetToken = async (
-  token: string,
-  email?: string
-): Promise<{ isValid: boolean; userId?: string; email?: string; error?: string }> => {
-  const tokenHash = createHash('sha256').update(token).digest('hex');
+export const verifyResetToken = async (token: string, email?: string) => {
+  const tokenHash = await sha256Hex(token);
 
   const resetToken = await prisma.passwordResetToken.findFirst({
     where: { tokenHash },
     include: { agent: true },
   });
 
-  if (!resetToken) return { isValid: false, error: 'Invalid token' };
-  if (resetToken.usedAt)
-    return { isValid: false, error: 'Token already used' };
+  if (!resetToken) return { isValid: false, error: "Invalid token" };
+  if (resetToken.usedAt) return { isValid: false, error: "Token already used" };
   if (isAfter(new Date(), resetToken.expiresAt))
-    return { isValid: false, error: 'Token expired' };
-
-  // Optional: extra check for email match
-  if (email && resetToken.agent.email?.toLowerCase() !== email.toLowerCase()) {
-    return { isValid: false, error: 'Email does not match token' };
-  }
+    return { isValid: false, error: "Token expired" };
+  if (email && resetToken.agent.email?.toLowerCase() !== email.toLowerCase())
+    return { isValid: false, error: "Email does not match token" };
 
   return {
     isValid: true,
     userId: resetToken.agentId,
-    email: resetToken.agent.email || undefined
+    email: resetToken.agent.email || undefined,
   };
 };
 
-export const markTokenAsUsed = async (token: string): Promise<void> => {
-  const tokenHash = createHash('sha256').update(token).digest('hex');
+export const markTokenAsUsed = async (token: string) => {
+  const tokenHash = await sha256Hex(token);
   await prisma.passwordResetToken.updateMany({
     where: { tokenHash },
     data: { usedAt: new Date() },
   });
 };
 
-
-// Session Management
+// ----------------- Session Management -----------------
 export const createSession = async (
   userId: string,
   metadata: { ip?: string; userAgent?: string } = {}
-): Promise<string> => {
-  const sessionToken = randomBytes(32).toString('hex');
+) => {
+  const sessionToken = await generateRandomHex(32);
   const expiresAt = addHours(new Date(), SESSION_EXPIRY_HOURS);
 
   await prisma.agentSession.create({
@@ -115,7 +110,7 @@ export const createSession = async (
 export const invalidateAllSessions = async (
   userId: string,
   options?: { keepCurrentToken?: string }
-): Promise<void> => {
+) => {
   await prisma.agentSession.updateMany({
     where: {
       agentId: userId,
@@ -127,40 +122,36 @@ export const invalidateAllSessions = async (
   });
 };
 
-// Cleanup Utilities
-export const cleanupExpiredSessions = async (): Promise<number> => {
-  const { count } = await prisma.agentSession.deleteMany({
-    where: { expiresAt: { lt: new Date() } },
-  });
-  return count;
-};
+// ----------------- Cleanup -----------------
+export const cleanupExpiredSessions = async () =>
+  (
+    await prisma.agentSession.deleteMany({
+      where: { expiresAt: { lt: new Date() } },
+    })
+  ).count;
 
-export const cleanupTokens = async (agentId: string): Promise<number> => {
-  const { count } = await prisma.passwordResetToken.deleteMany({
-    where: { agentId, expiresAt: { lt: new Date() }, usedAt: null },
-  });
-  return count;
-};
+export const cleanupTokens = async (agentId: string) =>
+  (
+    await prisma.passwordResetToken.deleteMany({
+      where: { agentId, expiresAt: { lt: new Date() }, usedAt: null },
+    })
+  ).count;
 
-export const cleanupExpiredResetTokens = async (): Promise<number> => {
-  const { count } = await prisma.passwordResetToken.deleteMany({
-    where: { expiresAt: { lt: new Date() } },
-  });
-  return count;
-};
+export const cleanupExpiredResetTokens = async () =>
+  (
+    await prisma.passwordResetToken.deleteMany({
+      where: { expiresAt: { lt: new Date() } },
+    })
+  ).count;
 
+// ----------------- Session Retrieval -----------------
 export async function getAgentFromSession(token?: string) {
   if (!token) return null;
 
   const session = await prisma.agentSession.findFirst({
-    where: {
-      token,
-      revokedAt: null,
-      expiresAt: { gte: new Date() },
-    },
+    where: { token, revokedAt: null, expiresAt: { gte: new Date() } },
     include: { agent: true },
   });
 
-  if (!session) return null;
-  return session.agent;
+  return session?.agent || null;
 }
