@@ -109,23 +109,35 @@ export default async function AgentProfilePage() {
       avatarUrl: agentData.profile?.avatarUrl,
     };
 
+    // Generate initials for avatar fallback
+    const getInitials = () => {
+      let initials = surname?.charAt(0) || "";
+      initials += firstName?.charAt(0) || "";
+      // if (otherName) {
+      //   initials += otherName.charAt(0);
+      // }
+      return initials.toUpperCase();
+    };
+
     const fullName = `${surname} ${firstName.slice(0, 1)}${otherName ? otherName.slice(0, 1) : ""}`;
 
     return (
       <div className="max-w-6xl mx-auto p-4 sm:p-6">
         <header className="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-          <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-100 overflow-hidden border-2 border-primary">
+          <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-100 overflow-hidden border-2 border-primary flex items-center justify-center">
             {unprotectedData.avatarUrl ? (
               <Image
                 src={unprotectedData.avatarUrl}
-                alt="Profile"
+                alt={fullName}
                 fill
                 className="object-cover"
                 sizes="(max-width: 640px) 80px, 96px"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-2xl sm:text-3xl text-gray-400">
-                <FiUser />
+              <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                <span className="text-2xl sm:text-3xl font-bold text-primary">
+                  {getInitials()}
+                </span>
               </div>
             )}
             <button className="absolute bottom-0 right-0 bg-primary text-white p-1 rounded-full">
