@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
   compress: true,
   productionBrowserSourceMaps: false,
 
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
+  },
   async headers() {
     return [
       {
@@ -55,11 +60,8 @@ const nextConfig: NextConfig = {
 
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "ui-avatars.com",
-        pathname: "/api/**",
-      },
+      new URL('https://res.cloudinary.com/**'),
+      new URL('https://ui-avatars.com/**'),
     ],
     disableStaticImages: false,
     minimumCacheTTL: 60,

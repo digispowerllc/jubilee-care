@@ -2,7 +2,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { isPublicPath, isPrivatePath } from "@/config/auth-paths";
+import { isPublicPath, isPrivatePath } from "@/lib/config/auth-paths";
 import Navigation from "@/components/nav/Navigation";
 
 export default function LayoutLoaderWrapper({

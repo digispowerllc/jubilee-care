@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Notification } from "@/components/global/Notification";
-import { Toaster } from "sonner";
+import { Toaster } from 'react-hot-toast';
 import LayoutLoaderWrapper from "./LayoutLoaderWrapper";
 
 import "./globals.css";
@@ -34,7 +34,7 @@ export default function RootLayout({
       >
         {" "}
         <LayoutLoaderWrapper>{children}</LayoutLoaderWrapper>
-        <Toaster position="top-center" richColors />
+        <Toaster position="top-right" />
         <Notification maxNotifications={3} position="top-right" />
       </body>
     </html>
