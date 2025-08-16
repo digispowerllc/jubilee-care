@@ -20,7 +20,7 @@ function mustEnv(name: string): string {
 const ENCRYPTION_KEY = mustHexEnv('ENCRYPTION_KEY', 32); // 32 bytes for AES-256
 const FIXED_IV_EMAIL = mustHexEnv('FIXED_IV_EMAIL', 16);
 const FIXED_IV_PHONE = mustHexEnv('FIXED_IV_PHONE', 16);
-const FIXED_GENERAL = mustHexEnv('FIXED_GENERAL', 16);
+ const FIXED_GENERAL = mustHexEnv('FIXED_GENERAL', 16);
 const SALT_ROUNDS = Number(process.env.SALT_ROUNDS ?? 12);
 const HASH_PEPPER = mustEnv('HASH_PEPPER');
 
