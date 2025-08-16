@@ -47,16 +47,17 @@ export function DeactivateModal({
     setIsLoading(true);
 
     try {
+      if (!agentId) throw new Error("Session expired");
+
       if (!validatePin(pin)) {
         throw new Error("PIN must be 8-15 digits");
       }
 
-      if (!agentId) throw new Error("Session expired");
       // const isValidPin = await verifyAgentPin(agentId, pin);
       // if (!isValidPin) throw new Error("Invalid PIN");
 
       if (confirmationText.toLowerCase() !== "deactivate my account") {
-        throw new Error("Confirmation text does not match");
+        throw new Error("You must type 'deactivate my account' to confirm");
       }
 
       const response = await fetch("/api/agent/account/deactivate", {
@@ -64,24 +65,29 @@ export function DeactivateModal({
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest", // Security header
         },
         body: JSON.stringify({
-          agentId,
-          pin,
-          confirmation: confirmationText,
+          agentId, // From session
+          pin, // 8-15 digit PIN
+          confirmation: confirmationText, // Exact phrase match
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Deactivation failed");
+        throw new Error(data.error || "Deactivation failed");
       }
 
+      // Success - log and redirect
+      console.log("Deactivation successful", data);
       setFeedback("Account deactivation initiated successfully");
       setTimeout(() => {
         window.location.href = "/logout";
       }, 2000);
     } catch (error) {
+        console.error("Deactivation error:", error);
       setFeedback(
         error instanceof Error ? error.message : "Deactivation failed"
       );

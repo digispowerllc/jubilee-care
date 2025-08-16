@@ -3,6 +3,16 @@ import { useState, useEffect } from "react";
 import { FiX, FiAlertOctagon, FiKey, FiLock, FiCheck } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 
+
+interface AuditMetadata {
+  deletionScheduled?: Date
+  recoveryWindow?: string // e.g., "30 days"
+  affectedServices?: string[]
+  riskScore?: number
+  twoFactorUsed?: boolean
+}
+
+
 export function DeleteModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [step, setStep] = useState<"warning" | "confirm" | "verify" | "final">("warning");
   const [password, setPassword] = useState("");

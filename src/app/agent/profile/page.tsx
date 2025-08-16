@@ -30,9 +30,26 @@ export default async function AgentProfilePage() {
     // Get and validate session
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("agent_session")?.value;
-    const session = await getAgentFromSession(sessionToken);
+
+    if (!sessionToken) {
+      console.warn(
+        "[middleware] No session token found → redirecting to sign in"
+      );
+      redirect("/agent/signin");
+    }
+
+    let session;
+    try {
+      session = await getAgentFromSession(sessionToken);
+    } catch (err) {
+      console.error("[middleware] Error fetching session:", err);
+      redirect("/agent/signin");
+    }
 
     if (!session) {
+      console.warn(
+        "[middleware] No matching session found in DB → redirecting"
+      );
       redirect("/agent/signin");
     }
 

@@ -95,13 +95,15 @@ export async function POST(req: Request) {
             // 2. Log the deletion request
             prisma.auditLog.create({
                 data: {
-                    action: 'ACCOUNT_DELETION_REQUEST',
+                    action: "ACCOUNT_DELETION_REQUEST",
                     agentId: session.id,
-                    details: 'User initiated permanent account deletion',
-                    ipAddress: req.headers.get('x-forwarded-for') || 'unknown',
-                    userAgent: req.headers.get('user-agent') || 'unknown',
+                    details: "User initiated permanent deletion",
+                    ipAddress: req.headers.get('x-forwarded-for') || "unknown",
+                    userAgent: req.headers.get('user-agent') || "unknown",
                     metadata: {
-                        deletionScheduled: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                        deletionScheduled: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                        confirmationText: confirmation, // "delete my data"
+                        systemsAffected: ["profile", "messages", "subscriptions"]
                     }
                 }
             }),

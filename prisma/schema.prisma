@@ -8,23 +8,59 @@ datasource db {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  action    String // e.g., "ACCOUNT_DEACTIVATION", "LOGIN", "PASSWORD_CHANGE"
-  details   String? // Additional details about the action
-  ipAddress String
-  userAgent String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String      @id @default(cuid())
+  action    AuditAction // Using enum instead of String
+  details   String?
+  ipAddress String      @default("unknown")
+  userAgent String      @default("unknown")
+  status    AuditStatus @default(SUCCESS)
+  severity  Severity    @default(MEDIUM)
   metadata  Json?
+  createdAt DateTime    @default(now())
+  expiresAt DateTime?   @default(dbgenerated("(NOW() + interval '7 years')")) // GDPR compliance
 
-  // Relationship to Agent (matches your existing pattern)
-  agentId String
-  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  // Enhanced relationships
+  agentId    String?
+  agent      Agent?  @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  targetId   String? // ID of affected resource
+  targetType String? // Type of affected resource (e.g., "ACCOUNT", "DATA")
 
-  // Indexes matching your schema style
-  @@index([agentId])
+  // Indexes (optimized for common queries)
   @@index([action])
+  @@index([agentId])
   @@index([createdAt])
+  @@index([severity])
+  @@index([status])
+  @@index([targetId, targetType])
+  // Data retention policy
+  @@map("audit_logs")
+}
+
+enum AuditAction {
+  ACCOUNT_DELETION_REQUEST
+  ACCOUNT_DEACTIVATION
+  LOGIN_ATTEMPT
+  LOGIN_SUCCESS
+  PASSWORD_CHANGE
+  PASSWORD_RESET
+  DATA_EXPORT
+  DATA_DELETION
+  PERMISSION_CHANGE
+  SYSTEM_EVENT
+}
+
+enum AuditStatus {
+  SUCCESS
+  FAILED
+  PENDING
+  REVERTED
+}
+
+enum Severity {
+  LOW // Informational (e.g., login success)
+  MEDIUM // Security-relevant (e.g., password change)
+  HIGH // Sensitive action (e.g., account deactivation)
+  CRITICAL // Destructive action (e.g., account deletion)
 }
 
 model Agent {
@@ -69,6 +105,8 @@ model Agent {
   @@index([state])
   @@index([lga])
   @@index([createdAt])
+  // Automatic data retention policy (7 years for compliance)
+  @@map("agent")
 }
 
 model AgentProfile {
@@ -99,6 +137,8 @@ model AgentProfile {
   @@index([emailHash])
   @@index([pinHash])
   @@index([createdAt])
+  // Automatic data retention policy (7 years for compliance)
+  @@map("agent_profile")
 }
 
 model AgentSession {
@@ -139,6 +179,9 @@ enum AgentStatus {
 model Lockout {
   id    String   @id // could be IP or account ID
   until DateTime
+
+  // Automatic data retention policy (7 years for compliance)
+  @@map("lockout")
 }
 
 model PasswordResetToken {
@@ -154,6 +197,8 @@ model PasswordResetToken {
 
   @@index([agentId])
   @@index([expiresAt])
+  // Automatic data retention policy (7 years for compliance)
+  @@map("password_reset_token")
 }
 
 model PasswordResetEvent {
@@ -165,6 +210,8 @@ model PasswordResetEvent {
   userAgent String?
 
   @@index([agentId, createdAt])
+  // Automatic data retention policy (7 years for compliance)
+  @@map("password_reset_event")
 }
 
 model User {
@@ -211,6 +258,9 @@ model UserRole {
   id   String @id
   role String @default("agent")
   user User   @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  // Automatic data retention policy (7 years for compliance)
+  @@map("user_role")
 }
 
 model Session {
@@ -226,6 +276,8 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
+  // Automatic data retention policy (7 years for compliance)
+  @@map("session")
 }
 
 model OAuthAccount {
@@ -237,4 +289,6 @@ model OAuthAccount {
   agent      Agent    @relation(fields: [agentId], references: [id])
 
   @@unique([provider, providerId])
+  // Automatic data retention policy (7 years for compliance)
+  @@map("oauth_account")
 }

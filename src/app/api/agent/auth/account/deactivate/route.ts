@@ -7,6 +7,14 @@ import { verifyAgentPin } from '@/lib/pin-utils';
 
 const PIN_REGEX = /^\d{8,15}$/;
 
+interface AuditMetadata {
+    deletionScheduled?: Date
+    recoveryWindow?: string // e.g., "30 days"
+    affectedServices?: string[]
+    riskScore?: number
+    twoFactorUsed?: boolean
+}
+
 export async function POST(req: Request) {
     try {
         const session = await getAgentFromSession();
@@ -87,11 +95,15 @@ export async function POST(req: Request) {
             // 2. Log the deactivation
             prisma.auditLog.create({
                 data: {
-                    action: 'ACCOUNT_DEACTIVATION',
+                    action: "ACCOUNT_DEACTIVATION",
                     agentId: session.id,
-                    details: 'User initiated account deactivation',
-                    ipAddress: req.headers.get('x-forwarded-for') || 'unknown',
-                    userAgent: req.headers.get('user-agent') || 'unknown'
+                    details: "User initiated deactivation via modal",
+                    ipAddress: req.headers.get('x-forwarded-for') || "unknown",
+                    userAgent: req.headers.get('user-agent') || "unknown",
+                    metadata: {
+                        pinLastFour: `****${pin.slice(-4)}`, // Secure PIN handling
+                        confirmationVerified: true
+                    }
                 }
             }),
 

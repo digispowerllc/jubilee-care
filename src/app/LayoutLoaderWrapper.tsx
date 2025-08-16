@@ -26,7 +26,7 @@ export default function LayoutLoaderWrapper({
       try {
         setLoading(true); // Show spinner immediately
 
-        const res = await fetch("/api/agent/auth/check-session", {
+        const res = await fetch("/api/agent/auth/check-session-2", {
           credentials: "include",
           cache: "no-store",
         });
