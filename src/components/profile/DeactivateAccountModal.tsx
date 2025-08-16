@@ -212,11 +212,11 @@ export function DeactivateModal({
           ) : (
             <form onSubmit={handleSubmit}>
               <div className="space-y-4 mb-6">
-                <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                  <FiAlertTriangle className="text-red-600 flex-shrink-0" />
-                  <p className="text-sm text-red-800">
-                    This is your final confirmation. This action cannot be
-                    undone.
+                <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                  <FiAlertTriangle className="text-amber-600 flex-shrink-0" />
+                  <p className="text-sm text-amber-800">
+                    This is your final confirmation. Type{" "}
+                    <strong>deactivate my account</strong> to confirm.
                   </p>
                 </div>
 
@@ -225,11 +225,15 @@ export function DeactivateModal({
                     htmlFor="confirmation"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Type <strong>deactivate my account</strong> to confirm
+                    Type{" "}
+                    <strong className="text-amber-600">
+                      deactivate my account
+                    </strong>{" "}
+                    to confirm
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FiCheck className="text-gray-400" />
+                      <FiCheck className="text-amber-400" />
                     </div>
                     <input
                       id="confirmation"
@@ -271,7 +275,7 @@ export function DeactivateModal({
                     isLoading ||
                     confirmationText.toLowerCase() !== "deactivate my account"
                   }
-                  className="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-400 flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md disabled:shadow-none"
+                  className="px-4 py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:bg-amber-400 flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md disabled:shadow-none"
                 >
                   {isLoading ? (
                     <>
