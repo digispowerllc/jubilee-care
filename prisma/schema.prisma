@@ -91,13 +91,16 @@ model Agent {
   deactivationReason String?
   avatarUrl          String    @default("")
 
-  profile            AgentProfile?
-  sessions           AgentSession[]
-  oauthAccounts      OAuthAccount[]
-  PasswordResetToken PasswordResetToken[]
-  PasswordResetEvent PasswordResetEvent[]
-  AuditLog           AuditLog[]
-  DeletionSchedule   DeletionSchedule[]
+  profile               AgentProfile?
+  sessions              AgentSession[]
+  oauthAccounts         OAuthAccount[]
+  PasswordResetToken    PasswordResetToken[]
+  PasswordResetEvent    PasswordResetEvent[]
+  AuditLog              AuditLog[]
+  DeletionSchedule      DeletionSchedule[]
+  AccountLock           AccountLock?
+  FailedAttempt         FailedAttempt[]
+  FailedDeletionAttempt FailedDeletionAttempt[]
 
   @@index([emailHash])
   @@index([phoneHash])
@@ -110,23 +113,28 @@ model Agent {
 }
 
 model AgentProfile {
-  id                    String    @id @default(uuid())
-  agentId               String    @unique
-  email                 String
-  emailHash             String    @unique
-  phone                 String
-  phoneHash             String    @unique
-  pin                   String    @default("")
-  pinHash               String    @default("")
-  passwordHash          String
-  emailVerified         DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @default(now()) @updatedAt
-  passwordResetAttempts Int?
-  accountLockedUntil    DateTime?
-  lockoutCount          Int       @default(0)
-  lastPasswordResetAt   DateTime?
-  avatarUrl             String    @default("")
+  id                     String    @id @default(uuid())
+  agentId                String    @unique
+  email                  String
+  emailHash              String    @unique
+  phone                  String
+  phoneHash              String    @unique
+  pin                    String    @default("")
+  pinHash                String    @default("")
+  passwordHash           String
+  emailVerified          DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @default(now()) @updatedAt
+  passwordResetAttempts  Int?
+  accountLockedUntil     DateTime?
+  isLocked               Boolean   @default(false)
+  lockoutCount           Int       @default(0)
+  lockedUntil            DateTime?
+  lastPasswordResetAt    DateTime?
+  avatarUrl              String    @default("")
+  failedDeletionAttempts DateTime?
+  deletionLockedUntil    DateTime?
+  deletionLockoutCount   Int       @default(0)
 
   agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
@@ -156,6 +164,13 @@ model AgentSession {
   @@index([expiresAt])
 }
 
+enum AgentStatus {
+  ACTIVE
+  DEACTIVATED
+  PENDING_DELETION
+  DELETED
+}
+
 model DeletionSchedule {
   id           String    @id @default(cuid())
   agentId      String
@@ -169,19 +184,66 @@ model DeletionSchedule {
   @@index([scheduledAt])
 }
 
-enum AgentStatus {
-  ACTIVE
-  DEACTIVATED
-  PENDING_DELETION
-  DELETED
+model FailedAttempt {
+  id        String   @id @default(cuid())
+  agentId   String // Reference to the agent account
+  action    String // Type of action (e.g., "LOGIN", "ACCOUNT_DELETION", "PIN_VERIFICATION")
+  details   String? // Additional context about the failure
+  ipAddress String // IP address where attempt originated
+  userAgent String? // Browser/device information
+  createdAt DateTime @default(now())
+
+  // Relations
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  // Indexes for efficient querying
+  @@index([agentId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([ipAddress])
+  // Data retention policy (90 days for failed attempts, longer for compliance cases)
+  @@map("failed_attempts")
 }
 
-model Lockout {
-  id    String   @id // could be IP or account ID
-  until DateTime
+model FailedDeletionAttempt {
+  id        String   @id @default(cuid())
+  agentId   String
+  action    String   @default("ACCOUNT_DELETION")
+  ipAddress String
+  userAgent String?
+  attempts  Int      @default(0)
+  details   String? // "Invalid PIN", "Invalid Password", etc.
+  createdAt DateTime @default(now())
 
+  // Relations
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([agentId])
+  @@index([createdAt])
+  @@index([ipAddress])
+  @@map("failed_deletion_attempts")
+}
+
+model AccountLock {
+  id        String   @id @default(cuid())
+  agentId   String   @unique // References the agent account
+  reason    String? // Reason for lock (e.g., "Too many failed attempts")
+  expiresAt DateTime // When the lock will automatically expire
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String? // IP address that triggered the lock
+  action    String? // What action caused the lock (e.g., "ACCOUNT_DELETION")
+  userAgent String?
+  // Relation to agent (optional but recommended)
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  // Indexes for efficient querying
+  @@index([agentId])
+  @@index([expiresAt])
+  @@index([action])
   // Automatic data retention policy (7 years for compliance)
-  @@map("lockout")
+  @@map("account_locks")
 }
 
 model PasswordResetToken {

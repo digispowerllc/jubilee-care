@@ -7,14 +7,6 @@ import { verifyAgentPin } from '@/lib/pin-utils';
 
 const PIN_REGEX = /^\d{8,15}$/;
 
-interface AuditMetadata {
-    deletionScheduled?: Date
-    recoveryWindow?: string // e.g., "30 days"
-    affectedServices?: string[]
-    riskScore?: number
-    twoFactorUsed?: boolean
-}
-
 export async function POST(req: Request) {
     try {
         const session = await getAgentFromSession();

@@ -1,15 +1,14 @@
 // File: src/app/agent/profile/page.tsx
-
 import { cookies } from "next/headers";
-import { getAgentFromSession } from "@/lib/auth-utils";
 import { redirect } from "next/navigation";
+import { getAgentFromSession } from "@/lib/auth-utils";
 import { unprotectData } from "@/lib/security/dataProtection";
 import { prisma } from "@/lib/prisma";
 import { ProfileTabs } from "./ProfileTabs";
 import LogoutButton from "./LogoutButton";
 import { AvatarUpload } from "@/components/global/AvatarUpload";
 
-export type AgentProfileData = {
+type AgentProfileData = {
   surname: string;
   firstName: string;
   otherName: string | null;
@@ -21,101 +20,111 @@ export type AgentProfileData = {
   address: string;
   emailVerified: boolean;
   memberSince?: Date;
-  avatarUrl?: string; // Changed to only string | undefined
+  avatarUrl?: string;
   agentId: string;
 };
 
-export default async function AgentProfilePage() {
-  try {
-    // Get and validate session
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get("agent_session")?.value;
-
-    if (!sessionToken) {
-      console.warn(
-        "[middleware] No session token found → redirecting to sign in"
-      );
-      redirect("/agent/signin");
-    }
-
-    let session;
-    try {
-      session = await getAgentFromSession(sessionToken);
-    } catch (err) {
-      console.error("[middleware] Error fetching session:", err);
-      redirect("/agent/signin");
-    }
-
-    if (!session) {
-      console.warn(
-        "[middleware] No matching session found in DB → redirecting"
-      );
-      redirect("/agent/signin");
-    }
-
-    // Fetch agent data
-    const [agentData, unprotectedFields] = await Promise.all([
-      prisma.agent.findUnique({
-        where: { id: session.id },
+async function fetchAgentData(agentId: string) {
+  return await prisma.agent.findUnique({
+    where: { id: agentId },
+    select: {
+      id: true,
+      surname: true,
+      firstName: true,
+      otherName: true,
+      email: true,
+      phone: true,
+      nin: true,
+      state: true,
+      lga: true,
+      address: true,
+      profile: {
         select: {
-          id: true,
-          surname: true,
-          firstName: true,
-          otherName: true,
-          email: true,
-          phone: true,
-          nin: true,
-          state: true,
-          lga: true,
-          address: true,
-          profile: {
-            select: {
-              emailVerified: true,
-              createdAt: true,
-              avatarUrl: true,
-            },
-          },
+          emailVerified: true,
+          createdAt: true,
+          avatarUrl: true,
         },
-      }),
-      // Pre-fetch all unprotected data
-      (async () => {
-        const data = await prisma.agent.findUnique({
-          where: { id: session.id },
-          select: {
-            id: true,
-            surname: true,
-            firstName: true,
-            otherName: true,
-            email: true,
-            phone: true,
-            nin: true,
-            state: true,
-            lga: true,
-            address: true,
-          },
-        });
+      },
+    },
+  });
+}
 
-        if (!data) return null;
+async function getUnprotectedFields(agentId: string) {
+  const data = await prisma.agent.findUnique({
+    where: { id: agentId },
+    select: {
+      surname: true,
+      firstName: true,
+      otherName: true,
+      email: true,
+      phone: true,
+      nin: true,
+      state: true,
+      lga: true,
+      address: true,
+    },
+  });
 
-        return Promise.all([
-          unprotectData(data.surname, "name"),
-          unprotectData(data.firstName, "name"),
-          data.otherName ? unprotectData(data.otherName, "name") : null,
-          unprotectData(data.email, "email"),
-          unprotectData(data.phone, "phone"),
-          unprotectData(data.nin, "government"),
-          unprotectData(data.state, "location"),
-          unprotectData(data.lga, "location"),
-          unprotectData(data.address, "location"),
-        ]);
-      })(),
+  if (!data) return null;
+
+  return Promise.all([
+    unprotectData(data.surname, "name"),
+    unprotectData(data.firstName, "name"),
+    data.otherName ? unprotectData(data.otherName, "name") : null,
+    unprotectData(data.email, "email"),
+    unprotectData(data.phone, "phone"),
+    unprotectData(data.nin, "government"),
+    unprotectData(data.state, "location"),
+    unprotectData(data.lga, "location"),
+    unprotectData(data.address, "location"),
+  ]);
+}
+
+function getInitials(surname: string, firstName: string) {
+  return `${surname?.charAt(0) || ""}${firstName?.charAt(0) || ""}`.toUpperCase();
+}
+
+function getFullName(
+  surname: string,
+  firstName: string,
+  otherName: string | null
+) {
+  return `${surname} ${firstName}${otherName ? ` ${otherName}` : ""}`;
+}
+
+export default async function AgentProfilePage() {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("agent_session")?.value;
+
+  if (!sessionToken) {
+    console.warn("[profile] No session token found → redirecting to sign in");
+    redirect("/agent/signin");
+  }
+
+  let session;
+  try {
+    session = await getAgentFromSession(sessionToken);
+  } catch (err) {
+    console.error("[profile] Error fetching session:", err);
+    redirect("/agent/signin");
+  }
+
+  if (!session) {
+    console.warn("[profile] No matching session found → redirecting");
+    redirect("/agent/signin");
+  }
+
+  try {
+    const [agentData, unprotectedFields] = await Promise.all([
+      fetchAgentData(session.id),
+      getUnprotectedFields(session.id),
     ]);
 
     if (!agentData || !unprotectedFields) {
+      console.warn("[profile] No agent data found → redirecting");
       redirect("/agent/signin");
     }
 
-    // Destructure unprotected data
     const [
       surname,
       firstName,
@@ -128,40 +137,38 @@ export default async function AgentProfilePage() {
       address,
     ] = unprotectedFields;
 
-    // Handle avatarUrl conversion from null to undefined
-    const avatarUrl = agentData.profile?.avatarUrl ?? undefined;
-
     const unprotectedData: AgentProfileData = {
       surname: surname ?? "",
       firstName: firstName ?? "",
-      otherName: otherName,
+      otherName,
       email: email ?? "",
       phone: phone ?? "",
       nin: nin ?? "",
       state: state ?? "",
       lga: lga ?? "",
       address: address ?? "",
-      emailVerified: !!agentData.profile?.emailVerified,
+      emailVerified: typeof agentData.profile?.emailVerified === "boolean" ? agentData.profile.emailVerified : false,
       memberSince: agentData.profile?.createdAt,
-      avatarUrl: avatarUrl, // This is now either string or undefined
+      avatarUrl: agentData.profile?.avatarUrl ?? undefined,
       agentId: agentData.id,
     };
 
-    // Generate initials
-    const getInitials = () => {
-      let initials = surname?.charAt(0) || "";
-      initials += firstName?.charAt(0) || "";
-      return initials.toUpperCase();
-    };
-
-    const fullName = `${surname} ${firstName}${otherName ? " " + otherName : ""}`;
+    const initials = getInitials(
+      unprotectedData.surname,
+      unprotectedData.firstName
+    );
+    const fullName = getFullName(
+      unprotectedData.surname,
+      unprotectedData.firstName,
+      unprotectedData.otherName
+    );
 
     return (
       <div className="max-w-6xl mx-auto p-4 sm:p-6">
         <header className="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
           <AvatarUpload
             initialAvatarUrl={unprotectedData.avatarUrl}
-            initials={getInitials()}
+            initials={initials}
             fullName={fullName}
             agentId={unprotectedData.agentId}
           />

@@ -1,0 +1,222 @@
+"use client";
+
+import { UnprotectedData } from "@/lib/types/profileTypes";
+import {
+  FiCheckCircle,
+  FiXCircle,
+  FiClipboard,
+  FiShield,
+  FiFileText,
+  FiSettings,
+  FiCreditCard,
+  FiMail,
+  FiUser,
+} from "react-icons/fi";
+
+interface OverviewTabProps {
+  data: UnprotectedData;
+}
+
+export function OverviewTab({ data }: OverviewTabProps) {
+  const quickActions = [
+    {
+      name: "Update Profile",
+      href: "#personal",
+      icon: FiUser,
+      description: "Edit your personal details",
+      secure: false,
+    },
+    {
+      name: "Verify Contact",
+      href: "#contact",
+      icon: FiMail,
+      description: "Confirm your email or phone",
+      secure: true,
+    },
+    {
+      name: "View ID",
+      href: "#identification",
+      icon: FiCreditCard,
+      description: "View your identification documents",
+      secure: true,
+    },
+    {
+      name: "View NIN",
+      href: "#identification",
+      icon: FiCreditCard,
+      description: "National Identification Number (NIN)",
+      secure: true,
+    },
+    {
+      name: "View BVN",
+      href: "#identification",
+      icon: FiCreditCard,
+      description: "Bank Verification Number (coming soon)",
+      secure: true,
+    },
+    {
+      name: "Security Settings",
+      href: "#security",
+      icon: FiShield,
+      description: "Manage passwords & PIN",
+      secure: true,
+    },
+    {
+      name: "Documents",
+      href: "#documents",
+      icon: FiFileText,
+      description: "Upload required files",
+    },
+    {
+      name: "Preferences",
+      href: "#preferences",
+      icon: FiSettings,
+      description: "Customize your experience",
+    },
+    {
+      name: "Support",
+      href: "#support",
+      icon: FiClipboard,
+      description: "Get help or contact support",
+    },
+  ];
+
+  const accountMetrics = [
+    {
+      name: "Tasks Completed",
+      value: "24",
+      icon: FiClipboard,
+      trend: "up",
+    },
+    {
+      name: "Active Sessions",
+      value: "1",
+      icon: FiShield,
+      trend: "stable",
+    },
+    {
+      name: "Pending Actions",
+      value: "3",
+      icon: FiFileText,
+      trend: "down",
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        {accountMetrics.map((metric) => (
+          <div key={metric.name} className="bg-white rounded-lg shadow-sm p-5">
+            <div className="flex items-center space-x-4">
+              <div
+                className={`p-3 rounded-lg ${
+                  metric.trend === "up"
+                    ? "bg-green-100 text-green-600"
+                    : metric.trend === "down"
+                      ? "bg-red-100 text-red-600"
+                      : "bg-blue-100 text-blue-600"
+                }`}
+              >
+                <metric.icon className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">
+                  {metric.name}
+                </p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {metric.value}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Quick Actions Grid */}
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="p-6">
+          <h3 className="text-lg font-medium leading-6 text-gray-900">
+            Quick Actions
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage your account with one click
+          </p>
+        </div>
+        <div className="border-t border-gray-200 px-6 py-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {quickActions.map((action) => (
+              <a
+                key={action.name}
+                href={action.href}
+                className="group relative flex items-start space-x-4 rounded-lg p-4 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              >
+                <div
+                  className={`flex-shrink-0 p-3 rounded-lg ${
+                    action.secure
+                      ? "bg-red-100 text-red-600"
+                      : "bg-gray-100 text-gray-600"
+                  } group-hover:bg-opacity-80`}
+                >
+                  <action.icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-sm font-medium text-gray-900">
+                    {action.name}
+                    {action.secure && (
+                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                        Secure
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-sm text-gray-500">{action.description}</p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Account Status */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h3 className="text-lg font-medium leading-6 text-gray-900">
+          Account Status
+        </h3>
+        <div className="mt-4 space-y-4">
+          <div className="flex items-start">
+            <div className="flex-shrink-0 pt-0.5">
+              {data.emailVerified ? (
+                <FiCheckCircle className="h-5 w-5 text-green-500" />
+              ) : (
+                <FiXCircle className="h-5 w-5 text-yellow-500" />
+              )}
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-700">
+                Email {data.emailVerified ? "Verified" : "Pending Verification"}
+              </p>
+              <p className="text-sm text-gray-500">
+                {data.emailVerified
+                  ? "Your email address has been confirmed"
+                  : "Please verify your email to access all features"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start">
+            <div className="flex-shrink-0 pt-0.5">
+              <FiShield className="h-5 w-5 text-blue-500" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-700">
+                Account Security
+              </p>
+              <p className="text-sm text-gray-500">
+                Your account has standard protection enabled
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
