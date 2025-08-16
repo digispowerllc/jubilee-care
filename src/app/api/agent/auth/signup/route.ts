@@ -64,8 +64,8 @@ export async function POST(req: Request) {
     }
 
     const fieldId = generateAgentId();
-    const DEFAULT_ACCESS_CODE = "";
-    // This is the default access code used for agent registration.
+    const DEFAULT_PIN = "";
+    // This is the default PIN used for agent registration.
 
     // Create agent & profile in a transaction
     const result = await prisma.$transaction(async (prismaTx) => {
@@ -99,8 +99,8 @@ export async function POST(req: Request) {
           emailHash,
           phone: (await protectData(phone, "phone")).encrypted,
           phoneHash,
-          pinHash: DEFAULT_ACCESS_CODE,
-          pinHash: DEFAULT_ACCESS_CODE,
+          pin: DEFAULT_PIN,
+          pinHash: DEFAULT_PIN,
           passwordHash: (await protectData(password, "system-code")).encrypted,
         },
       });

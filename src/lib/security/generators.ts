@@ -10,7 +10,7 @@ export function generateAgentId(): string {
   return `${prefix}${random}`;
 }
 
-export function generatepinHash(): string {
+export function generateAccessCode(): string {
   const length = Math.floor(Math.random() * 5) + 8; // Random number between 8 and 12
   let code = '';
   while (code.length < length) {
