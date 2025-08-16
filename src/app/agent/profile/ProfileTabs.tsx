@@ -1,151 +1,261 @@
-// File: src/app/agent/profile/ProfileTabs.tsx
 "use client";
 
-import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@headlessui/react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { OverviewTab } from "@/components/profile/tabs/OverviewTab";
-import { PersonalTab } from "@/components/profile/tabs/PersonalTab";
-import { ContactTab } from "@/components/profile/tabs/ContactTab";
-import { AddressTab } from "@/components/profile/tabs/AddressTab";
-import { SecurityTab } from "@/components/profile/tabs/SecurityTab";
-import { PreferencesTab } from "@/components/profile/tabs/PreferencesTab";
-import { IdentificationTab } from "@/components/profile/tabs/IdentificationTab";
-import { PINModal } from "@/components/profile/modals/PINModal";
-import { UnprotectedData } from "@/lib/types/profileTypes";
 import {
-  FiActivity,
-  FiUser,
-  FiMail,
-  FiMapPin,
+  FiLock,
   FiShield,
-  FiCreditCard,
-  FiSettings,
+  FiKey,
+  FiPhone,
+  FiTrash2,
+  FiEdit2,
 } from "react-icons/fi";
+import { DangerZone } from "@/components/profile/DangerZone";
+import { NextRouter } from "next/router";
 
-export function ProfileTabs({
-  unprotectedData,
-}: {
-  unprotectedData: UnprotectedData;
-}) {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState("Overview");
-  const [showPINModal, setShowPINModal] = useState(false);
-  const [pinModalPurpose, setPinModalPurpose] = useState<
-    "viewNIN" | "viewPhone" | ""
-  >("");
+interface SecurityTabProps {
+  router: NextRouter;
+}
+
+export function SecurityTab({ router }: SecurityTabProps) {
+  const [isEditingPassword, setIsEditingPassword] = useState(false);
+  const [isEditingPIN, setIsEditingPIN] = useState(false);
+  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [newPIN, setNewPIN] = useState("");
+  const [confirmPIN, setConfirmPIN] = useState("");
+  const [pinVerified, setPinVerified] = useState(true);
+
+  const handlePasswordUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsEditingPassword(false);
+    router.reload();
+  };
+
+  const handlePINUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsEditingPIN(false);
+    setPinVerified(true);
+    router.reload();
+  };
+
+  const openPasswordCard = () => {
+    setIsEditingPassword(true);
+    setIsEditingPIN(false);
+    setNewPIN("");
+    setConfirmPIN("");
+  };
+
+  const openPINCard = () => {
+    setIsEditingPIN(true);
+    setIsEditingPassword(false);
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+  };
 
   return (
-    <>
-      <PINModal
-        isOpen={showPINModal}
-        onClose={() => setShowPINModal(false)}
-        purpose={pinModalPurpose}
-      />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow-sm p-6 flex items-center gap-4">
+        <div className="p-3 rounded-full border border-gray-200">
+          <FiShield className="h-6 w-6 text-gray-600" />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">
+            Security Center
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage your account security settings
+          </p>
+        </div>
+      </div>
 
-      <TabGroup
-        onChange={(index) => {
-          const tabs = [
-            "Overview",
-            "Personal",
-            "Identification",
-            "Contact",
-            "Address",
-            "Security",
-            "Preferences",
-          ];
-          setActiveTab(tabs[index]);
-        }}
-      >
-        <TabList className="flex overflow-x-auto py-2 space-x-1 rounded-xl bg-gray-100 p-1 mb-6 scrollbar-hide">
-          {[
-            {
-              name: "Overview",
-              icon: (
-                <FiActivity className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
-              ),
-            },
-            {
-              name: "Personal",
-              icon: <FiUser className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />,
-            },
-            {
-              name: "Identification",
-              icon: (
-                <FiCreditCard className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
-              ),
-            },
-            {
-              name: "Contact",
-              icon: <FiMail className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />,
-            },
-            {
-              name: "Address",
-              icon: <FiMapPin className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />,
-            },
-            {
-              name: "Security",
-              icon: <FiShield className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />,
-            },
-            {
-              name: "Preferences",
-              icon: (
-                <FiSettings className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
-              ),
-            },
-          ].map((tab) => (
-            <Tab
-              key={tab.name}
-              className={({ selected }) =>
-                `flex-shrink-0 py-2 px-3 md:py-3 md:px-4 rounded-lg text-xs md:text-sm font-medium leading-5 flex items-center justify-center outline-none transition-all duration-200 ${
-                  selected
-                    ? "bg-white text-primary shadow-lg ring-2 ring-primary ring-opacity-60"
-                    : "text-gray-600 hover:bg-white/[0.12] hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50"
-                }`
-              }
-            >
-              {tab.icon}
-              <span className="hidden sm:inline">{tab.name}</span>
-            </Tab>
-          ))}
-        </TabList>
+      <div className="space-y-6">
+        {/* Password Card */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 relative p-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <FiKey className="h-5 w-5 text-gray-600" />
+              <h3 className="text-base font-medium text-gray-900">Password</h3>
+            </div>
+            {!isEditingPassword && (
+              <button
+                onClick={openPasswordCard}
+                className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-400 rounded p-1"
+              >
+                <FiEdit2 className="h-5 w-5" />
+              </button>
+            )}
+          </div>
 
-        <TabPanels className="mt-2">
-          <TabPanel>
-            <OverviewTab data={unprotectedData} />
-          </TabPanel>
-          <TabPanel>
-            <PersonalTab data={unprotectedData} />
-          </TabPanel>
-          <TabPanel>
-            <IdentificationTab
-              data={unprotectedData}
-              onRequestPINVerification={() => {
-                setPinModalPurpose("viewNIN");
-                setShowPINModal(true);
-              }}
-            />
-          </TabPanel>
-          <TabPanel>
-            <ContactTab
-              data={unprotectedData}
-              onRequestPINVerification={(purpose) => {
-                setPinModalPurpose(purpose);
-                setShowPINModal(true);
-              }}
-            />
-          </TabPanel>
-          <TabPanel>
-            <AddressTab data={unprotectedData} />
-          </TabPanel>
-          <TabPanel>
-            <SecurityTab router={router} />
-          </TabPanel>
-          <TabPanel>
-            <PreferencesTab />
-          </TabPanel>
-        </TabPanels>
-      </TabGroup>
-    </>
+          {isEditingPassword ? (
+            <form onSubmit={handlePasswordUpdate} className="space-y-4">
+              <input
+                type="password"
+                placeholder="Current Password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full px-3 py-3 border border-gray-300 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-green-400"
+                required
+              />
+              <input
+                type="password"
+                placeholder="New Password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-3 py-3 border border-gray-300 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-green-400"
+                required
+              />
+              <input
+                type="password"
+                placeholder="Confirm New Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-3 py-3 border border-gray-300 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-green-400"
+                required
+              />
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditingPassword(false);
+                    setCurrentPassword("");
+                    setNewPassword("");
+                    setConfirmPassword("");
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="w-40 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          ) : (
+            <p className="text-sm text-gray-500 mt-2">
+              Last changed 3 months ago
+            </p>
+          )}
+        </div>
+
+        {/* PIN Card */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 relative p-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <FiLock className="h-5 w-5 text-gray-600" />
+              <h3 className="text-base font-medium text-gray-900">
+                Security PIN
+              </h3>
+            </div>
+            {pinVerified && !isEditingPIN && (
+              <button
+                onClick={openPINCard}
+                className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-400 rounded p-1"
+              >
+                <FiEdit2 className="h-5 w-5" />
+              </button>
+            )}
+          </div>
+
+          {isEditingPIN && (
+            <form onSubmit={handlePINUpdate} className="space-y-4">
+              <input
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                placeholder="New 6-digit PIN"
+                value={newPIN}
+                onChange={(e) => setNewPIN(e.target.value)}
+                className="w-full px-3 py-3 border border-gray-300 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-green-400"
+                required
+              />
+              <input
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                placeholder="Confirm 6-digit PIN"
+                value={confirmPIN}
+                onChange={(e) => setConfirmPIN(e.target.value)}
+                className="w-full px-3 py-3 border border-gray-300 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-green-400"
+                required
+              />
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditingPIN(false);
+                    setNewPIN("");
+                    setConfirmPIN("");
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="w-40 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          )}
+          {!isEditingPIN && (
+            <p className="text-sm text-gray-500 mt-2">PIN is set</p>
+          )}
+        </div>
+
+        {/* 2FA Card */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <FiPhone className="h-5 w-5 text-gray-600" />
+              <h3 className="text-base font-medium text-gray-900">
+                Two-Factor Authentication
+              </h3>
+            </div>
+
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={is2FAEnabled}
+                onChange={() => setIs2FAEnabled(!is2FAEnabled)}
+              />
+              <div className="w-12 h-6 bg-gray-300 rounded-full peer-focus:outline-none peer-focus:ring-0 peer-focus:ring-green-400 peer-checked:bg-green-600 transition-colors duration-300"></div>
+              <span className="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-6"></span>
+            </label>
+          </div>
+
+          <p className="text-sm text-gray-500 mt-1">
+            {is2FAEnabled
+              ? "2FA is currently enabled via SMS"
+              : "Add an extra layer of security to your account"}
+          </p>
+          {is2FAEnabled && (
+            <button className="mt-2 text-sm font-medium text-green-600 hover:text-green-800">
+              Change 2FA Method
+            </button>
+          )}
+        </div>
+
+        {/* Danger Zone */}
+        <div className="bg-white rounded-lg shadow-sm border border-red-200 p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <FiTrash2 className="h-5 w-5 text-red-600" />
+            <h3 className="text-base font-medium text-red-900">Danger Zone</h3>
+          </div>
+          <DangerZone />
+        </div>
+      </div>
+    </div>
   );
 }
