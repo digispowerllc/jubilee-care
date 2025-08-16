@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { FiX, FiMail, FiAlertOctagon, FiKey} from "react-icons/fi";
+import { useState, useEffect } from "react";
+import { FiX, FiMail, FiAlertOctagon, FiKey, FiLock, FiDownload,FiCheck } from "react-icons/fi";
+import { toast } from "react-hot-toast";
 
 export function DeleteModal({
   isOpen,
@@ -10,30 +11,79 @@ export function DeleteModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const [step, setStep] = useState<"warning" | "confirm" | "verify">("warning");
+  const [step, setStep] = useState<"warning" | "confirm" | "verify" | "final">("warning");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [pin, setPin] = useState("");
+  const [confirmationText, setConfirmationText] = useState("");
   const [feedback, setFeedback] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [userEmail, setUserEmail] = useState(""); // Current user's email from session
+
+  // Get user email from session on modal open
+  useEffect(() => {
+    if (isOpen) {
+      // Simulate fetching user data
+      fetch('/api/auth/session')
+        .then(res => res.json())
+        .then(data => setUserEmail(data.email))
+        .catch(() => toast.error("Failed to load session data"));
+    }
+  }, [isOpen]);
+
+  const validatePin = (pin: string): boolean => {
+    return /^\d{8,15}$/.test(pin);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setFeedback("");
 
     try {
+      // Validate inputs
+      if (email !== userEmail) {
+        throw new Error("Email does not match your account");
+      }
+
+      if (!validatePin(pin)) {
+        throw new Error("PIN must be 8-15 digits");
+      }
+
+      if (confirmationText.toLowerCase() !== "delete my data") {
+        throw new Error("Confirmation text does not match");
+      }
+
       // API call to delete data
-      await deleteAccountData({ email, password });
+      const response = await fetch('/api/account/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          pin,
+          confirmation: confirmationText
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Deletion failed");
+      }
+
       setFeedback("Data deletion initiated successfully");
+      setStep("final");
+      
+      // Force logout after 2 seconds
       setTimeout(() => {
-        onClose();
-        // Redirect or log out user
+        window.location.href = "/logout";
       }, 2000);
     } catch (error) {
-      if (error instanceof Error) {
-        setFeedback(error.message);
-      } else {
-        setFeedback("Deletion failed");
-      }
+      setFeedback(
+        error instanceof Error ? error.message : "Deletion failed"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -48,11 +98,15 @@ export function DeleteModal({
         <div className="p-5 border-b border-red-100 flex justify-between items-center bg-red-50 rounded-t-xl">
           <div className="flex items-center gap-3">
             <FiAlertOctagon className="text-red-600 w-5 h-5" />
-            <h3 className="font-semibold text-red-900">Delete All Data</h3>
+            <h3 className="font-semibold text-red-900">
+              {step === "final" ? "Deletion Complete" : "Delete All Data"}
+            </h3>
           </div>
-          <button onClick={onClose} className="text-red-400 hover:text-red-600">
-            <FiX className="w-5 h-5" />
-          </button>
+          {step !== "final" && (
+            <button onClick={onClose} className="text-red-400 hover:text-red-600">
+              <FiX className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* Body */}
@@ -60,17 +114,16 @@ export function DeleteModal({
           {step === "warning" ? (
             <>
               <div className="prose prose-red text-sm mb-6">
-                <p className="font-bold">This action is irreversible!</p>
+                <p className="font-bold text-red-800">This action is irreversible!</p>
                 <p>Deleting your data will:</p>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li>Permanently erase all your personal information</li>
+                  <li>Permanently erase all personal information</li>
                   <li>Delete your account and all associated data</li>
-                  <li>Cancel any active subscriptions</li>
-                  <li>Remove access to all services immediately</li>
+                  <li>Cancel any active subscriptions immediately</li>
+                  <li>Remove access to all services permanently</li>
                 </ul>
                 <p className="mt-3 text-red-700 font-medium">
-                  This cannot be undone. We recommend downloading your data
-                  first.
+                  This cannot be undone. We strongly recommend exporting your data first.
                 </p>
               </div>
 
@@ -83,9 +136,10 @@ export function DeleteModal({
                 </button>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => (window.location.href = "/account/export")}
-                    className="px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50"
+                    onClick={() => window.location.href = "/account/export"}
+                    className="px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 flex items-center gap-2"
                   >
+                    <FiDownload className="w-4 h-4" />
                     Export Data
                   </button>
                   <button
@@ -101,11 +155,11 @@ export function DeleteModal({
             <>
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-red-800 font-medium mb-3">
-                  Are you absolutely sure?
+                  Final Warning: This cannot be undone
                 </p>
                 <p className="text-sm text-red-700">
-                  This will permanently delete all your data across all our
-                  systems. You will lose access to all services immediately.
+                  By proceeding, you acknowledge that all your data will be permanently
+                  erased from our systems with no possibility of recovery.
                 </p>
               </div>
 
@@ -120,32 +174,28 @@ export function DeleteModal({
                   onClick={() => setStep("verify")}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                 >
-                  I Understand
+                  I Understand the Risks
                 </button>
               </div>
             </>
-          ) : (
+          ) : step === "verify" ? (
             <form onSubmit={handleSubmit}>
               <div className="space-y-4 mb-6">
                 <div className="p-3 bg-red-100 rounded-lg border border-red-200">
                   <p className="text-sm text-red-800 font-medium">
-                    Final verification required
+                    Verify your identity to permanently delete all data
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Confirm Email
+                  <label className="block text-sm font-medium text-gray-700">
+                    Confirm Your Email
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <FiMail className="text-gray-400" />
                     </div>
                     <input
-                      id="email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -157,18 +207,14 @@ export function DeleteModal({
                 </div>
 
                 <div className="space-y-2">
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Enter Password
+                  <label className="block text-sm font-medium text-gray-700">
+                    Enter Your Password
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <FiKey className="text-gray-400" />
                     </div>
                     <input
-                      id="password"
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -179,10 +225,47 @@ export function DeleteModal({
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Enter Your Security PIN (8-15 digits)
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FiLock className="text-gray-400" />
+                    </div>
+                    <input
+                      type="password"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={15}
+                      value={pin}
+                      onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                      className="pl-10 w-full rounded-lg border-gray-300 focus:border-red-300 focus:ring focus:ring-red-200 font-mono"
+                      placeholder="Enter your PIN"
+                      required
+                    />
+                  </div>
+                  {pin && !validatePin(pin) && (
+                    <p className="text-sm text-red-600">PIN must be 8-15 digits</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Type <strong>delete my data</strong> to confirm
+                  </label>
+                  <input
+                    type="text"
+                    value={confirmationText}
+                    onChange={(e) => setConfirmationText(e.target.value)}
+                    className="w-full rounded-lg border-gray-300 focus:border-red-300 focus:ring focus:ring-red-200"
+                    placeholder="delete my data"
+                    required
+                  />
+                </div>
+
                 {feedback && (
-                  <p
-                    className={`text-sm ${feedback.includes("failed") ? "text-red-600" : "text-green-600"}`}
-                  >
+                  <p className={`text-sm ${feedback.includes("failed") ? "text-red-600" : "text-green-600"}`}>
                     {feedback}
                   </p>
                 )}
@@ -193,32 +276,22 @@ export function DeleteModal({
                   type="button"
                   onClick={() => setStep("confirm")}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  disabled={isLoading}
                 >
                   Back
                 </button>
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || !validatePin(pin) || confirmationText.toLowerCase() !== "delete my data"}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-400 flex items-center gap-2"
                 >
                   {isLoading ? (
                     <>
                       <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
-                      Deleting...
+                      Processing...
                     </>
                   ) : (
                     "Permanently Delete All Data"
@@ -226,6 +299,16 @@ export function DeleteModal({
                 </button>
               </div>
             </form>
+          ) : (
+            <div className="text-center py-6">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                <FiCheck className="h-6 w-6 text-green-600" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Deletion Complete</h3>
+              <p className="text-sm text-gray-500">
+                All your data has been scheduled for deletion. You will be logged out shortly.
+              </p>
+            </div>
           )}
         </div>
       </div>

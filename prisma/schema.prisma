@@ -59,6 +59,7 @@ model Agent {
   PasswordResetToken PasswordResetToken[]
   PasswordResetEvent PasswordResetEvent[]
   AuditLog           AuditLog[]
+  DeletionSchedule   DeletionSchedule[]
 
   @@index([emailHash])
   @@index([phoneHash])
@@ -111,6 +112,26 @@ model AgentSession {
 
   @@index([agentId])
   @@index([expiresAt])
+}
+
+model DeletionSchedule {
+  id           String    @id @default(cuid())
+  agentId      String
+  agent        Agent     @relation(fields: [agentId], references: [id])
+  scheduledAt  DateTime
+  deletionType String // "FULL_ACCOUNT" or "DATA_ONLY"
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([agentId])
+  @@index([scheduledAt])
+}
+
+enum AgentStatus {
+  ACTIVE
+  DEACTIVATED
+  PENDING_DELETION
+  DELETED
 }
 
 model Lockout {

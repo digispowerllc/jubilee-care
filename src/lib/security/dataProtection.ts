@@ -86,6 +86,7 @@ export async function unprotectData(
             return decryptSearchable(encryptedData, "phone");
 
         case "location":
+            return decryptBasic(encryptedData);
         case "name":
             return decryptBasic(encryptedData);
 
@@ -147,11 +148,16 @@ export async function verifyProtectedData(
         if (decrypted !== plainText) return false;
 
         // For searchable fields, verify hash if provided
-        if (storedSearchHash && (tier === "email" || tier === "phone")) {
+        if (storedSearchHash && (tier === "email" || tier === "phone" || tier === "general")) {
             const recomputedHash =
                 tier === "email"
                     ? generateSearchHash(plainText.trim().toLowerCase())
-                    : generateSearchHash(plainText.trim());
+                    : tier === "phone"
+                        ? generateSearchHash(plainText.trim())
+                        : tier === "general"
+                            ? generateSearchHash(plainText.trim())
+                            : generateSearchHash(plainText.trim());
+
 
             if (recomputedHash !== storedSearchHash) return false;
         }
