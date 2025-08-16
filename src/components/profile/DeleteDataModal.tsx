@@ -1,8 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FiX, FiMail, FiAlertOctagon, FiKey, FiLock, FiDownload,FiCheck } from "react-icons/fi";
+import {
+  FiX,
+  FiMail,
+  FiAlertOctagon,
+  FiKey,
+  FiLock,
+  FiDownload,
+  FiCheck,
+} from "react-icons/fi";
 import { toast } from "react-hot-toast";
+import { verifyAgentPin } from "@/lib/pin-utils";
 
 export function DeleteModal({
   isOpen,
@@ -11,23 +20,27 @@ export function DeleteModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const [step, setStep] = useState<"warning" | "confirm" | "verify" | "final">("warning");
+  const [step, setStep] = useState<"warning" | "confirm" | "verify" | "final">(
+    "warning"
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pin, setPin] = useState("");
   const [confirmationText, setConfirmationText] = useState("");
   const [feedback, setFeedback] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [userEmail, setUserEmail] = useState(""); // Current user's email from session
+  const [agentId, setAgentId] = useState(""); // Current user's email from session
 
-  // Get user email from session on modal open
+  // Get agent ID from session
   useEffect(() => {
     if (isOpen) {
-      // Simulate fetching user data
-      fetch('/api/auth/session')
-        .then(res => res.json())
-        .then(data => setUserEmail(data.email))
-        .catch(() => toast.error("Failed to load session data"));
+      fetch("/api/agent/auth/get-session", {
+        credentials: "include",
+        cache: "no-store",
+      })
+        .then((res) => res.json())
+        .then((data) => setAgentId(data.agentId))
+        .catch(() => toast.error("Failed to verify session"));
     }
   }, [isOpen]);
 
@@ -42,29 +55,32 @@ export function DeleteModal({
 
     try {
       // Validate inputs
-      if (email !== userEmail) {
-        throw new Error("Email does not match your account");
-      }
-
+      // Validate PIN format first
       if (!validatePin(pin)) {
         throw new Error("PIN must be 8-15 digits");
       }
+
+      // Verify PIN against database
+      if (!agentId) throw new Error("Session expired");
+
+      // const isValidPin = await verifyAgentPin(agentId, pin);
+      // if (!isValidPin) throw new Error("Invalid PIN");
 
       if (confirmationText.toLowerCase() !== "delete my data") {
         throw new Error("Confirmation text does not match");
       }
 
       // API call to delete data
-      const response = await fetch('/api/account/delete', {
-        method: 'POST',
+      const response = await fetch("/api/account/delete", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           email,
           password,
           pin,
-          confirmation: confirmationText
+          confirmation: confirmationText,
         }),
       });
 
@@ -75,15 +91,13 @@ export function DeleteModal({
 
       setFeedback("Data deletion initiated successfully");
       setStep("final");
-      
+
       // Force logout after 2 seconds
       setTimeout(() => {
         window.location.href = "/logout";
       }, 2000);
     } catch (error) {
-      setFeedback(
-        error instanceof Error ? error.message : "Deletion failed"
-      );
+      setFeedback(error instanceof Error ? error.message : "Deletion failed");
     } finally {
       setIsLoading(false);
     }
@@ -103,7 +117,10 @@ export function DeleteModal({
             </h3>
           </div>
           {step !== "final" && (
-            <button onClick={onClose} className="text-red-400 hover:text-red-600">
+            <button
+              onClick={onClose}
+              className="text-red-400 hover:text-red-600"
+            >
               <FiX className="w-5 h-5" />
             </button>
           )}
@@ -114,7 +131,9 @@ export function DeleteModal({
           {step === "warning" ? (
             <>
               <div className="prose prose-red text-sm mb-6">
-                <p className="font-bold text-red-800">This action is irreversible!</p>
+                <p className="font-bold text-red-800">
+                  This action is irreversible!
+                </p>
                 <p>Deleting your data will:</p>
                 <ul className="list-disc pl-5 space-y-1">
                   <li>Permanently erase all personal information</li>
@@ -123,7 +142,8 @@ export function DeleteModal({
                   <li>Remove access to all services permanently</li>
                 </ul>
                 <p className="mt-3 text-red-700 font-medium">
-                  This cannot be undone. We strongly recommend exporting your data first.
+                  This cannot be undone. We strongly recommend exporting your
+                  data first.
                 </p>
               </div>
 
@@ -136,7 +156,7 @@ export function DeleteModal({
                 </button>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => window.location.href = "/account/export"}
+                    onClick={() => (window.location.href = "/account/export")}
                     className="px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 flex items-center gap-2"
                   >
                     <FiDownload className="w-4 h-4" />
@@ -158,8 +178,9 @@ export function DeleteModal({
                   Final Warning: This cannot be undone
                 </p>
                 <p className="text-sm text-red-700">
-                  By proceeding, you acknowledge that all your data will be permanently
-                  erased from our systems with no possibility of recovery.
+                  By proceeding, you acknowledge that all your data will be
+                  permanently erased from our systems with no possibility of
+                  recovery.
                 </p>
               </div>
 
@@ -239,14 +260,18 @@ export function DeleteModal({
                       pattern="[0-9]*"
                       maxLength={15}
                       value={pin}
-                      onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                      onChange={(e) =>
+                        setPin(e.target.value.replace(/\D/g, ""))
+                      }
                       className="pl-10 w-full rounded-lg border-gray-300 focus:border-red-300 focus:ring focus:ring-red-200 font-mono"
                       placeholder="Enter your PIN"
                       required
                     />
                   </div>
                   {pin && !validatePin(pin) && (
-                    <p className="text-sm text-red-600">PIN must be 8-15 digits</p>
+                    <p className="text-sm text-red-600">
+                      PIN must be 8-15 digits
+                    </p>
                   )}
                 </div>
 
@@ -265,7 +290,9 @@ export function DeleteModal({
                 </div>
 
                 {feedback && (
-                  <p className={`text-sm ${feedback.includes("failed") ? "text-red-600" : "text-green-600"}`}>
+                  <p
+                    className={`text-sm ${feedback.includes("failed") ? "text-red-600" : "text-green-600"}`}
+                  >
                     {feedback}
                   </p>
                 )}
@@ -282,14 +309,29 @@ export function DeleteModal({
                 </button>
                 <button
                   type="submit"
-                  disabled={isLoading || !validatePin(pin) || confirmationText.toLowerCase() !== "delete my data"}
+                  disabled={
+                    isLoading ||
+                    !validatePin(pin) ||
+                    confirmationText.toLowerCase() !== "delete my data"
+                  }
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-400 flex items-center gap-2"
                 >
                   {isLoading ? (
                     <>
                       <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
                       </svg>
                       Processing...
                     </>
@@ -304,9 +346,12 @@ export function DeleteModal({
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
                 <FiCheck className="h-6 w-6 text-green-600" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Deletion Complete</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Deletion Complete
+              </h3>
               <p className="text-sm text-gray-500">
-                All your data has been scheduled for deletion. You will be logged out shortly.
+                All your data has been scheduled for deletion. You will be
+                logged out shortly.
               </p>
             </div>
           )}
