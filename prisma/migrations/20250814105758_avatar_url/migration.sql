@@ -34,8 +34,8 @@ CREATE TABLE "public"."AgentProfile" (
     "emailHash" TEXT NOT NULL,
     "phone" TEXT NOT NULL,
     "phoneHash" TEXT NOT NULL,
-    "accessCode" TEXT NOT NULL DEFAULT '',
-    "accessCodeHash" TEXT NOT NULL DEFAULT '',
+    "pinHash" TEXT NOT NULL DEFAULT '',
+    "pinHash" TEXT NOT NULL DEFAULT '',
     "passwordHash" TEXT NOT NULL,
     "emailVerified" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -204,7 +204,7 @@ CREATE INDEX "AgentProfile_phoneHash_idx" ON "public"."AgentProfile"("phoneHash"
 CREATE INDEX "AgentProfile_emailHash_idx" ON "public"."AgentProfile"("emailHash");
 
 -- CreateIndex
-CREATE INDEX "AgentProfile_accessCodeHash_idx" ON "public"."AgentProfile"("accessCodeHash");
+CREATE INDEX "AgentProfile_pinHash_idx" ON "public"."AgentProfile"("pinHash");
 
 -- CreateIndex
 CREATE INDEX "AgentProfile_createdAt_idx" ON "public"."AgentProfile"("createdAt");

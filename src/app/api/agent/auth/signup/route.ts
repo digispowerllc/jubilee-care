@@ -99,9 +99,9 @@ export async function POST(req: Request) {
           emailHash,
           phone: (await protectData(phone, "phone")).encrypted,
           phoneHash,
-          accessCode: DEFAULT_ACCESS_CODE,
-          accessCodeHash: DEFAULT_ACCESS_CODE,
-                   passwordHash: (await protectData(password, "system-code")).encrypted,
+          pinHash: DEFAULT_ACCESS_CODE,
+          pinHash: DEFAULT_ACCESS_CODE,
+          passwordHash: (await protectData(password, "system-code")).encrypted,
         },
       });
 
