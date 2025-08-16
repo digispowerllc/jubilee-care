@@ -3,18 +3,24 @@ import { useState, useEffect } from "react";
 import { FiX, FiAlertOctagon, FiKey, FiLock, FiCheck } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 
-
 interface AuditMetadata {
-  deletionScheduled?: Date
-  recoveryWindow?: string // e.g., "30 days"
-  affectedServices?: string[]
-  riskScore?: number
-  twoFactorUsed?: boolean
+  deletionScheduled?: Date;
+  recoveryWindow?: string; // e.g., "30 days"
+  affectedServices?: string[];
+  riskScore?: number;
+  twoFactorUsed?: boolean;
 }
 
-
-export function DeleteModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [step, setStep] = useState<"warning" | "confirm" | "verify" | "final">("warning");
+export function DeleteModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  const [step, setStep] = useState<"warning" | "confirm" | "verify" | "final">(
+    "warning"
+  );
   const [password, setPassword] = useState("");
   const [pin, setPin] = useState("");
   const [confirmationText, setConfirmationText] = useState("");
@@ -28,16 +34,39 @@ export function DeleteModal({ isOpen, onClose }: { isOpen: boolean; onClose: () 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       if (!validatePin(pin)) throw new Error("PIN must be 8-15 digits");
       if (confirmationText.toLowerCase() !== "delete my data") {
         throw new Error("Confirmation text does not match");
       }
 
-      // API call would go here
+      const response = await fetch("/api/agent/auth/account/delete", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+          "X-Delete-Intent": "permanent", // Special header for destructive actions
+        },
+        body: JSON.stringify({
+          agentId, // From session
+          pin, // 8-15 digit PIN
+          password, // User's current password
+          confirmation: confirmationText, // Must be "delete my data"
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Deletion failed. Please try again.");
+      }
+
+      // Success - force logout and redirect
+      window.location.href = "/logout?message=account_deleted";
       setStep("final");
-      setTimeout(() => window.location.href = "/logout", 2000);
+      setTimeout(() => (window.location.href = "/logout"), 2000);
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Deletion failed");
     } finally {
@@ -59,7 +88,10 @@ export function DeleteModal({ isOpen, onClose }: { isOpen: boolean; onClose: () 
             </h3>
           </div>
           {step !== "final" && (
-            <button onClick={onClose} className="text-red-400 hover:text-red-600 transition-colors">
+            <button
+              onClick={onClose}
+              className="text-red-400 hover:text-red-600 transition-colors"
+            >
               <FiX className="w-5 h-5" />
             </button>
           )}
@@ -70,7 +102,9 @@ export function DeleteModal({ isOpen, onClose }: { isOpen: boolean; onClose: () 
           {step === "warning" ? (
             <>
               <div className="prose prose-red text-sm mb-6">
-                <p className="font-bold text-red-800">This action is irreversible!</p>
+                <p className="font-bold text-red-800">
+                  This action is irreversible!
+                </p>
                 <ul className="list-disc pl-5 space-y-1 marker:text-red-400">
                   <li>Permanently erase all personal information</li>
                   <li>Delete your account and all associated data</li>
@@ -78,10 +112,16 @@ export function DeleteModal({ isOpen, onClose }: { isOpen: boolean; onClose: () 
                 </ul>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 justify-end">
-                <button onClick={onClose} className="px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
                   Cancel
                 </button>
-                <button onClick={() => setStep("confirm")} className="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-sm hover:shadow-md transition-colors">
+                <button
+                  onClick={() => setStep("confirm")}
+                  className="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-sm hover:shadow-md transition-colors"
+                >
                   Continue
                 </button>
               </div>
@@ -90,13 +130,21 @@ export function DeleteModal({ isOpen, onClose }: { isOpen: boolean; onClose: () 
             <>
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-red-800 font-medium mb-2">Final Warning</p>
-                <p className="text-sm text-red-700">Data will be permanently erased with no recovery option.</p>
+                <p className="text-sm text-red-700">
+                  Data will be permanently erased with no recovery option.
+                </p>
               </div>
               <div className="flex gap-3 justify-end">
-                <button onClick={() => setStep("warning")} className="px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <button
+                  onClick={() => setStep("warning")}
+                  className="px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
                   Back
                 </button>
-                <button onClick={() => setStep("verify")} className="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-sm hover:shadow-md transition-colors">
+                <button
+                  onClick={() => setStep("verify")}
+                  className="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-sm hover:shadow-md transition-colors"
+                >
                   I Understand
                 </button>
               </div>
@@ -142,20 +190,26 @@ export function DeleteModal({ isOpen, onClose }: { isOpen: boolean; onClose: () 
                       type="password"
                       inputMode="numeric"
                       value={pin}
-                      onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                      onChange={(e) =>
+                        setPin(e.target.value.replace(/\D/g, ""))
+                      }
                       className="w-full px-4 py-3 pl-10 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 font-mono"
                       required
                     />
                   </div>
                   {pin && !validatePin(pin) && (
-                    <p className="text-sm text-red-600">PIN must be 8-15 digits</p>
+                    <p className="text-sm text-red-600">
+                      PIN must be 8-15 digits
+                    </p>
                   )}
                 </div>
 
                 {/* Confirmation Text */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Type <strong className="text-red-600">delete my data</strong> to confirm
+                    Type{" "}
+                    <strong className="text-red-600">delete my data</strong> to
+                    confirm
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -173,7 +227,9 @@ export function DeleteModal({ isOpen, onClose }: { isOpen: boolean; onClose: () 
                 </div>
 
                 {feedback && (
-                  <div className={`p-3 rounded-lg text-sm ${feedback.includes("failed") ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}`}>
+                  <div
+                    className={`p-3 rounded-lg text-sm ${feedback.includes("failed") ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}`}
+                  >
                     {feedback}
                   </div>
                 )}
@@ -189,7 +245,10 @@ export function DeleteModal({ isOpen, onClose }: { isOpen: boolean; onClose: () 
                 </button>
                 <button
                   type="submit"
-                  disabled={!validatePin(pin) || confirmationText.toLowerCase() !== "delete my data"}
+                  disabled={
+                    !validatePin(pin) ||
+                    confirmationText.toLowerCase() !== "delete my data"
+                  }
                   className="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-400 transition-colors"
                 >
                   {isLoading ? "Processing..." : "Permanently Delete"}
@@ -201,8 +260,12 @@ export function DeleteModal({ isOpen, onClose }: { isOpen: boolean; onClose: () 
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
                 <FiCheck className="h-6 w-6 text-green-600" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Deletion Complete</h3>
-              <p className="text-sm text-gray-500">All data has been scheduled for deletion.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Deletion Complete
+              </h3>
+              <p className="text-sm text-gray-500">
+                All data has been scheduled for deletion.
+              </p>
             </div>
           )}
         </div>

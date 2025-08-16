@@ -60,7 +60,7 @@ export function DeactivateModal({
         throw new Error("You must type 'deactivate my account' to confirm");
       }
 
-      const response = await fetch("/api/agent/account/deactivate", {
+      const response = await fetch("/api/agent/auth/account/deactivate", {
         method: "POST",
         credentials: "include",
         headers: {
