@@ -7,6 +7,25 @@ datasource db {
   url      = env("PRISMA_JCG__PRISMA_DATABASE_URL")
 }
 
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String // e.g., "ACCOUNT_DEACTIVATION", "LOGIN", "PASSWORD_CHANGE"
+  details   String? // Additional details about the action
+  ipAddress String
+  userAgent String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationship to Agent (matches your existing pattern)
+  agentId String
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  // Indexes matching your schema style
+  @@index([agentId])
+  @@index([action])
+  @@index([createdAt])
+}
+
 model Agent {
   id                 String    @id @default(uuid())
   fieldId            String
@@ -27,8 +46,11 @@ model Agent {
   lastLoginAt        DateTime?
   lastLoginAttemptIp String?
   isActive           Boolean   @default(true)
-  isAdmitted         Boolean   @default(false)
-  isDeleted          Boolean   @default(false)
+  status             String    @default("")
+  admittedAt         DateTime?
+  deletedAt          DateTime?
+  deactivatedAt      DateTime?
+  deactivationReason String?
   avatarUrl          String    @default("")
 
   profile            AgentProfile?
@@ -36,6 +58,7 @@ model Agent {
   oauthAccounts      OAuthAccount[]
   PasswordResetToken PasswordResetToken[]
   PasswordResetEvent PasswordResetEvent[]
+  AuditLog           AuditLog[]
 
   @@index([emailHash])
   @@index([phoneHash])
@@ -52,13 +75,12 @@ model AgentProfile {
   emailHash             String    @unique
   phone                 String
   phoneHash             String    @unique
-  accessCode            String    @default("")
-  accessCodeHash        String    @default("")
+  pin                   String    @default("")
+  pinHash               String    @default("")
   passwordHash          String
   emailVerified         DateTime?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @default(now()) @updatedAt
-  deletedAt             DateTime?
   passwordResetAttempts Int?
   accountLockedUntil    DateTime?
   lockoutCount          Int       @default(0)
@@ -72,7 +94,7 @@ model AgentProfile {
   @@index([agentId])
   @@index([phoneHash])
   @@index([emailHash])
-  @@index([accessCodeHash])
+  @@index([pinHash])
   @@index([createdAt])
 }
 

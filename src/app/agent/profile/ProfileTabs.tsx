@@ -22,6 +22,7 @@ import {
 } from "react-icons/fi";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { DangerZone } from "@/components/profile/DangerZone";
 
 interface UnprotectedData {
   firstName: string;
@@ -930,24 +931,7 @@ export function ProfileTabs({
               </div>
 
               {/* Danger Zone */}
-              <div className="border border-red-200 rounded-lg overflow-hidden bg-red-50">
-                <div className="p-4 border-b border-red-200">
-                  <h4 className="font-medium text-red-800">Danger Zone</h4>
-                  <p className="text-sm text-red-600">
-                    These actions are irreversible. Proceed with caution.
-                  </p>
-                </div>
-                <div className="p-4 space-y-3">
-                  <button className="w-full text-left p-3 bg-white rounded-md border border-red-200 text-red-600 hover:bg-red-100 transition-colors flex justify-between items-center">
-                    <span>Deactivate Account</span>
-                    <FiChevronRight />
-                  </button>
-                  <button className="w-full text-left p-3 bg-white rounded-md border border-red-200 text-red-600 hover:bg-red-100 transition-colors flex justify-between items-center">
-                    <span>Request Data Deletion</span>
-                    <FiChevronRight />
-                  </button>
-                </div>
-              </div>
+              <DangerZone />
             </div>
           </TabPanel>
         </TabPanels>

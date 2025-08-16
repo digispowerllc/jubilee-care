@@ -7,16 +7,17 @@ import {
     decryptBasic,
     hashData,
     verifyHash,
-    generateSearchHash
-} from '@/lib/security/encryption';
+    generateSearchHash,
+} from "@/lib/security/encryption";
 
 export type ProtectionTier =
-    | 'government' // Highest security, AES-GCM w/ random IV
-    | 'email'      // Deterministic searchable encryption (fixed IV AES-CBC)
-    | 'phone'      // Same as email tier, but no lowercase normalization
-    | 'location'   // Random-IV AES-CBC
-    | 'name'       // Random-IV AES-CBC
-    | 'system-code'; // One-way hash (bcrypt), not reversible
+    | "government" // Highest security, AES-GCM w/ random IV
+    | "email" // Deterministic searchable encryption (fixed IV AES-CBC)
+    | "phone" // Same as email tier, but no lowercase normalization
+    | "location" // Random-IV AES-CBC
+    | "name" // Random-IV AES-CBC
+    | "system-code" // One-way hash (bcrypt), not reversible
+    | "general"; // General types of data
 
 /**
  * Protect sensitive data according to its tier.
@@ -26,34 +27,38 @@ export async function protectData(
     data: string,
     tier: ProtectionTier
 ): Promise<{ encrypted: string; searchHash?: string }> {
-    if (!data) return { encrypted: '' };
+    if (!data) return { encrypted: "" };
 
     switch (tier) {
-        case 'government':
+        case "government":
             return { encrypted: encryptHighestSecurity(data) };
 
-        case 'email': {
+        case "email": {
             const normalized = data.trim().toLowerCase();
             return {
-                encrypted: encryptSearchable(normalized, 'email'),
-                searchHash: generateSearchHash(normalized)
+                encrypted: encryptSearchable(normalized, "email"),
+                searchHash: generateSearchHash(normalized),
             };
         }
 
-        case 'phone': {
+        case "phone": {
             const normalized = data.trim();
             return {
-                encrypted: encryptSearchable(normalized, 'phone'),
-                searchHash: generateSearchHash(normalized)
+                encrypted: encryptSearchable(normalized, "phone"),
+                searchHash: generateSearchHash(normalized),
             };
         }
 
-        case 'location':
-        case 'name':
+        case "location":
+            return { encrypted: encryptBasic(data) };
+        case "name":
             return { encrypted: encryptBasic(data) };
 
-        case 'system-code':
+        case "system-code":
             return { encrypted: await hashData(data) };
+
+        case "general":
+            return { encrypted: encryptBasic(data) };
 
         default:
             return { encrypted: data };
@@ -68,30 +73,31 @@ export async function unprotectData(
     encryptedData: string,
     tier: ProtectionTier
 ): Promise<string> {
-    if (!encryptedData) return '';
+    if (!encryptedData) return "";
 
     switch (tier) {
-        case 'government':
+        case "government":
             return decryptHighestSecurity(encryptedData);
 
-        case 'email':
-            return decryptSearchable(encryptedData, 'email');
+        case "email":
+            return decryptSearchable(encryptedData, "email");
 
-        case 'phone':
-            return decryptSearchable(encryptedData, 'phone');
+        case "phone":
+            return decryptSearchable(encryptedData, "phone");
 
-        case 'location':
-        case 'name':
+        case "location":
+        case "name":
             return decryptBasic(encryptedData);
 
-        case 'system-code':
+        case "system-code":
             return encryptedData; // Not reversible
 
+        case "general":
+            return decryptBasic(encryptedData);
         default:
             return encryptedData;
     }
 }
-
 
 export async function generateSearchableHash(input: string): Promise<string> {
     if (!input) throw new Error("No input provided for hash");
@@ -118,7 +124,7 @@ export async function generateSearchableHash(input: string): Promise<string> {
 
     // Convert buffer to hex string
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 /**
  * Verify hash (system-code) or perform round-trip decrypt + compare.
@@ -132,7 +138,7 @@ export async function verifyProtectedData(
 ): Promise<boolean> {
     if (!plainText || !protectedData) return false;
 
-    if (tier === 'system-code') {
+    if (tier === "system-code") {
         return verifyHash(plainText, protectedData);
     }
 
@@ -141,9 +147,9 @@ export async function verifyProtectedData(
         if (decrypted !== plainText) return false;
 
         // For searchable fields, verify hash if provided
-        if (storedSearchHash && (tier === 'email' || tier === 'phone')) {
+        if (storedSearchHash && (tier === "email" || tier === "phone")) {
             const recomputedHash =
-                tier === 'email'
+                tier === "email"
                     ? generateSearchHash(plainText.trim().toLowerCase())
                     : generateSearchHash(plainText.trim());
 
@@ -152,7 +158,7 @@ export async function verifyProtectedData(
 
         return true;
     } catch (error) {
-        console.error('Data verification failed:', error);
+        console.error("Data verification failed:", error);
         return false;
     }
 }

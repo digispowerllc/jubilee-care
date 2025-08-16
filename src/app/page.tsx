@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import AgentEnrollmentModal from "../components/global/AgentEnrollmentModal";
-import Hero from "@/components/HeroClient";
-import CoreServices from "@/components/CoreServices";
-import Testimonials from "@/components/Testimonials";
-import ImpactSection from "@/components/ImpactSection";
-import VisualInsight from "@/components/VisualInsight";
-import AboutUs from "@/components/AboutUs";
-import SocialHandles from "@/components/SocialHandles";
-import { JSX } from "react/jsx-runtime";
+import Hero from "@/components/ui/landingPage/HeroClient";
+import CoreServices from "@/components/ui/landingPage/CoreServices";
+import Testimonials from "@/components/ui/landingPage/Testimonials";
+import ImpactSection from "@/components/ui/landingPage/ImpactSection";
+import VisualInsight from "@/components/ui/landingPage/VisualInsight";
+import AboutUs from "@/components/ui/landingPage/AboutUs";
+import SocialHandles from "@/components/ui/landingPage/SocialHandles";
+
 
 export default function HomePage() {
   const [showModal, setShowModal] = useState(false);

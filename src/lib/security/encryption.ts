@@ -20,6 +20,7 @@ function mustEnv(name: string): string {
 const ENCRYPTION_KEY = mustHexEnv('ENCRYPTION_KEY', 32); // 32 bytes for AES-256
 const FIXED_IV_EMAIL = mustHexEnv('FIXED_IV_EMAIL', 16);
 const FIXED_IV_PHONE = mustHexEnv('FIXED_IV_PHONE', 16);
+const FIXED_GENERAL = mustHexEnv('FIXED_GENERAL', 16);
 const SALT_ROUNDS = Number(process.env.SALT_ROUNDS ?? 12);
 const HASH_PEPPER = mustEnv('HASH_PEPPER');
 
@@ -52,14 +53,14 @@ export function decryptHighestSecurity(encryptedData: string): string {
 }
 
 // Tier 2: Deterministic / Searchable (FIXED IV used intentionally)
-export function encryptSearchable(data: string, type: 'email' | 'phone'): string {
-  const iv = type === 'email' ? FIXED_IV_EMAIL : FIXED_IV_PHONE;
+export function encryptSearchable(data: string, type: 'email' | 'phone' | 'general'): string {
+  const iv = type === 'email' ? FIXED_IV_EMAIL : type === 'phone' ? FIXED_IV_PHONE : FIXED_GENERAL;
   const cipher = crypto.createCipheriv('aes-256-cbc', ENCRYPTION_KEY, iv);
   return cipher.update(data, 'utf8', 'hex') + cipher.final('hex');
 }
 
-export function decryptSearchable(encryptedData: string, type: 'email' | 'phone'): string {
-  const iv = type === 'email' ? FIXED_IV_EMAIL : FIXED_IV_PHONE;
+export function decryptSearchable(encryptedData: string, type: 'email' | 'phone' | 'general'): string {
+  const iv = type === 'email' ? FIXED_IV_EMAIL : type === 'phone' ? FIXED_IV_PHONE : FIXED_GENERAL;
   const decipher = crypto.createDecipheriv('aes-256-cbc', ENCRYPTION_KEY, iv);
   return decipher.update(encryptedData, 'hex', 'utf8') + decipher.final('utf8');
 }

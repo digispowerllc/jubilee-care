@@ -23,9 +23,8 @@ export const validateApiKey = (apiKey: string | undefined): boolean => {
   );
 };
 
-// File: src/lib/auth.ts
-
 // ------------------- GENERATE RESET TOKEN -------------------
+
 export const generateResetToken = async (
   agentId: string
 ): Promise<{ token: string; expiresAt: Date }> => {
@@ -75,6 +74,7 @@ export const generateResetToken = async (
 };
 
 // ------------------- VERIFY RESET TOKEN -------------------
+
 export const verifyResetToken = async (
   token: string,
   agentId: string
@@ -160,6 +160,7 @@ export const verifyResetToken = async (
     return { isValid: false, error: 'Internal server error' };
   }
 };
+
 
 // ------------------- MARK TOKEN AS USED -------------------
 export const markTokenAsUsed = async (token: string, agentId: string): Promise<void> => {
