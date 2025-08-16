@@ -1,11 +1,10 @@
 // src/app/api/account/deactivate/route.ts
 import { NextResponse } from 'next/server';
-import { verifyAgentPin } from '@/lib/pin-utils';
 import { getAgentFromSession } from '@/lib/auth-utils';
 import { prisma } from '@/lib/prisma';
 import { protectData, verifyHash } from '@/lib/security/dataProtection';
+import { verifyAgentPin } from '@/lib/pin-utils';
 
-// PIN validation regex (8-15 digits)
 const PIN_REGEX = /^\d{8,15}$/;
 
 export async function POST(req: Request) {
@@ -18,9 +17,9 @@ export async function POST(req: Request) {
             );
         }
 
-        const { pin, confirmation, password } = await req.json();
+        const { password, pin, confirmation } = await req.json();
 
-        // Validate PIN format first
+        // Validate inputs
         if (!PIN_REGEX.test(pin)) {
             return NextResponse.json(
                 { success: false, error: 'PIN must be 8-15 digits' },
@@ -28,34 +27,34 @@ export async function POST(req: Request) {
             );
         }
 
-        // Verify confirmation text
         if (typeof confirmation !== 'string' ||
             confirmation.toLowerCase() !== 'deactivate my account') {
             return NextResponse.json(
-                { success: false, error: 'Invalid confirmation text' },
+                { success: false, error: 'Type "deactivate my account" to confirm' },
                 { status: 400 }
             );
         }
 
-        // Verify PIN against database
-        const isPinValid = await verifyAgentPin(session.id, pin);
-        if (!isPinValid) {
-            return NextResponse.json(
-                { success: false, error: 'Invalid PIN' },
-                { status: 403 }
-            );
-        }
-
-        // Verify password
-        const profile = await prisma.agentProfile.findUnique({
-            where: { agentId: session.id },
-            select: { passwordHash: true }
-        });
+        // Verify credentials
+        const [profile, isPinValid] = await Promise.all([
+            prisma.agentProfile.findUnique({
+                where: { agentId: session.id },
+                select: { passwordHash: true }
+            }),
+            verifyAgentPin(session.id, pin)
+        ]);
 
         if (!profile) {
             return NextResponse.json(
                 { success: false, error: 'Account not found' },
                 { status: 404 }
+            );
+        }
+
+        if (!isPinValid) {
+            return NextResponse.json(
+                { success: false, error: 'Invalid PIN' },
+                { status: 403 }
             );
         }
 
@@ -67,24 +66,25 @@ export async function POST(req: Request) {
             );
         }
 
-        // Proceed with deactivation
+        // Begin deactivation process
         const protectedReason = await protectData(
-            'Account deactivated by user',
+            `Account deactivated by user ${session.email}`,
             "general"
         );
 
-        // Update agent status and create audit log
         await prisma.$transaction([
+            // 1. Deactivate the account
             prisma.agent.update({
                 where: { id: session.id },
                 data: {
                     status: 'DEACTIVATED',
-                    deletedAt: new Date(),
                     deactivatedAt: new Date(),
                     deactivationReason: protectedReason.encrypted,
                     updatedAt: new Date()
                 }
             }),
+
+            // 2. Log the deactivation
             prisma.auditLog.create({
                 data: {
                     action: 'ACCOUNT_DEACTIVATION',
@@ -93,17 +93,30 @@ export async function POST(req: Request) {
                     ipAddress: req.headers.get('x-forwarded-for') || 'unknown',
                     userAgent: req.headers.get('user-agent') || 'unknown'
                 }
+            }),
+
+            // 3. Invalidate all sessions (optional - could keep for reactivation)
+            prisma.agentSession.deleteMany({
+                where: { agentId: session.id }
             })
         ]);
 
         return NextResponse.json(
-            { success: true },
+            {
+                success: true,
+                message: 'Account deactivated. Contact support within 30 days to reactivate.'
+            },
             { status: 200 }
         );
+
     } catch (error) {
-        console.error('Deactivation error:', error);
+        console.error('Account deactivation error:', error);
         return NextResponse.json(
-            { success: false, error: 'Internal server error' },
+            {
+                success: false,
+                error: 'Failed to process deactivation request',
+                systemMessage: error instanceof Error ? error.message : undefined
+            },
             { status: 500 }
         );
     }

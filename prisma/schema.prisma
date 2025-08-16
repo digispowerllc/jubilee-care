@@ -15,6 +15,7 @@ model AuditLog {
   userAgent String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  metadata  Json?
 
   // Relationship to Agent (matches your existing pattern)
   agentId String
@@ -49,6 +50,7 @@ model Agent {
   status             String    @default("")
   admittedAt         DateTime?
   deletedAt          DateTime?
+  deletionReason     String?
   deactivatedAt      DateTime?
   deactivationReason String?
   avatarUrl          String    @default("")
