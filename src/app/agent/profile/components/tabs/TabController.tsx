@@ -1,19 +1,17 @@
-// File: src/components/profile/tabs/TabController.ts
-"use client";
-
-import { useRouter } from "next/navigation";
+// File: src/app/agent/profile/components/tabs/TabController.ts
 import { ProfileControllerState, TabType } from "../../types";
+import { useRouter } from "next/navigation";
 
 export class TabController {
   state: ProfileControllerState;
   setState: (state: Partial<ProfileControllerState>) => void;
-  router: ReturnType<typeof useRouter>;
+  router: ReturnType<typeof useRouter>; // ✅ Correct type
 
   constructor(
     initialState: ProfileControllerState,
     setState: (state: Partial<ProfileControllerState>) => void,
-    controller: TabController,
-    router: ReturnType<typeof useRouter>
+    _controller: TabController,
+    router: ReturnType<typeof useRouter> // ✅ Fix here
   ) {
     this.state = initialState;
     this.setState = setState;
@@ -22,16 +20,13 @@ export class TabController {
 
   switchTab = (tab: TabType) => {
     this.setState({ activeTab: tab });
-    // optional: sync tab to URL so it survives refresh
-    // this.router.push(`?tab=${tab}`);
   };
 
   // Security Tab Methods
   handlePasswordUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     this.setState({ isEditingPassword: false });
-    // App Router has no reload, so simulate reload:
-    this.router.refresh();
+    this.router.refresh(); // ✅ use refresh in App Router instead of reload
   };
 
   handlePINUpdate = (e: React.FormEvent) => {
@@ -40,7 +35,7 @@ export class TabController {
       isEditingPIN: false,
       pinVerified: true,
     });
-    this.router.refresh();
+    this.router.refresh(); // ✅ App Router
   };
 
   openPasswordCard = () => {
@@ -68,4 +63,3 @@ export class TabController {
     });
   };
 }
-

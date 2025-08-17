@@ -14,7 +14,7 @@ import {
   PreferencesTab,
 } from "./components/tabs";
 import { TabType, AgentProfileData } from "./types";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation"; // ✅ Correct for App Router
 import {
   FiHome,
   FiUser,
@@ -44,16 +44,16 @@ export default function AgentProfileClient({ profileData }: Props) {
   });
 
   const router = useRouter();
-  const [controller] = useState(() => {
-    const tempController = {} as TabController;
-    return new TabController(
-      state,
-      (partialState: Partial<typeof state>) =>
-        setState((prev) => ({ ...prev, ...partialState })),
-      tempController,
-      router
-    );
-  });
+
+  const [controller] = useState(
+    () =>
+      new TabController(
+        state,
+        (partialState: Partial<typeof state>) =>
+          setState((prev) => ({ ...prev, ...partialState })),
+        {} as TabController
+      )
+  );
 
   const tabs: { value: TabType; label: string; icon: React.ElementType }[] = [
     { value: "overview", label: "Overview", icon: FiHome },
@@ -97,7 +97,6 @@ export default function AgentProfileClient({ profileData }: Props) {
           <SecurityTab
             profileData={profileData}
             controller={controller}
-            router={router}
           />
         );
       case "preferences":
