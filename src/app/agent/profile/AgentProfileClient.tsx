@@ -51,7 +51,8 @@ export default function AgentProfileClient({ profileData }: Props) {
         state,
         (partialState: Partial<typeof state>) =>
           setState((prev) => ({ ...prev, ...partialState })),
-        {} as TabController
+        {} as TabController,
+        router
       )
   );
 
@@ -94,10 +95,7 @@ export default function AgentProfileClient({ profileData }: Props) {
         return <AddressTab profileData={profileData} controller={state} />;
       case "security":
         return (
-          <SecurityTab
-            profileData={profileData}
-            controller={controller}
-          />
+          <SecurityTab profileData={profileData} controller={controller} />
         );
       case "preferences":
         return (
