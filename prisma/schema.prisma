@@ -69,6 +69,8 @@ model Agent {
   surname            String
   firstName          String
   otherName          String
+  gender             String?
+  dob                DateTime?
   email              String
   phone              String
   nin                String    @unique
@@ -90,6 +92,7 @@ model Agent {
   deactivatedAt      DateTime?
   deactivationReason String?
   avatarUrl          String    @default("")
+  emailVerified      DateTime?
 
   profile               AgentProfile?
   sessions              AgentSession[]
@@ -108,6 +111,7 @@ model Agent {
   @@index([state])
   @@index([lga])
   @@index([createdAt])
+  @@index([emailVerified])
   // Automatic data retention policy (7 years for compliance)
   @@map("agent")
 }

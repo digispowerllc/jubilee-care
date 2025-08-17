@@ -1,17 +1,25 @@
 // File: src/components/profile/tabs/IdentificationTab.tsx
 "use client";
 
-import { UnprotectedData } from "@/lib/types/profileTypes";
-import { FiLock, FiCreditCard, FiShield, FiAlertCircle } from "react-icons/fi";
+import {
+  FiLock,
+  FiCreditCard,
+  FiShield,
+  FiAlertCircle,
+  FiUser,
+} from "react-icons/fi";
+import { TabController } from "./TabController";
+import { AgentProfileData } from "../../types";
 
 interface IdentificationTabProps {
-  data: UnprotectedData;
-  onRequestPINVerification: (type: "NIN" | "BVN") => void;
+  profileData: AgentProfileData;
+  controller: TabController;
+  documentStatus?: "verified" | "pending" | "rejected";
 }
 
 export function IdentificationTab({
-  data,
-  onRequestPINVerification,
+  profileData,
+  controller,
 }: IdentificationTabProps) {
   return (
     <div className="space-y-6">
@@ -50,7 +58,7 @@ export function IdentificationTab({
             </div>
 
             <div className="mt-4 flex items-center justify-between">
-              {data.nin ? (
+              {profileData.nin ? (
                 <>
                   <div className="flex items-center">
                     <FiLock className="h-4 w-4 text-gray-600 mr-2" />
@@ -60,7 +68,9 @@ export function IdentificationTab({
                   </div>
                   <button
                     type="button"
-                    onClick={() => onRequestPINVerification("NIN")}
+                    onClick={() =>
+                      controller.setState({ isEditingPersonal: true })
+                    }
                     className="ml-4 inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     View NIN

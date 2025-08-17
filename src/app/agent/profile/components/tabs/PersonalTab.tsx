@@ -1,30 +1,42 @@
 // File: src/components/profile/tabs/PersonalTab.tsx
 "use client";
 
-import { UnprotectedData } from "@/lib/types/profileTypes";
+import { TabController } from "./TabController";
 import { FiUser } from "react-icons/fi";
+import { AgentProfileData } from "../../types";
 
 interface PersonalTabProps {
-  data: UnprotectedData;
+  profileData: AgentProfileData;
+  controller: TabController; // ✅ Added controller for consistency
 }
 
-export function PersonalTab({ data }: PersonalTabProps) {
+export function PersonalTab({ profileData, controller }: PersonalTabProps) {
   return (
     <div className="space-y-6">
       {/* Header Section */}
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center">
-          <div className="flex-shrink-0 p-3 rounded-full border border-gray-200">
-            <FiUser className="h-6 w-6 text-primary-600" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="flex-shrink-0 p-3 rounded-full border border-gray-200">
+              <FiUser className="h-6 w-6 text-primary-600" />
+            </div>
+            <div className="ml-5">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Personal Information
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Your verified identification details
+              </p>
+            </div>
           </div>
-          <div className="ml-5">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Personal Information
-            </h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Your verified identification details
-            </p>
-          </div>
+
+          {/* ✅ Example use of controller (edit button to switch tab/trigger state) */}
+          <button
+            onClick={() => controller.setState({ isEditingPersonal: true })}
+            className="text-sm text-primary-600 hover:text-primary-800"
+          >
+            Edit
+          </button>
         </div>
       </div>
 
@@ -41,7 +53,7 @@ export function PersonalTab({ data }: PersonalTabProps) {
               <div>
                 <p className="text-xs font-medium text-gray-500">Surname</p>
                 <p className="mt-1 text-base font-medium text-gray-900">
-                  {data.surname}
+                  {profileData.surname}
                 </p>
               </div>
 
@@ -49,7 +61,7 @@ export function PersonalTab({ data }: PersonalTabProps) {
               <div>
                 <p className="text-xs font-medium text-gray-500">First Name</p>
                 <p className="mt-1 text-base font-medium text-gray-900">
-                  {data.firstName}
+                  {profileData.firstName}
                 </p>
               </div>
 
@@ -57,7 +69,7 @@ export function PersonalTab({ data }: PersonalTabProps) {
               <div>
                 <p className="text-xs font-medium text-gray-500">Other Names</p>
                 <p className="mt-1 text-base font-medium text-gray-900">
-                  {data.otherName || "—"}
+                  {profileData.otherName || "—"}
                 </p>
               </div>
             </div>

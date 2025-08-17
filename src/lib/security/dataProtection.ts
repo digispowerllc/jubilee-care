@@ -14,6 +14,8 @@ export type ProtectionTier =
     | 'government' // Highest security, AES-GCM w/ random IV
     | 'email'      // Deterministic searchable encryption (fixed IV AES-CBC)
     | 'phone'      // Same as email tier, but no lowercase normalization
+    | 'gender'     // Random-IV AES-CBC
+    | 'date'       // Random-IV AES-CBC
     | 'location'   // Random-IV AES-CBC
     | 'name'       // Random-IV AES-CBC
     | 'system-code' // One-way hash (bcrypt), not reversible
@@ -48,6 +50,10 @@ export async function protectData(
                 searchHash: generateSearchHash(normalized)
             };
         }
+        case 'gender':
+            return { encrypted: encryptBasic(data) };
+        case 'date':
+            return { encrypted: encryptBasic(data) };
 
         case 'location':
             return { encrypted: encryptBasic(data) };
@@ -83,6 +89,12 @@ export async function unprotectData(
 
         case 'phone':
             return decryptSearchable(encryptedData, 'phone');
+
+        case 'gender':
+            return decryptBasic(encryptedData);
+
+        case 'date':
+            return decryptBasic(encryptedData);
 
         case 'location':
             return decryptBasic(encryptedData);

@@ -1,16 +1,19 @@
+
 export interface UnprotectedData {
+    agentId: string;
     firstName: string;
     surname: string;
     otherName: string | null;
-    email: string;
-    phone: string;
-    nin: string;
-    state: string;
-    lga: string;
-    address: string;
-    emailVerified: boolean;
+    gender: string | null;
+    dob: string | null;
+    email: string | null;
+    phone: string | null;
+    nin: string | null;
+    state: string | null;
+    lga: string | null;
+    address: string | null;
     memberSince?: Date;
-    avatarUrl?: string;
+    avatarUrl?: string | null;
     clients?: Array<{
         id: string;
         name: string;
@@ -23,4 +26,16 @@ export interface UnprotectedData {
         date: Date;
         type: "deposit" | "withdrawal" | "transfer";
     }>;
+}
+
+export interface ProfileControllerState {
+  isEditingPassword: boolean;
+  isEditingPIN: boolean;
+  is2FAEnabled: boolean;
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+  newPIN: string;
+  confirmPIN: string;
+  pinVerified: boolean;
 }

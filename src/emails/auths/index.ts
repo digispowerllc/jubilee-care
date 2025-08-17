@@ -3,4 +3,4 @@ export { ForgotPasswordEmail } from './forgot-password';
 export { PasswordResetEmail } from './password-reset';
 export { PasswordChangedEmail } from './password-changed';
 export { VerifyEmailEmail } from './verify-email';
-export { LoginNotificationEmail } from './login-notification';
+export { LoginNotificationEmail } from './signin-notification';

@@ -9,14 +9,18 @@ import {
   FiTrash2,
   FiEdit2,
 } from "react-icons/fi";
-import { DangerZone } from "@/components/profile/DangerZone";
+import { DangerZone } from "@/app/agent/profile/components/DangerZone";
 import { NextRouter } from "next/router";
+import { TabController } from "./TabController";
+import { AgentProfileData } from "../../types";
 
 interface SecurityTabProps {
   router: NextRouter;
+  profileData: AgentProfileData;
+  controller: TabController;
 }
 
-export function SecurityTab({ router }: SecurityTabProps) {
+export function SecurityTab({ router, profileData, controller }: SecurityTabProps) {
   const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [isEditingPIN, setIsEditingPIN] = useState(false);
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
@@ -38,21 +42,6 @@ export function SecurityTab({ router }: SecurityTabProps) {
     setIsEditingPIN(false);
     setPinVerified(true);
     router.reload();
-  };
-
-  const openPasswordCard = () => {
-    setIsEditingPassword(true);
-    setIsEditingPIN(false);
-    setNewPIN("");
-    setConfirmPIN("");
-  };
-
-  const openPINCard = () => {
-    setIsEditingPIN(true);
-    setIsEditingPassword(false);
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
   };
 
   return (
@@ -82,7 +71,12 @@ export function SecurityTab({ router }: SecurityTabProps) {
             </div>
             {!isEditingPassword && (
               <button
-                onClick={openPasswordCard}
+                onClick={() => {
+                  setIsEditingPassword(true);
+                  setIsEditingPIN(false); // close PIN card
+                  setNewPIN("");
+                  setConfirmPIN("");
+                }}
                 className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-400 rounded p-1"
               >
                 <FiEdit2 className="h-5 w-5" />
@@ -155,7 +149,13 @@ export function SecurityTab({ router }: SecurityTabProps) {
             </div>
             {pinVerified && !isEditingPIN && (
               <button
-                onClick={openPINCard}
+                onClick={() => {
+                  setIsEditingPIN(true);
+                  setIsEditingPassword(false); // close Password card
+                  setCurrentPassword("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                }}
                 className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-400 rounded p-1"
               >
                 <FiEdit2 className="h-5 w-5" />
@@ -223,6 +223,7 @@ export function SecurityTab({ router }: SecurityTabProps) {
               </h3>
             </div>
 
+            {/* iOS-style toggle */}
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"

@@ -9,8 +9,21 @@ import {
   FiDollarSign,
   FiSettings,
 } from "react-icons/fi";
+import { AgentProfileData } from "../../types";
+import { TabController } from "./TabController";
 
-export function PreferencesTab() {
+// PreferencesTab component
+interface PreferencesTabProps {
+  profileData: AgentProfileData;
+  controller: TabController;
+}
+
+export { PreferencesTab };
+
+const PreferencesTab: React.FC<PreferencesTabProps> = ({
+  profileData,
+  controller,
+}) => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const [showSensitiveData, setShowSensitiveData] = useState(false);
@@ -90,4 +103,4 @@ export function PreferencesTab() {
       </div>
     </div>
   );
-}
+};

@@ -7,8 +7,8 @@ import {
   FiTrash2,
   FiChevronRight,
 } from "react-icons/fi";
-import { DeactivateModal } from "./DeactivateAccountModal";
-import { DeleteModal } from "./DeleteDataModal";
+import { DeactivateModal } from "./modals/DeactivateAccountModal";
+import { DeleteModal } from "./modals/DeleteDataModal";
 
 export function DangerZone() {
   const [showDeactivate, setShowDeactivate] = useState(false);

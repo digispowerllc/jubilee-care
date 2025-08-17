@@ -1,11 +1,8 @@
-import { UnprotectedData } from "@/lib/types/profileTypes";
 import { FiMapPin, FiHome } from "react-icons/fi";
+import { TabController } from "./TabController";
+import { AddressTabProps } from "../../types";
 
-interface AddressTabProps {
-  data: UnprotectedData;
-}
-
-export function AddressTab({ data }: AddressTabProps) {
+export function AddressTab({ profileData, controller }: AddressTabProps) {
   return (
     <div className="space-y-6">
       {/* Header Section */}
@@ -38,7 +35,7 @@ export function AddressTab({ data }: AddressTabProps) {
                 <div>
                   <p className="text-xs font-medium text-gray-500">State</p>
                   <p className="mt-1 text-base font-medium text-gray-900 p-3 bg-gray-50 rounded-md">
-                    {data.state}
+                    {profileData.state}
                   </p>
                 </div>
                 <div>
@@ -46,7 +43,7 @@ export function AddressTab({ data }: AddressTabProps) {
                     Local Government Area
                   </p>
                   <p className="mt-1 text-base font-medium text-gray-900 p-3 bg-gray-50 rounded-md">
-                    {data.lga}
+                    {profileData.lga}
                   </p>
                 </div>
               </div>
@@ -65,7 +62,7 @@ export function AddressTab({ data }: AddressTabProps) {
             </div>
             <div className="mt-4 p-3 bg-gray-50 rounded-md h-[calc(100%-50px)]">
               <p className="text-gray-900 whitespace-pre-line">
-                {data.address || "No address provided"}
+                {profileData.address || "No address provided"}
               </p>
             </div>
           </div>

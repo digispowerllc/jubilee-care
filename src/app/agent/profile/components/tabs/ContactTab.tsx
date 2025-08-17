@@ -10,17 +10,15 @@ import {
   FiShield,
   FiUser,
 } from "react-icons/fi";
-import { UnprotectedData } from "@/lib/types/profileTypes";
+import { TabController } from "./TabController";
+import { AgentProfileData } from "../../types";
 
 interface ContactTabProps {
-  data: UnprotectedData;
-  onRequestPINVerification: (purpose: "viewNIN" | "viewPhone") => void;
+  profileData: AgentProfileData;
+  controller: TabController;
 }
 
-export function ContactTab({
-  data,
-  onRequestPINVerification,
-}: ContactTabProps) {
+export function ContactTab({ profileData, controller }: ContactTabProps) {
   const [showPhone, setShowPhone] = useState(false);
   const [pinVerified, setPinVerified] = useState(false);
 
@@ -61,7 +59,7 @@ export function ContactTab({
                   Email Address
                 </h3>
               </div>
-              {data.emailVerified ? (
+              {profileData.emailVerified ? (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                   <FiCheckCircle className="mr-1 h-3 w-3" />
                   Verified
@@ -75,7 +73,7 @@ export function ContactTab({
 
             <div className="mt-4">
               <div className="p-3 bg-gray-50 rounded-md">
-                <p className="text-gray-900">{data.email}</p>
+                <p className="text-gray-900">{profileData.email}</p>
               </div>
             </div>
           </div>
@@ -99,11 +97,13 @@ export function ContactTab({
             <div className="mt-4 flex items-center justify-between">
               <div className="p-3 bg-gray-50 rounded-md flex-1 mr-4">
                 <p className="text-gray-900">
-                  {pinVerified && showPhone ? data.phone : maskData(data.phone)}
+                  {pinVerified && showPhone
+                    ? profileData.phone
+                    : maskData(profileData.phone)}
                 </p>
               </div>
               <button
-                onClick={() => onRequestPINVerification("viewPhone")}
+                onClick={() => controller.setState({ isEditingPIN: true })}
                 className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 {pinVerified && showPhone ? (

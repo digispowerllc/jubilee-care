@@ -1,6 +1,8 @@
+// File: src/app/agent/profile/components/tabs/OverviewTab.tsx
 "use client";
 
-import { UnprotectedData } from "@/lib/types/profileTypes";
+import { TabController } from "./TabController";
+import { TabType } from "../../types";
 import {
   FiCheckCircle,
   FiXCircle,
@@ -13,69 +15,80 @@ import {
   FiUser,
 } from "react-icons/fi";
 
-interface OverviewTabProps {
-  data: UnprotectedData;
+export interface UnprotectedData {
+  // existing properties
+  emailVerified: Date;
 }
 
-export function OverviewTab({ data }: OverviewTabProps) {
-  const quickActions = [
+export interface OverviewTabProps {
+  profileData: UnprotectedData;
+  controller: TabController;
+}
+
+export function OverviewTab({ profileData, controller }: OverviewTabProps) {
+  const quickActions: {
+    name: string;
+    tab?: TabType;
+    icon: import("react-icons").IconType;
+    description: string;
+    secure?: boolean;
+  }[] = [
     {
       name: "Update Profile",
-      href: "#personal",
+      tab: "personal",
       icon: FiUser,
       description: "Edit your personal details",
-      secure: false,
     },
     {
       name: "Verify Contact",
-      href: "#contact",
+      tab: "contact",
       icon: FiMail,
       description: "Confirm your email or phone",
       secure: true,
     },
     {
       name: "View ID",
-      href: "#identification",
+      tab: "identification",
       icon: FiCreditCard,
       description: "View your identification documents",
       secure: true,
     },
     {
       name: "View NIN",
-      href: "#identification",
+      tab: "identification",
       icon: FiCreditCard,
       description: "National Identification Number (NIN)",
       secure: true,
     },
     {
       name: "View BVN",
-      href: "#identification",
+      tab: "identification",
       icon: FiCreditCard,
       description: "Bank Verification Number (coming soon)",
       secure: true,
     },
     {
       name: "Security Settings",
-      href: "#security",
+      tab: "security",
       icon: FiShield,
       description: "Manage passwords & PIN",
       secure: true,
     },
     {
       name: "Documents",
-      href: "#documents",
+      tab: "identification",
       icon: FiFileText,
       description: "Upload required files",
     },
     {
       name: "Preferences",
-      href: "#preferences",
+      tab: "preferences",
       icon: FiSettings,
       description: "Customize your experience",
     },
     {
       name: "Support",
-      href: "#support",
+      tab: "contact",
       icon: FiClipboard,
       description: "Get help or contact support",
     },
@@ -133,7 +146,7 @@ export function OverviewTab({ data }: OverviewTabProps) {
         ))}
       </div>
 
-      {/* Quick Actions Grid */}
+      {/* Quick Actions */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="p-6">
           <h3 className="text-lg font-medium leading-6 text-gray-900">
@@ -146,9 +159,10 @@ export function OverviewTab({ data }: OverviewTabProps) {
         <div className="border-t border-gray-200 px-6 py-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {quickActions.map((action) => (
-              <a
+              <button
                 key={action.name}
-                href={action.href}
+                type="button"
+                onClick={() => action.tab && controller.switchTab(action.tab)}
                 className="group relative flex items-start space-x-4 rounded-lg p-4 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
               >
                 <div
@@ -171,7 +185,7 @@ export function OverviewTab({ data }: OverviewTabProps) {
                   </h4>
                   <p className="text-sm text-gray-500">{action.description}</p>
                 </div>
-              </a>
+              </button>
             ))}
           </div>
         </div>
@@ -185,7 +199,7 @@ export function OverviewTab({ data }: OverviewTabProps) {
         <div className="mt-4 space-y-4">
           <div className="flex items-start">
             <div className="flex-shrink-0 pt-0.5">
-              {data.emailVerified ? (
+              {profileData.emailVerified ? (
                 <FiCheckCircle className="h-5 w-5 text-green-500" />
               ) : (
                 <FiXCircle className="h-5 w-5 text-yellow-500" />
@@ -193,10 +207,13 @@ export function OverviewTab({ data }: OverviewTabProps) {
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-700">
-                Email {data.emailVerified ? "Verified" : "Pending Verification"}
+                Email{" "}
+                {profileData.emailVerified
+                  ? "Verified"
+                  : "Pending Verification"}
               </p>
               <p className="text-sm text-gray-500">
-                {data.emailVerified
+                {profileData.emailVerified
                   ? "Your email address has been confirmed"
                   : "Please verify your email to access all features"}
               </p>
