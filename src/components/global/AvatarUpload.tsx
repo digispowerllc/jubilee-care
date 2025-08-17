@@ -1,11 +1,10 @@
-// File: src/components/global/AvatarUpload.tsx
 "use client";
 
 import { useState, useRef, ChangeEvent, useEffect } from "react";
 import { FiUpload } from "react-icons/fi";
 import Image from "next/image";
 import { uploadImage } from "@/lib/actions/upload";
-import { notifyError, notifySuccess } from "./Notification";
+import toast from "react-hot-toast";
 
 interface AvatarUploadProps {
   initialAvatarUrl?: string;
@@ -93,7 +92,11 @@ export function AvatarUpload({
     initialAvatarUrl
   );
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Calculate SVG wave height based on upload progress (0-200)
+  const uploadHeight = Math.min(200, 200 * (uploadProgress / 100));
 
   // Initialize DB and load cached avatar
   useEffect(() => {
@@ -102,7 +105,6 @@ export function AvatarUpload({
         const cachedAvatar = await getAvatarFromDB(agentId);
         if (cachedAvatar) setAvatarUrl(cachedAvatar);
       } else {
-        // Cache the initial avatar if it exists
         await saveAvatarToDB(agentId, initialAvatarUrl);
       }
     };
@@ -122,7 +124,7 @@ export function AvatarUpload({
 
     // Validate image type
     if (!file.type.startsWith("image/")) {
-      notifyError("Please select a valid image file (JPEG, PNG, etc.)");
+      toast.error("Please select a valid image file (JPEG, PNG, etc.)");
       resetFileInput();
       return;
     }
@@ -130,18 +132,33 @@ export function AvatarUpload({
     // Validate size limit (5MB)
     const MAX_FILE_SIZE = 5 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
-      notifyError("Image size must be less than 5MB");
+      toast.error("Image size must be less than 5MB");
       resetFileInput();
       return;
     }
 
     let previewUrl: string | undefined;
+    let toastId: string | undefined;
     try {
       setIsUploading(true);
+      setUploadProgress(0);
+      // toastId = toast.loading("Uploading image...");
 
       // Create and store preview URL
       previewUrl = URL.createObjectURL(file);
       setAvatarUrl(previewUrl);
+
+      // Simulate progress with wave animation
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => {
+          const newProgress = prev + Math.random() * 10;
+          if (newProgress >= 100) {
+            clearInterval(progressInterval);
+            return 100;
+          }
+          return newProgress;
+        });
+      }, 300);
 
       // Prepare form data
       const formData = new FormData();
@@ -149,31 +166,36 @@ export function AvatarUpload({
       formData.append("agentId", agentId);
 
       // Upload to backend
-      const result = await uploadImage(formData);
+      const result = await uploadImage(formData) as { success?: boolean; url?: string; error?: string };
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
+      // Let the animation complete
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       if (result?.success && result.url) {
-        notifySuccess("Profile picture updated successfully!");
+        toast.success("Profile picture updated successfully!", { id: toastId });
         setAvatarUrl(result.url);
-        // Cache the successful upload in IndexedDB
         await saveAvatarToDB(agentId, result.url);
       } else {
+        // Use type assertion to access error if present, otherwise fallback
         throw new Error(result?.error || "Failed to upload image");
       }
     } catch (error) {
       console.error("Upload error:", error);
-      notifyError(
-        error instanceof Error ? error.message : "Failed to upload image"
+      toast.error(
+        error instanceof Error ? error.message : "Failed to upload image",
+        { id: toastId }
       );
       // Fall back to cached avatar from IndexedDB
       const cachedAvatar = await getAvatarFromDB(agentId);
       setAvatarUrl(cachedAvatar || undefined);
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
       resetFileInput();
       // Clean up object URL to avoid memory leaks
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
     }
   };
 
@@ -188,6 +210,47 @@ export function AvatarUpload({
 
   return (
     <div className="relative group w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-100 overflow-hidden border-2 border-primary flex items-center justify-center">
+      {/* SVG Wave Animation - Only visible during upload */}
+      {isUploading && (
+        <svg
+          viewBox="0 0 200 200"
+          className="absolute w-full h-full top-0 left-0 z-10"
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <clipPath id="wave-clip">
+              <path
+                d="M0,50 C50,30 100,50 150,30 S250,50 300,30 V200 H0 Z"
+                fill="white"
+                transform={`translate(0, ${200 - uploadHeight})`}
+              />
+            </clipPath>
+          </defs>
+          <rect
+            width="200"
+            height="200"
+            fill="rgba(255,255,255,0.3)"
+            clipPath="url(#wave-clip)"
+            className="transition-transform duration-300 ease-out"
+          />
+          {/* Secondary wave layer for depth */}
+          <path
+            d="M0,40 C50,20 100,40 150,20 S250,40 300,20 V200 H0 Z"
+            fill="rgba(255,255,255,0.2)"
+            transform={`translate(0, ${200 - uploadHeight})`}
+            className="wave-animation"
+          />
+          {/* Tertiary wave layer */}
+          <path
+            d="M0,60 C50,40 100,60 150,40 S250,60 300,40 V200 H0 Z"
+            fill="rgba(255,255,255,0.15)"
+            transform={`translate(0, ${200 - uploadHeight * 0.9})`}
+            className="wave-animation delay-200"
+          />
+        </svg>
+      )}
+
+      {/* Avatar Image */}
       {finalAvatar.startsWith("data:") ||
       finalAvatar.startsWith("blob:") ||
       finalAvatar.startsWith("http") ? (
@@ -200,7 +263,6 @@ export function AvatarUpload({
           priority={!!initialAvatarUrl}
           onError={async () => {
             console.warn("Image failed to load, falling back");
-            // Remove invalid URL from IndexedDB
             await deleteAvatarFromDB(agentId);
             setAvatarUrl(undefined);
           }}
@@ -213,6 +275,7 @@ export function AvatarUpload({
         </div>
       )}
 
+      {/* Hidden file input */}
       <input
         type="file"
         ref={fileInputRef}
@@ -222,19 +285,42 @@ export function AvatarUpload({
         disabled={isUploading}
       />
 
+      {/* Upload button */}
       <button
         type="button"
-        onClick={() => fileInputRef.current?.click()}
-        className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full"
+        onClick={() => !isUploading && fileInputRef.current?.click()}
+        className={`absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full ${isUploading ? "!opacity-100" : ""}`}
         aria-label="Upload profile picture"
         disabled={isUploading}
       >
-        {isUploading ? (
-          <span className="text-white text-xs font-medium">Uploading...</span>
-        ) : (
-          <FiUpload className="w-5 h-5 text-white" />
-        )}
+        {!isUploading && <FiUpload className="w-5 h-5 text-white" />}
       </button>
+
+      {/* Wave animation styles */}
+      <style jsx global>{`
+        @keyframes wave-float {
+          0%,
+          100% {
+            transform: translateY(0) scaleY(1);
+          }
+          25% {
+            transform: translateY(-3px) scaleY(0.98);
+          }
+          50% {
+            transform: translateY(0) scaleY(1.02);
+          }
+          75% {
+            transform: translateY(2px) scaleY(0.99);
+          }
+        }
+        .wave-animation {
+          animation: wave-float 4s ease-in-out infinite;
+          transition: transform 0.5s ease-out;
+        }
+        .delay-200 {
+          animation-delay: 200ms;
+        }
+      `}</style>
     </div>
   );
 }
