@@ -1,4 +1,5 @@
-import { NextRouter } from "next/router";
+// import { NextRouter } from "next/router";
+import { TabController } from "./components/tabs/TabController";
 
 export type TabType =
     | 'overview'
@@ -10,6 +11,8 @@ export type TabType =
     | 'preferences';
 
 export interface AgentProfileData {
+    agentId: string;       // Internal ID for backend operations
+    fieldId?: string;      // Displayed as "Agent ID" in the UI
     surname: string;
     firstName: string;
     otherName: string | null;
@@ -21,11 +24,10 @@ export interface AgentProfileData {
     state: string;
     lga: string;
     address: string;
-    emailVerified: boolean; // Changed from Date | null to boolean
+    emailVerified: boolean;
     memberSince?: Date;
     avatarUrl?: string;
-    agentId: string;
-    createdAt: Date
+    createdAt: Date;
 }
 
 export interface UnprotectedData extends Omit<AgentProfileData, 'emailVerified'> {
@@ -62,9 +64,9 @@ export interface ContactTabProps extends ProfileTabProps {
     secondaryPhone?: string;
 }
 
-export interface AddressTabProps extends ProfileTabProps {
+export interface AddressTabProps {
     profileData: AgentProfileData;
-    controller: ProfileControllerState;
+    controller: TabController;
 }
 
 export interface SecurityTabProps extends ProfileTabProps {

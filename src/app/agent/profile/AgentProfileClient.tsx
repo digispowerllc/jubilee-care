@@ -67,10 +67,9 @@ export default function AgentProfileClient({ profileData }: Props) {
     { value: "preferences", label: "Preferences", icon: FiSettings },
   ];
 
-  // Prepare data for OverviewTab
   const overviewData = {
     ...profileData,
-    emailVerified: Boolean(profileData.emailVerified), // Ensure boolean type
+    emailVerified: Boolean(profileData.emailVerified),
   };
 
   const renderTab = () => {
@@ -91,7 +90,7 @@ export default function AgentProfileClient({ profileData }: Props) {
       case "contact":
         return <ContactTab profileData={profileData} controller={controller} />;
       case "address":
-        return <AddressTab profileData={profileData} controller={state} />;
+        return <AddressTab profileData={profileData} controller={controller} />;
       case "security":
         return (
           <SecurityTab profileData={profileData} controller={controller} />
@@ -113,17 +112,42 @@ export default function AgentProfileClient({ profileData }: Props) {
           initialAvatarUrl={profileData.avatarUrl}
           initials={`${profileData.surname?.charAt(0)}${profileData.firstName?.charAt(0)}`}
           fullName={`${profileData.surname} ${profileData.firstName}`}
-          agentId={profileData.agentId}
+          agentId={profileData.agentId} // Internal use
         />
 
         <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-2xl font-medium text-gray-900 tracking-tight">
-              {profileData.surname} {profileData.firstName}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-medium text-gray-900 tracking-tight">
+                {profileData.surname} {profileData.firstName}
+              </h1>
+              {profileData.emailVerified ? (
+                <span
+                  className="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800"
+                  title="Verified Account"
+                >
+                  Verified
+                </span>
+              ) : (
+                <span
+                  className="px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800"
+                  title="Unverified Account"
+                >
+                  Unverified
+                </span>
+              )}
+            </div>
+
+            <p className="text-sm text-gray-500 font-light">
+              Agent ID:{" "}
+              <span className="font-medium">
+                {profileData.fieldId ?? profileData.agentId}
+              </span>
+            </p>
+
             {profileData.memberSince && (
               <p className="text-sm text-gray-500 font-light">
-                Member since{" "}
+                Member since:{" "}
                 {new Date(profileData.memberSince).toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "long",
@@ -141,7 +165,7 @@ export default function AgentProfileClient({ profileData }: Props) {
 
       {/* Tab Navigation */}
       <div className="mb-8">
-        {/* Mobile - Minimalist underline */}
+        {/* Mobile */}
         <div className="sm:hidden flex justify-between border-b border-gray-100 pb-1">
           {tabs.map(({ value, label, icon: Icon }) => (
             <button
@@ -162,7 +186,7 @@ export default function AgentProfileClient({ profileData }: Props) {
           ))}
         </div>
 
-        {/* Desktop - Elegant text with subtle indicator */}
+        {/* Desktop */}
         <div className="hidden sm:block">
           <nav className="flex space-x-8">
             {tabs.map(({ value, label, icon: Icon }) => (

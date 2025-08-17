@@ -1,4 +1,3 @@
-// File: src/app/agent/profile/components/tabs/OverviewTab.tsx
 "use client";
 
 import { TabController } from "./TabController";
@@ -18,7 +17,7 @@ import {
 interface OverviewTabProps {
   profileData: {
     emailVerified: boolean;
-    // Include other properties used in the component if needed
+    // Include other properties if needed
   };
   controller: TabController;
 }
@@ -36,6 +35,7 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
       tab: "personal",
       icon: FiUser,
       description: "Edit your personal details",
+      secure: true,
     },
     {
       name: "Verify Contact",
@@ -48,21 +48,7 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
       name: "View ID",
       tab: "identification",
       icon: FiCreditCard,
-      description: "View your identification documents",
-      secure: true,
-    },
-    {
-      name: "View NIN",
-      tab: "identification",
-      icon: FiCreditCard,
-      description: "National Identification Number (NIN)",
-      secure: true,
-    },
-    {
-      name: "View BVN",
-      tab: "identification",
-      icon: FiCreditCard,
-      description: "Bank Verification Number (coming soon)",
+      description: "View your identification documents (NIN & BVN)",
       secure: true,
     },
     {
@@ -77,18 +63,21 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
       tab: "identification",
       icon: FiFileText,
       description: "Upload required files",
+      secure: true,
     },
     {
       name: "Preferences",
       tab: "preferences",
       icon: FiSettings,
       description: "Customize your experience",
+      secure: true,
     },
     {
       name: "Support",
       tab: "contact",
       icon: FiClipboard,
       description: "Get help or contact support",
+      secure: true,
     },
   ];
 
@@ -125,8 +114,8 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
                   metric.trend === "up"
                     ? "bg-green-100 text-green-600"
                     : metric.trend === "down"
-                    ? "bg-red-100 text-red-600"
-                    : "bg-blue-100 text-blue-600"
+                      ? "bg-red-100 text-red-600"
+                      : "bg-blue-100 text-blue-600"
                 }`}
               >
                 <metric.icon className="h-6 w-6" />
@@ -160,13 +149,17 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
               <button
                 key={action.name}
                 type="button"
-                onClick={() => action.tab && controller.switchTab(action.tab)}
+                onClick={() => {
+                  if (action.tab && controller.state.activeTab !== action.tab) {
+                    controller.switchTab(action.tab); // Only switch if different
+                  }
+                }}
                 className="group relative flex items-start space-x-4 rounded-lg p-4 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
               >
                 <div
                   className={`flex-shrink-0 p-3 rounded-lg ${
                     action.secure
-                      ? "bg-red-100 text-red-600"
+                      ? "bg-green-100 text-green-600"
                       : "bg-gray-100 text-gray-600"
                   } group-hover:bg-opacity-80`}
                 >
@@ -205,7 +198,10 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-700">
-                Email {profileData.emailVerified ? "Verified" : "Pending Verification"}
+                Email{" "}
+                {profileData.emailVerified
+                  ? "Verified"
+                  : "Pending Verification"}
               </p>
               <p className="text-sm text-gray-500">
                 {profileData.emailVerified
