@@ -15,13 +15,11 @@ import {
   FiUser,
 } from "react-icons/fi";
 
-export interface UnprotectedData {
-  // existing properties
-  emailVerified: Date;
-}
-
-export interface OverviewTabProps {
-  profileData: UnprotectedData;
+interface OverviewTabProps {
+  profileData: {
+    emailVerified: boolean;
+    // Include other properties used in the component if needed
+  };
   controller: TabController;
 }
 
@@ -29,7 +27,7 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
   const quickActions: {
     name: string;
     tab?: TabType;
-    icon: import("react-icons").IconType;
+    icon: React.ComponentType<{ className?: string }>;
     description: string;
     secure?: boolean;
   }[] = [
@@ -99,19 +97,19 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
       name: "Tasks Completed",
       value: "24",
       icon: FiClipboard,
-      trend: "up",
+      trend: "up" as const,
     },
     {
       name: "Active Sessions",
       value: "1",
       icon: FiShield,
-      trend: "stable",
+      trend: "stable" as const,
     },
     {
       name: "Pending Actions",
       value: "3",
       icon: FiFileText,
-      trend: "down",
+      trend: "down" as const,
     },
   ];
 
@@ -127,8 +125,8 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
                   metric.trend === "up"
                     ? "bg-green-100 text-green-600"
                     : metric.trend === "down"
-                      ? "bg-red-100 text-red-600"
-                      : "bg-blue-100 text-blue-600"
+                    ? "bg-red-100 text-red-600"
+                    : "bg-blue-100 text-blue-600"
                 }`}
               >
                 <metric.icon className="h-6 w-6" />
@@ -207,10 +205,7 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-700">
-                Email{" "}
-                {profileData.emailVerified
-                  ? "Verified"
-                  : "Pending Verification"}
+                Email {profileData.emailVerified ? "Verified" : "Pending Verification"}
               </p>
               <p className="text-sm text-gray-500">
                 {profileData.emailVerified

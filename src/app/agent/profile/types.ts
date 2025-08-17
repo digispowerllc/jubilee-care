@@ -21,10 +21,15 @@ export interface AgentProfileData {
     state: string;
     lga: string;
     address: string;
-    emailVerified: Date | null;
+    emailVerified: boolean; // Changed from Date | null to boolean
     memberSince?: Date;
     avatarUrl?: string;
     agentId: string;
+    createdAt: Date
+}
+
+export interface UnprotectedData extends Omit<AgentProfileData, 'emailVerified'> {
+    emailVerified: boolean; // Ensure consistent type
 }
 
 export interface ProfileControllerState {

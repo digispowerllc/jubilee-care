@@ -14,7 +14,7 @@ import {
   PreferencesTab,
 } from "./components/tabs";
 import { TabType, AgentProfileData } from "./types";
-import { useRouter } from "next/navigation"; // ✅ Correct for App Router
+import { useRouter } from "next/navigation";
 import {
   FiHome,
   FiUser,
@@ -24,6 +24,7 @@ import {
   FiShield,
   FiSettings,
 } from "react-icons/fi";
+import LogoutButton from "./components/LogoutButton";
 
 interface Props {
   profileData: AgentProfileData;
@@ -66,18 +67,16 @@ export default function AgentProfileClient({ profileData }: Props) {
     { value: "preferences", label: "Preferences", icon: FiSettings },
   ];
 
+  // Prepare data for OverviewTab
+  const overviewData = {
+    ...profileData,
+    emailVerified: Boolean(profileData.emailVerified), // Ensure boolean type
+  };
+
   const renderTab = () => {
     switch (state.activeTab) {
       case "overview":
-        return (
-          <Overview
-            profileData={{
-              ...profileData,
-              emailVerified: profileData.emailVerified ?? new Date(0),
-            }}
-            controller={controller}
-          />
-        );
+        return <Overview profileData={overviewData} controller={controller} />;
       case "personal":
         return (
           <PersonalTab profileData={profileData} controller={controller} />
@@ -102,73 +101,100 @@ export default function AgentProfileClient({ profileData }: Props) {
           <PreferencesTab profileData={profileData} controller={controller} />
         );
       default:
-        return (
-          <Overview
-            profileData={{
-              ...profileData,
-              emailVerified: profileData.emailVerified ?? new Date(0),
-            }}
-            controller={controller}
-          />
-        );
+        return <Overview profileData={overviewData} controller={controller} />;
     }
   };
 
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
-      <header className="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+      {/* Profile Header */}
+      <header className="mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-5">
         <AvatarUpload
           initialAvatarUrl={profileData.avatarUrl}
           initials={`${profileData.surname?.charAt(0)}${profileData.firstName?.charAt(0)}`}
           fullName={`${profileData.surname} ${profileData.firstName}`}
           agentId={profileData.agentId}
         />
+
+        <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-medium text-gray-900 tracking-tight">
+              {profileData.surname} {profileData.firstName}
+            </h1>
+            {profileData.memberSince && (
+              <p className="text-sm text-gray-500 font-light">
+                Member since{" "}
+                {new Date(profileData.memberSince).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+            )}
+          </div>
+
+          <div className="self-start sm:self-center">
+            <LogoutButton />
+          </div>
+        </div>
       </header>
 
       {/* Tab Navigation */}
-      <div className="mb-6">
-        {/* Mobile - Icons Only */}
-        <div className="sm:hidden flex justify-around border-b border-gray-200 pb-2">
+      <div className="mb-8">
+        {/* Mobile - Minimalist underline */}
+        <div className="sm:hidden flex justify-between border-b border-gray-100 pb-1">
           {tabs.map(({ value, label, icon: Icon }) => (
             <button
               key={value}
               onClick={() => controller.switchTab(value)}
-              className={`p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+              className={`relative px-3 py-2 text-sm font-medium transition-colors duration-150 ${
                 state.activeTab === value
                   ? "text-green-600"
                   : "text-gray-500 hover:text-gray-700"
               }`}
               aria-label={label}
             >
-              <Icon className="h-6 w-6" />
+              <Icon className="h-5 w-5 mx-auto" />
+              {state.activeTab === value && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 rounded-full" />
+              )}
             </button>
           ))}
         </div>
 
-        {/* Desktop - Icons with Labels */}
-        <div className="hidden sm:flex border-b border-gray-200">
-          <ul className="flex w-full">
+        {/* Desktop - Elegant text with subtle indicator */}
+        <div className="hidden sm:block">
+          <nav className="flex space-x-8">
             {tabs.map(({ value, label, icon: Icon }) => (
-              <li key={value} className="flex-1">
-                <button
-                  onClick={() => controller.switchTab(value)}
-                  className={`w-full py-3 px-4 border-b-2 font-medium text-sm flex flex-col items-center gap-1 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
-                    state.activeTab === value
-                      ? "border-green-500 text-green-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  <Icon className="h-5 w-5" />
+              <button
+                key={value}
+                onClick={() => controller.switchTab(value)}
+                className={`group relative px-1 py-3 text-sm font-medium transition-colors duration-200 ${
+                  state.activeTab === value
+                    ? "text-green-600"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon className="h-4 w-4" />
                   <span>{label}</span>
-                </button>
-              </li>
+                </div>
+                {state.activeTab === value && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 transition-all duration-300" />
+                )}
+                {state.activeTab !== value && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-transparent group-hover:bg-gray-200 transition-all duration-300" />
+                )}
+              </button>
             ))}
-          </ul>
+          </nav>
         </div>
       </div>
 
       {/* Active Tab Content */}
-      {renderTab()}
+      <div className="transition-opacity duration-300 ease-in-out">
+        {renderTab()}
+      </div>
     </div>
   );
 }

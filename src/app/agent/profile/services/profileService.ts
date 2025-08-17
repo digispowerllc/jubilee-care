@@ -24,7 +24,11 @@ export async function fetchAgentData(agentId: string) {
             address: true,
             createdAt: true,
             avatarUrl: true,
-            emailVerified: true, // Include email verification status
+            profile: {
+                select: {
+                    emailVerified: true
+                }
+            }
         },
     });
 }
@@ -47,7 +51,11 @@ export async function getUnprotectedFields(agentId: string) {
             state: true,
             lga: true,
             address: true,
-            emailVerified: true,
+            profile: {
+                select: {
+                    emailVerified: true
+                }
+            }
         },
     });
 
@@ -58,14 +66,14 @@ export async function getUnprotectedFields(agentId: string) {
         unprotectData(data.firstName, "name"),
         data.otherName ? unprotectData(data.otherName, "name") : null,
         data.dob ? unprotectData(data.dob.toISOString(), "date") : null,
-        unprotectData(data.gender ?? "", "gender"),
+        data.gender ? unprotectData(data.gender, "gender") : null,
         unprotectData(data.email, "email"),
         unprotectData(data.phone, "phone"),
         unprotectData(data.nin, "government"),
         unprotectData(data.state, "location"),
         unprotectData(data.lga, "location"),
         unprotectData(data.address, "location"),
-        data.emailVerified ?? new Date(),
+        data.profile?.emailVerified ?? false
     ]);
 }
 
@@ -112,6 +120,7 @@ export async function prepareProfileData(
         state,
         lga,
         address,
+        emailVerified
     ] = unprotectedFields;
 
     return {
@@ -119,7 +128,7 @@ export async function prepareProfileData(
         surname: surname ?? "",
         firstName: firstName ?? "",
         otherName,
-        dob: dob ? new Date(dob) : agentData.dob ?? null, // prefer decrypted dob if present
+        dob: dob ? new Date(dob) : agentData.dob ?? null,
         gender: gender ?? agentData.gender ?? null,
         email: email ?? "",
         phone: phone ?? "",
@@ -129,6 +138,7 @@ export async function prepareProfileData(
         address: address ?? "",
         memberSince: agentData.createdAt,
         avatarUrl: agentData.avatarUrl ?? undefined,
-        emailVerified: agentData.emailVerified ?? new Date(),
-    }
+        emailVerified: Boolean(emailVerified), // Ensure boolean type
+        createdAt: agentData.createdAt
+    };
 }

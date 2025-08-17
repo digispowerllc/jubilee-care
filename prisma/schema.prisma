@@ -92,7 +92,7 @@ model Agent {
   deactivatedAt      DateTime?
   deactivationReason String?
   avatarUrl          String    @default("")
-  emailVerified      DateTime?
+  emailVerified      Boolean   @default(false)
 
   profile               AgentProfile?
   sessions              AgentSession[]
