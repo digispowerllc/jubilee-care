@@ -93,6 +93,12 @@ model Agent {
   deactivationReason String?
   avatarUrl          String    @default("")
   emailVerified      Boolean   @default(false)
+  phoneVerified      Boolean   @default(false)
+  ninVerified        Boolean   @default(false)
+  bvnVerified        Boolean   @default(false)
+  dobVerified        Boolean   @default(false)
+  genderVerified     Boolean   @default(false)
+  documentVerified   Boolean   @default(false)
 
   profile               AgentProfile?
   sessions              AgentSession[]
@@ -112,6 +118,12 @@ model Agent {
   @@index([lga])
   @@index([createdAt])
   @@index([emailVerified])
+  @@index([phoneVerified])
+  @@index([ninVerified])
+  @@index([bvnVerified])
+  @@index([dobVerified])
+  @@index([genderVerified])
+  @@index([documentVerified])
   // Automatic data retention policy (7 years for compliance)
   @@map("agent")
 }

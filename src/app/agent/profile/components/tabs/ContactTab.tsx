@@ -9,6 +9,8 @@ import {
   FiCheckCircle,
   FiShield,
   FiUser,
+  FiLock,
+  FiAlertTriangle,
 } from "react-icons/fi";
 import { TabController } from "./TabController";
 import { AgentProfileData } from "../../types";
@@ -28,21 +30,34 @@ export function ContactTab({ profileData, controller }: ContactTabProps) {
     return `${data.substring(0, visibleChars)}${"•".repeat(data.length - visibleChars * 2)}${data.substring(data.length - visibleChars)}`;
   };
 
+  // Verification status for contact information
+  const verificationStatus = {
+    verified: profileData.emailVerified && profileData.phoneVerified,
+    level: profileData.emailVerified && profileData.phoneVerified 
+      ? "Full" 
+      : profileData.emailVerified || profileData.phoneVerified 
+        ? "Partial" 
+        : "None",
+    date: "2023-11-15",
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center">
-          <div className="flex-shrink-0 p-3 rounded-full border border-gray-200">
-            <FiMail className="h-6 w-6 text-gray-600" />
-          </div>
-          <div className="ml-5">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Contact Information
-            </h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Your verified contact details
-            </p>
+      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="flex-shrink-0 p-3 rounded-full border border-gray-200">
+              <FiMail className="h-6 w-6 text-gray-600" />
+            </div>
+            <div className="ml-5">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Contact Information
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Your verified contact details
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -50,7 +65,7 @@ export function ContactTab({ profileData, controller }: ContactTabProps) {
       {/* Contact Cards */}
       <div className="grid grid-cols-1 gap-6">
         {/* Email Card */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
           <div className="px-6 py-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -80,7 +95,7 @@ export function ContactTab({ profileData, controller }: ContactTabProps) {
         </div>
 
         {/* Phone Card */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
           <div className="px-6 py-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -103,8 +118,8 @@ export function ContactTab({ profileData, controller }: ContactTabProps) {
                 </p>
               </div>
               <button
-                onClick={() => controller.setState({ isEditingPIN: true })}
-                className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
+                onClick={() => setShowPhone(!showPhone)}
+                className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 {pinVerified && showPhone ? (
                   <FiEyeOff className="mr-2 h-4 w-4" />
@@ -118,23 +133,50 @@ export function ContactTab({ profileData, controller }: ContactTabProps) {
         </div>
       </div>
 
-      {/* Security Notice */}
-      <div className="bg-blue-50 rounded-lg shadow-sm p-4">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <FiShield className="h-5 w-5 text-gray-600" />
+      {/* Verification Status Section */}
+      <div className="bg-blue-50 px-6 py-4 border-t border-b border-gray-200">
+        <div className="flex items-start">
+          <div className="flex-shrink-0 p-3">
+            {verificationStatus.verified ? (
+              <FiCheckCircle className="h-5 w-5 text-green-500" />
+            ) : (
+              <FiAlertTriangle className="h-5 w-5 text-yellow-500" />
+            )}
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800">
-              Your contact information is secure
-            </h3>
-            <div className="mt-2 text-sm text-blue-700">
-              <p>
-                Phone numbers require PIN verification to view complete details.
-                We recommend keeping your email verified for important
-                notifications.
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium text-gray-900">
+                Contact Verification Status
               </p>
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                verificationStatus.verified 
+                  ? "bg-green-100 text-green-800" 
+                  : "bg-yellow-100 text-yellow-800"
+              }`}>
+                {verificationStatus.level}
+              </span>
             </div>
+            <p className="mt-1 text-sm text-gray-500">
+              {verificationStatus.verified
+                ? `Verified on ${new Date(verificationStatus.date).toLocaleDateString()}`
+                : `Last updated ${new Date(verificationStatus.date).toLocaleDateString()}`}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+        <div className="flex items-start">
+          <div className="flex-shrink-0">
+            <FiLock className="h-4 w-4 text-gray-400" />
+          </div>
+          <div className="ml-3">
+            <p className="text-xs text-gray-500">
+              {verificationStatus.verified
+                ? "Your contact information is fully verified and secure."
+                : "Complete all verification steps for full account security."}
+            </p>
           </div>
         </div>
       </div>
