@@ -142,12 +142,7 @@ export default function AgentProfileClient({
       case "security":
         return <SecurityTab profileData={overviewData} />;
       case "preferences":
-        return (
-          <PreferencesTab
-            profileData={overviewData}
-            controller={unifiedController}
-          />
-        );
+        return <PreferencesTab />;
       default:
         return <OverviewTab profileData={overviewData} />;
     }
