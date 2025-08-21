@@ -55,14 +55,19 @@ export interface AgentData {
   email: string | null;
   phone: string | null;
   emailVerified: boolean;
+  emailVerifiedDate: Date | null;
   phoneVerified: boolean;
+  phoneVerifiedDate: Date | null;
 
   // Government IDs
   nin: string | null;
   bvn?: string | null;
   ninVerified: boolean;
+  ninVerifiedDate: Date | null;
   bvnVerified: boolean;
+  bvnVerifiedDate: Date | null;
   documentVerified: boolean;
+  documentVerifiedDate: Date | null;
 
   // Location
   state: string | null;
@@ -71,7 +76,9 @@ export interface AgentData {
 
   // Verification flags
   dobVerified: boolean;
+  dobVerifiedDate: Date | null;
   genderVerified: boolean;
+  genderVerifiedDate: Date | null;
 
   // Account metadata
   memberSince: Date;
@@ -136,7 +143,7 @@ export interface FailedAttemptSummary {
   details?: string;
   createdAt: Date;
   attempts: number;
-  }
+}
 
 /**
  * Account deletion schedule summary

@@ -194,13 +194,20 @@ model VerificationStatus {
   agentId String
   agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
-  emailVerified    Boolean @default(false)
-  phoneVerified    Boolean @default(false)
-  ninVerified      Boolean @default(false)
-  bvnVerified      Boolean @default(false)
-  documentVerified Boolean @default(false) // e.g. driver’s license / passport from API
-  dobVerified      Boolean @default(false)
-  genderVerified   Boolean @default(false)
+  emailVerified        Boolean   @default(false)
+  emailVerifiedDate    DateTime?
+  phoneVerified        Boolean   @default(false)
+  phoneVerifiedDate    DateTime?
+  ninVerified          Boolean   @default(false)
+  ninVerifiedDate      DateTime?
+  bvnVerified          Boolean   @default(false)
+  bvnVerifiedDate      DateTime?
+  documentVerified     Boolean   @default(false) // e.g. driver’s license / passport from API
+  documentVerifiedDate DateTime?
+  dobVerified          Boolean   @default(false)
+  dobVerifiedDate      DateTime?
+  genderVerified       Boolean   @default(false)
+  genderVerifiedDate   DateTime?
 
   lastCheckedAt DateTime? // when last verified against an agency
   createdAt     DateTime  @default(now())
@@ -214,6 +221,13 @@ model VerificationStatus {
   @@index([genderVerified])
   @@index([documentVerified])
   @@index([lastCheckedAt])
+  @@index([emailVerifiedDate])
+  @@index([phoneVerifiedDate])
+  @@index([ninVerifiedDate])
+  @@index([bvnVerifiedDate])
+  @@index([dobVerifiedDate])
+  @@index([genderVerifiedDate])
+  @@index([documentVerifiedDate])
   @@map("verification_status")
 }
 

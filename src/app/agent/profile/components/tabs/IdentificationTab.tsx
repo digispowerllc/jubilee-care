@@ -2,7 +2,7 @@
 "use client";
 
 import {
-    FiCreditCard,
+  FiCreditCard,
   FiShield,
   FiAlertCircle,
   FiCheckCircle,
@@ -24,14 +24,14 @@ interface IdentificationTabProps {
     setActiveTab?: (tab: string) => void;
     state?: Record<string, unknown>;
   };
-  documentStatus?: "verified" | "pending" | "rejected" | "not_added";
+  documentStatus?: "verified" | "pending" | "rejected";
   hasUploadedDocuments?: boolean;
 }
 
 export function IdentificationTab({
   profileData,
   controller,
-  documentStatus = "not_added",
+  documentStatus = "pending",
   hasUploadedDocuments = false,
 }: IdentificationTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,37 +55,10 @@ export function IdentificationTab({
       text: "Verification Failed",
       description: "Please submit valid documents",
     },
-    not_added: {
-      color: "orange",
-      icon: FiFilePlus,
-      text: "Not Added",
-      description: "Please upload your verification documents",
-    },
   };
 
-  const currentStatus = hasUploadedDocuments
-    ? documentStatus === "not_added"
-      ? "pending"
-      : documentStatus
-    : "not_added";
-
-  const status = statusConfig[currentStatus];
-
-  const verificationStatus = (() => {
-    const hasNIN = !!profileData.nin;
-    const hasVerifiedDocuments = documentStatus === "verified";
-    const allIdentityVerified = hasNIN && hasVerifiedDocuments;
-
-    return {
-      verified: allIdentityVerified,
-      level: allIdentityVerified
-        ? "Full"
-        : hasNIN || hasUploadedDocuments
-          ? "Partial"
-          : "None",
-      date: "2023-11-15",
-    };
-  })();
+  const currentStatus = hasUploadedDocuments ? documentStatus : "pending";
+  const documentStatusUI = statusConfig[currentStatus];
 
   const triggerFileInput = () => fileInputRef.current?.click();
 
@@ -113,29 +86,26 @@ export function IdentificationTab({
         </div>
       </div>
 
-      {/* Verification Progress */}
+      {/* Verification Steps */}
       <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100 flex justify-between">
-        {["NIN", "Documents", "BVN"].map((step, index) => {
-          let stepStatus: keyof typeof statusConfig = "not_added";
-          if (step === "NIN" && profileData.nin) stepStatus = "verified";
-          if (step === "Documents") stepStatus = currentStatus;
-
+        {[
+          { label: "NIN", verified: profileData.ninVerified },
+          { label: "Documents", verified: profileData.documentVerified },
+          { label: "BVN", verified: profileData.bvnVerified },
+        ].map((step, index) => {
+          const stepStatus = step.verified ? "verified" : "pending";
+          const stepColor =
+            stepStatus === "verified"
+              ? "bg-green-100 text-green-800"
+              : "bg-yellow-100 text-yellow-800";
           return (
-            <div key={step} className="flex flex-col items-center">
+            <div key={step.label} className="flex flex-col items-center">
               <div
-                className={`flex items-center justify-center rounded-full h-8 w-8 ${
-                  stepStatus === "verified"
-                    ? "bg-green-100 text-green-800"
-                    : stepStatus === "pending"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : stepStatus === "rejected"
-                        ? "bg-red-100 text-red-800"
-                        : "bg-orange-100 text-orange-800"
-                }`}
+                className={`flex items-center justify-center rounded-full h-8 w-8 ${stepColor}`}
               >
                 {index + 1}
               </div>
-              <span className="mt-2 text-xs text-gray-700">{step}</span>
+              <span className="mt-2 text-xs text-gray-700">{step.label}</span>
             </div>
           );
         })}
@@ -151,21 +121,21 @@ export function IdentificationTab({
             </h3>
           </div>
           <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              profileData.nin
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs text-center font-medium ${
+              profileData.ninVerified
                 ? "bg-green-100 text-green-800"
-                : "bg-orange-100 text-orange-800"
+                : "bg-red-100 text-red-800"
             }`}
           >
-            {profileData.nin ? (
+            {profileData.ninVerified ? (
               <>
                 <FiCheckCircle className="mr-1 h-3 w-3" />
                 Verified
               </>
             ) : (
               <>
-                <FiFilePlus className="mr-1 h-3 w-3" />
-                Not Added
+                <FiAlertCircle className="mr-1 h-3 w-3" />
+                Not Verified
               </>
             )}
           </span>
@@ -174,27 +144,20 @@ export function IdentificationTab({
         {/* Masked NIN display */}
         {profileData.nin && (
           <p className="mt-2 text-sm text-gray-600">
-            {`${"*".repeat(profileData.nin.length - 4)}${profileData.nin.slice(-4)}`}
+            {`${"*".repeat(profileData.nin.length - 4)}${profileData.nin.slice(
+              -4
+            )}`}
           </p>
         )}
 
         <div className="mt-4 flex justify-end">
-          {profileData.nin ? (
-            <button
-              onClick={controller.handleViewNIN}
-              className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-            >
-              <FiEye className="mr-2 h-4 w-4" />
-              View NIN
-            </button>
-          ) : (
-            <button
-              onClick={controller.handleAddNIN}
-              className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
-            >
-              Add NIN
-            </button>
-          )}
+          <button
+            onClick={controller.handleViewNIN}
+            className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+          >
+            <FiEye className="mr-2 h-4 w-4" />
+            View NIN
+          </button>
         </div>
       </div>
 
@@ -209,21 +172,21 @@ export function IdentificationTab({
           </div>
           <span
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              currentStatus === "verified"
+              documentStatusUI.color === "green"
                 ? "bg-green-100 text-green-800"
-                : currentStatus === "pending"
+                : documentStatusUI.color === "yellow"
                   ? "bg-yellow-100 text-yellow-800"
-                  : currentStatus === "rejected"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-orange-100 text-orange-800"
+                  : "bg-red-100 text-red-800"
             }`}
           >
-            <status.icon className="mr-1 h-3 w-3" />
-            {status.text}
+            <documentStatusUI.icon className="mr-1 h-3 w-3" />
+            {documentStatusUI.text}
           </span>
         </div>
 
-        <p className="mt-2 text-sm text-gray-500">{status.description}</p>
+        <p className="mt-2 text-sm text-gray-500">
+          {documentStatusUI.description}
+        </p>
 
         <input
           ref={fileInputRef}
@@ -243,19 +206,6 @@ export function IdentificationTab({
             Upload Documents
           </button>
         </div>
-
-        {currentStatus === "pending" && (
-          <div className="mt-3 text-xs text-yellow-600 flex items-center">
-            <FiAlertCircle className="mr-2 h-4 w-4" />
-            Your documents are being reviewed (usually within 24-48 hours)
-          </div>
-        )}
-        {currentStatus === "rejected" && (
-          <div className="mt-3 text-xs text-red-600 flex items-center">
-            <FiAlertTriangle className="mr-2 h-4 w-4" />
-            Please check the requirements and resubmit
-          </div>
-        )}
       </div>
 
       {/* BVN Card */}
@@ -275,32 +225,6 @@ export function IdentificationTab({
         <p className="mt-2 text-sm text-gray-500">
           Secure banking verification will be available soon
         </p>
-      </div>
-
-      {/* Verification Footer */}
-      <div className="bg-blue-50 px-6 py-4 border-t border-gray-200 rounded-t-lg flex items-start">
-        <div className="flex-shrink-0 p-3">
-          {verificationStatus.verified ? (
-            <FiCheckCircle className="h-5 w-5 text-green-500" />
-          ) : (
-            <FiAlertTriangle className="h-5 w-5 text-yellow-500" />
-          )}
-        </div>
-        <div className="ml-5 text-sm text-gray-500">
-          {verificationStatus.verified ? (
-            <>
-              Verified on{" "}
-              {new Date(verificationStatus.date).toLocaleDateString()}
-              <p>All required information has been successfully verified.</p>
-            </>
-          ) : (
-            <>
-              Last updated{" "}
-              {new Date(verificationStatus.date).toLocaleDateString()}
-              <p>Some required information is missing or incomplete.</p>
-            </>
-          )}
-        </div>
       </div>
     </div>
   );
