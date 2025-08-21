@@ -1,79 +1,27 @@
-// File: src/lib/middleware/securityHeaders.ts
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
+// ========= Security Headers Middleware =========
+import { NextResponse } from "next/server";
+import { cspConfig } from "../security/cspConfig";
 
-// Edge-compliant nonce generator
-function generateNonce(): string {
-  const array = new Uint8Array(16)
-  crypto.getRandomValues(array)
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
-}
+export async function withSecurityHeaders(): Promise<NextResponse> {
+  const res = NextResponse.next();
 
-interface SecurityHeadersConfig {
-  frameOptions?: string
-  contentTypeOptions?: string
-  referrerPolicy?: string
-  permissionsPolicy?: string
-  strictTransportSecurity?: string
-  csp?: Record<string, string[]>
-}
+  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=(), payment=()"
+  );
+  res.headers.set(
+    "Strict-Transport-Security",
+    "max-age=63072000; includeSubDomains; preload"
+  );
+  res.headers.set("X-XSS-Protection", "1; mode=block");
 
-// Create default config with nonce generated at runtime
-export const securityHeadersConfig: SecurityHeadersConfig = (() => {
-  const nonce = generateNonce()
-  return {
-    frameOptions: 'DENY',
-    contentTypeOptions: 'nosniff',
-    referrerPolicy: 'strict-origin-when-cross-origin',
-    permissionsPolicy: 'camera=(), microphone=(), geolocation=(), payment=()',
-    strictTransportSecurity: 'max-age=63072000; includeSubDomains; preload',
-    csp: {
-      defaultSrc: ["'self'"],
-      scriptSrc: [
-        "'self'",
-        "'report-sample'",
-        `'nonce-${nonce}'`,
-        'https://*.vercel.app'
-      ],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", 'data:', 'blob:', 'https://ui-avatars.com', 'https://res.cloudinary.com', 'https://*.cloudinary.com/'],
-      fontSrc: ["'self'", 'data:'],
-      connectSrc: ["'self'", 'https://*.vercel.app'],
-      frameSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      baseUri: ["'self'"],
-      formAction: ["'self'"]
-    }
-  }
-})()
+  const directives = Object.entries(cspConfig)
+    .map(([key, value]) => `${key} ${value.join(" ")}`)
+    .join("; ");
+  res.headers.set("Content-Security-Policy", directives);
 
-
-export function withSecurityHeaders(
-  request: NextRequest,
-  config: SecurityHeadersConfig = securityHeadersConfig
-): NextResponse {
-  const response = NextResponse.next()
-
-  // Security headers
-  response.headers.set('X-Frame-Options', config.frameOptions || 'DENY')
-  response.headers.set('X-Content-Type-Options', config.contentTypeOptions || 'nosniff')
-  response.headers.set('Referrer-Policy', config.referrerPolicy || 'strict-origin-when-cross-origin')
-  response.headers.set('Permissions-Policy', config.permissionsPolicy || 'camera=(), microphone=(), geolocation=(), payment=()')
-  response.headers.set('Strict-Transport-Security', config.strictTransportSecurity || 'max-age=63072000; includeSubDomains; preload')
-  response.headers.set('X-XSS-Protection', '1; mode=block')
-
-  // Build CSP header
-  if (config.csp) {
-    const directives = Object.entries(config.csp)
-      .map(([key, value]) => `${key} ${value.join(' ')}`)
-      .join('; ')
-    response.headers.set('Content-Security-Policy', directives)
-  }
-
-  return response
-}
-
-// Middleware entry point
-export function middleware(request: NextRequest) {
-  return withSecurityHeaders(request)
+  return res;
 }
