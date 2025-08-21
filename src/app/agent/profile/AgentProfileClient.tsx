@@ -11,14 +11,7 @@ import {
   SecurityTab,
   PreferencesTab,
 } from "./components/tabs";
-import {
-  TabType,
-  SecurityHandlers,
-  PasswordChangeRequest,
-  PINChangeRequest,
-  TwoFARequest,
-  AgentFullDataExtended,
-} from "./types";
+import { TabType, AgentFullDataExtended } from "./types";
 import {
   FiHome,
   FiUser,
@@ -59,8 +52,6 @@ export default function AgentProfileClient({
   // Create controller
   const controller = useMemo(() => createTabController(setActiveTab), []);
 
-  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
-
   const tabs: { value: TabType; label: string; icon: React.ElementType }[] = [
     { value: "overview", label: "Overview", icon: FiHome },
     { value: "personal", label: "Personal", icon: FiUser },
@@ -82,16 +73,6 @@ export default function AgentProfileClient({
           ? new Date(agentRaw.memberSince)
           : new Date(), // fallback to current date if undefined
   };
-
-  const securityHandlers: SecurityHandlers = {
-    onPasswordChange: (req: PasswordChangeRequest) =>
-      console.log("Password change request:", req),
-    onPINChange: (req: PINChangeRequest) =>
-      console.log("PIN change request:", req),
-    onToggle2FA: (req: TwoFARequest) => setIs2FAEnabled(req.enable),
-  };
-
-  const commonProps = { agent, ...securityHandlers };
 
   const currentTab: TabType = activeTab;
 

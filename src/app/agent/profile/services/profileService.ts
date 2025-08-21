@@ -91,8 +91,8 @@ export async function getAgentFullData(
     sessions: mapSessions(agent.sessions),
     accountLocks: agent.AccountLock ? mapAccountLocks([agent.AccountLock]) : [],
     auditLogs: mapAuditLogs(agent.AuditLog),
-    failedAttempts: mapFailedAttempts([
-      ...agent.FailedAttempt,
+    failedAttempts: mapFailedAttempts([...agent.FailedAttempt]),
+    failedDeletionAttempts: mapFailedDeletionAttempts([
       ...agent.FailedDeletionAttempt,
     ]),
     deletionSchedules: mapDeletionSchedules(agent.DeletionSchedule),
@@ -198,37 +198,36 @@ function mapAuditLogs(logs: AuditLog[]): AuditLogSummary[] {
   }));
 }
 
-function mapFailedAttempts(
-  failed: (FailedAttempt | FailedDeletionAttempt)[]
+// For regular failed login / pin attempts
+function mapFailedAttempts(failed: FailedAttempt[]): FailedAttemptSummary[] {
+  return failed.map((f) => ({
+    id: f.id,
+    agentId: f.agentId,
+    action: (["LOGIN", "PIN_VERIFICATION"].includes(f.action ?? "")
+      ? f.action
+      : "LOGIN") as "LOGIN" | "PIN_VERIFICATION",
+    ipAddress: f.ipAddress,
+    userAgent: f.userAgent ?? undefined,
+    details: f.details ?? undefined,
+    createdAt: f.createdAt,
+    attempts: f.attempts, // doesn’t exist on FailedAttempt
+  }));
+}
+
+// For failed account deletion attempts
+function mapFailedDeletionAttempts(
+  failed: FailedDeletionAttempt[]
 ): FailedAttemptSummary[] {
   return failed.map((f) => ({
     id: f.id,
     agentId: f.agentId,
-    action: (["LOGIN", "ACCOUNT_DELETION", "PIN_VERIFICATION"].includes(
-      f.action ?? ""
-    )
-      ? f.action
-      : "ACCOUNT_DELETION") as
-      | "LOGIN"
-      | "ACCOUNT_DELETION"
-      | "PIN_VERIFICATION",
+    action: "ACCOUNT_DELETION" as const,
     ipAddress: f.ipAddress,
-    userAgent: "userAgent" in f ? (f.userAgent ?? undefined) : undefined,
+    userAgent: f.userAgent ?? undefined,
     details: f.details ?? undefined,
-    attempts: isFailedAttempt(f)
-      ? ((f as FailedAttempt).attempts ?? undefined)
-      : undefined,
     createdAt: f.createdAt,
+    attempts: f.attempts ?? undefined, // exists here
   }));
-}
-
-// Type guard for FailedAttempt
-function isFailedAttempt(
-  f: FailedAttempt | FailedDeletionAttempt
-): f is FailedAttempt {
-  return (
-    "attempts" in f && typeof (f as FailedAttempt).attempts !== "undefined"
-  );
 }
 
 function mapDeletionSchedules(

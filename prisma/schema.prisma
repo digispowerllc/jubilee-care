@@ -225,6 +225,7 @@ model FailedAttempt {
   ipAddress String // IP address where attempt originated
   userAgent String? // Browser/device information
   createdAt DateTime @default(now())
+  attempts  Int      @default(0) // Number of attempts before lockout
 
   // Relations
   agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)

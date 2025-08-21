@@ -130,13 +130,13 @@ export interface AuditLogSummary {
 export interface FailedAttemptSummary {
   id: string;
   agentId: string;
-  action: "LOGIN" | "ACCOUNT_DELETION" | "PIN_VERIFICATION";
+  action: "LOGIN" | "PIN_VERIFICATION" | "ACCOUNT_DELETION";
   ipAddress: string;
   userAgent?: string;
   details?: string;
-  attempts?: number;
   createdAt: Date;
-}
+  attempts: number;
+  }
 
 /**
  * Account deletion schedule summary
