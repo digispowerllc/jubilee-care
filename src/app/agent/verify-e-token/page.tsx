@@ -3,6 +3,15 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FiCheckCircle,
+  FiXCircle,
+  FiLoader,
+  FiArrowRight,
+  FiShield,
+  FiLock,
+} from "react-icons/fi";
 
 export default function VerifyAccountPage() {
   const router = useRouter();
@@ -84,7 +93,7 @@ export default function VerifyAccountPage() {
           `/agent/password-reset?token=${encodeURIComponent(formToken)}&sid=${encodeURIComponent(sid!)}`
         );
       } else {
-        router.push(`/agent/sign-in`);
+        router.push(`/agent/signin`);
       }
     } else {
       router.push("/");
@@ -102,22 +111,47 @@ export default function VerifyAccountPage() {
   // ---------------- UI ----------------
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md text-center space-y-4">
-          <h1 className="text-3xl font-bold text-gray-900">Invalid Link</h1>
-          <p className="text-sm text-gray-600">
-            Redirecting to home in 3 seconds...
-          </p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-md w-full text-center space-y-6 bg-white rounded-2xl shadow-xl p-8 border border-gray-200"
+        >
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+            <FiXCircle className="h-8 w-8 text-red-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Invalid Link
+            </h1>
+            <p className="text-gray-600">Redirecting to home page...</p>
+          </div>
+          <div className="flex justify-center">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+              className="h-6 w-6 border-2 border-gray-300 border-t-blue-600 rounded-full"
+            />
+          </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md space-y-8 bg-white rounded-2xl shadow-xl p-8 border border-gray-200"
+      >
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <div className="flex justify-center mb-4">
+            <div className="p-3 bg-green-100 rounded-xl">
+              <FiShield className="h-8 w-8 text-green-600" />
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">
             {verified
               ? isPasswordReset
                 ? "Verification Complete!"
@@ -127,7 +161,7 @@ export default function VerifyAccountPage() {
           <p className="mt-2 text-sm text-gray-600">
             {verified
               ? isPasswordReset
-                ? `You're being redirected to password reset in ${countdown}s.. Click the button if you are not redirected.`
+                ? `You're being redirected to password reset in ${countdown}s...`
                 : `You're being redirected to sign in in ${countdown}s...`
               : error
                 ? "You're being redirected to home page..."
@@ -135,54 +169,120 @@ export default function VerifyAccountPage() {
           </p>
         </div>
 
-        {error && (
-          <div className="rounded-md bg-red-50 p-4 flex items-center">
-            <span className="text-sm font-medium text-red-800">{error}</span>
-          </div>
-        )}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl bg-red-50 p-4 border border-red-200"
+            >
+              <div className="flex items-center">
+                <FiXCircle className="h-5 w-5 text-red-600 mr-2" />
+                <span className="text-sm font-medium text-red-800">
+                  {error}
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {verified && (
-          <div className="text-center space-y-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center space-y-6"
+          >
             <div className="flex justify-center">
-              <svg
-                className="h-12 w-12 text-green-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
+                <FiCheckCircle className="h-8 w-8 text-green-600" />
+              </motion.div>
             </div>
-            <button
+
+            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+              <div className="flex items-center">
+                <FiLock className="h-5 w-5 text-blue-600 mr-2" />
+                <p className="text-sm text-blue-700">
+                  {isPasswordReset
+                    ? "Your email has been verified. You can now reset your password."
+                    : "Your account has been successfully verified and is now secure."}
+                </p>
+              </div>
+            </div>
+
+            <motion.button
               onClick={() => {
                 if (formToken) {
                   router.push(
                     `/agent/password-reset?token=${encodeURIComponent(formToken)}&sid=${encodeURIComponent(sid!)}`
                   );
                 } else {
-                  router.push("/agent/sign-in");
+                  router.push("/agent/signin");
                 }
               }}
-              className="inline-flex items-center px-4 py-2 text-white bg-green-600 hover:bg-green-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              className="w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-medium hover:from-green-700 hover:to-emerald-700 transition-all"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
               {isPasswordReset
                 ? "Continue to Password Reset"
                 : "Continue to Sign In"}
-            </button>
-          </div>
+              <FiArrowRight className="ml-2 h-4 w-4" />
+            </motion.button>
+          </motion.div>
         )}
 
         {!verified && !error && (
-          <div className="flex justify-center">
-            <div className="animate-spin h-8 w-8 border-b-2 border-green-600 rounded-full"></div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center space-y-4"
+          >
+            <div className="flex justify-center">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                className="h-12 w-12 border-4 border-green-500 border-t-transparent rounded-full"
+              />
+            </div>
+            <p className="text-sm text-gray-600">Verifying your account...</p>
+          </motion.div>
+        )}
+
+        {error && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center"
+          >
+            <div className="flex justify-center">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                className="h-6 w-6 border-2 border-gray-300 border-t-blue-600 rounded-full"
+              />
+            </div>
+            <p className="text-sm text-gray-600 mt-2">
+              Redirecting to home page...
+            </p>
+          </motion.div>
+        )}
+
+        {/* Countdown Progress */}
+        {(verified || error) && (
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <motion.div
+              className="bg-green-500 h-2 rounded-full"
+              initial={{ width: "100%" }}
+              animate={{ width: "0%" }}
+              transition={{ duration: countdown, ease: "linear" }}
+            />
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }

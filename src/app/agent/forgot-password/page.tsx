@@ -3,6 +3,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import {
+  FiMail,
+  FiArrowLeft,
+  FiCheckCircle,
+  FiAlertCircle,
+  FiLock,
+  FiShield,
+} from "react-icons/fi";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -82,138 +91,174 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md space-y-8"
+      >
+        {/* Header */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Password Reset</h1>
-          <p className="mt-2 text-sm text-gray-600">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl mb-4 mx-auto"
+          >
+            <FiLock className="w-8 h-8 text-white" />
+          </motion.div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Reset Password
+          </h1>
+          <p className="text-gray-600">
             {submitted
-              ? "If an account exists with this email, you'll receive a reset link shortly."
-              : "Enter your email and let's get you back into your account!"}
+              ? "Check your email for reset instructions"
+              : "Enter your email to receive a password reset link"}
           </p>
         </div>
 
-        {error && (
-          <div className="rounded-md bg-red-50 p-4">
-            <div className="flex items-center">
-              <svg
-                className="h-5 w-5 text-red-400 mr-2"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span className="text-sm font-medium text-red-800">{error}</span>
-            </div>
-          </div>
-        )}
-
-        {!submitted ? (
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            <div className="rounded-md shadow-sm -space-y-px">
-              <div>
-                <label htmlFor="email" className="sr-only">
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none rounded-md relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                  placeholder="Email address"
-                  disabled={loading}
-                />
+        {/* Main Card */}
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl bg-red-50 p-4 border border-red-200 mb-6"
+            >
+              <div className="flex items-center">
+                <FiAlertCircle className="h-5 w-5 text-red-600 mr-2" />
+                <span className="text-sm font-medium text-red-800">
+                  {error}
+                </span>
               </div>
-            </div>
+            </motion.div>
+          )}
 
-            <div>
-              <button
+          {!submitted ? (
+            <motion.form
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="space-y-6"
+              onSubmit={handleSubmit}
+            >
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Email Address
+                </label>
+                <div className="relative">
+                  <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                                        value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    placeholder="Enter your email address"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              <motion.button
                 type="submit"
                 disabled={loading}
-                className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
+                className={`w-full flex justify-center items-center py-3 px-4 rounded-xl text-lg font-medium text-white transition-all ${
                   loading
                     ? "bg-green-700 cursor-not-allowed"
-                    : "bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                } transition-colors duration-200`}
+                    : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                }`}
+                whileHover={{ scale: loading ? 1 : 1.01 }}
+                whileTap={{ scale: loading ? 1 : 0.99 }}
               >
                 {loading ? (
-                  <>
-                    <svg
-                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Processing...
-                  </>
+                  <div className="flex items-center">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 1,
+                        ease: "linear",
+                      }}
+                      className="h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-3"
+                    />
+                    <span>Sending...</span>
+                  </div>
                 ) : (
                   "Send Reset Link"
                 )}
-              </button>
-            </div>
-          </form>
-        ) : (
-          <div className="text-center mt-8">
-            <div className="rounded-md bg-green-50 p-4 mb-4">
-              <div className="flex items-center justify-center">
-                <svg
-                  className="h-5 w-5 text-green-400 mr-2"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span className="text-sm font-medium text-green-800">
-                  Password reset request completed successfully!
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={handleResetForm}
-              className="font-medium text-green-600 hover:text-green-500 text-sm"
+              </motion.button>
+            </motion.form>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center space-y-6"
             >
-              Send another reset link
-            </button>
-          </div>
-        )}
+              <div className="rounded-xl bg-green-50 p-6 border border-green-200">
+                <div className="flex items-center justify-center">
+                  <FiCheckCircle className="h-8 w-8 text-green-600 mr-3" />
+                  <div>
+                    <p className="text-lg font-medium text-green-800 mb-1">
+                      Check Your Email
+                    </p>
+                    <p className="text-sm text-green-700">
+                      If your email is associated with an account, we&#39;ve sent a password reset link to your email address.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-        <div className="text-center text-sm pt-4 border-t border-gray-200">
-          <Link
-            href="/agent/signin"
-            className="font-medium text-green-600 hover:text-green-500"
-          >
-            ← Back to sign in
-          </Link>
+              <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                <div className="flex items-start">
+                  <FiShield className="h-5 w-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-900">
+                      Didn&#39;t receive the email?
+                    </p>
+                    <ul className="text-xs text-blue-700 mt-1 space-y-1">
+                      <li>• Check your spam or junk folder</li>
+                      <li>• Make sure you entered the correct email</li>
+                      <li>• Wait a few minutes and try again</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <motion.button
+                onClick={handleResetForm}
+                className="w-full py-3 px-4 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-all font-medium"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+              >
+                Try Another Email
+              </motion.button>
+            </motion.div>
+          )}
+
+          {/* Back to Sign In */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <Link
+              href="/agent/signin"
+              className="flex items-center justify-center text-green-600 hover:text-green-500 transition-colors font-medium"
+            >
+              <FiArrowLeft className="h-4 w-4 mr-2" />
+              Back to sign in
+            </Link>
+          </div>
         </div>
-      </div>
+
+        {/* Security Notice */}
+        <div className="text-center text-xs text-gray-500">
+          <p>
+            Your security is important to us. All reset links expire after 1
+            hour for your protection.
+          </p>
+        </div>
+      </motion.div>
     </div>
   );
 }

@@ -1,6 +1,8 @@
+// File: src/app/agent/signin/AuthForm.tsx
+
 "use client";
 
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Shield, User, Lock, Smartphone } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { signIn } from "./signAuth";
@@ -110,21 +112,31 @@ export const AuthForm = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg"
+      className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-xl border border-gray-100"
     >
       <div className="text-center">
-        <h1 className="text-3xl mb-6 font-bold text-gray-900">Agent Portal</h1>
+        <div className="mb-6">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl mb-4"
+          >
+            <Shield className="w-8 h-8 text-white" />
+          </motion.div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Agent Portal</h1>
+          <p className="text-gray-600">Sign in to access your dashboard</p>
+        </div>
 
         {/* Tab Selector */}
         <div className="flex items-center justify-center mb-8">
-          <div className="inline-flex rounded-md shadow-sm" role="group">
+          <div className="inline-flex rounded-xl shadow-sm bg-gray-100 p-1" role="group">
             <motion.button
               type="button"
               onClick={() => switchTab("standard")}
-              className={`px-4 py-2 text-sm font-medium rounded-l-lg border ${
+              className={`px-6 py-3 text-sm font-medium rounded-xl transition-all ${
                 activeTab === "standard"
-                  ? "bg-green-600 text-white border-green-600"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  ? "bg-white text-green-600 shadow-md"
+                  : "text-gray-600 hover:text-gray-900"
               }`}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
@@ -134,10 +146,10 @@ export const AuthForm = ({
             <motion.button
               type="button"
               onClick={() => switchTab("nimc")}
-              className={`px-4 py-2 text-sm font-medium rounded-r-lg border ${
+              className={`px-6 py-3 text-sm font-medium rounded-xl transition-all ${
                 activeTab === "nimc"
-                  ? "bg-green-600 text-white border-green-600"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  ? "bg-white text-green-600 shadow-md"
+                  : "text-gray-600 hover:text-gray-900"
               }`}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
@@ -162,17 +174,12 @@ export const AuthForm = ({
                 <motion.button
                   type="button"
                   onClick={() => onProviderSignIn("google")}
-                  disabled //={submitting || loading}
-                  className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={submitting || loading}
+                  className="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 rounded-xl bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   whileHover={{ scale: submitting || loading ? 1 : 1.02 }}
                   whileTap={{ scale: submitting || loading ? 1 : 0.98 }}
                 >
-                  <svg
-                    className="w-5 h-5 mr-2"
-                    viewBox="0 0 24 24"
-                    width="24"
-                    height="24"
-                  >
+                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                     <path
                       fill="#4285F4"
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -195,17 +202,12 @@ export const AuthForm = ({
                 <motion.button
                   type="button"
                   onClick={() => onProviderSignIn("github")}
-                  disabled //</div>={submitting || loading}
-                  className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={submitting || loading}
+                  className="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 rounded-xl bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   whileHover={{ scale: submitting || loading ? 1 : 1.02 }}
                   whileTap={{ scale: submitting || loading ? 1 : 0.98 }}
                 >
-                  <svg
-                    className="w-5 h-5 mr-2"
-                    viewBox="0 0 24 24"
-                    width="24"
-                    height="24"
-                  >
+                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                     <path
                       fill="#333"
                       d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"
@@ -220,8 +222,8 @@ export const AuthForm = ({
                   <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="px-2 bg-white text-sm text-gray-500">
-                    Or sign in with credentials
+                  <span className="px-3 bg-white text-sm text-gray-500">
+                    Or continue with credentials
                   </span>
                 </div>
               </div>
@@ -236,10 +238,13 @@ export const AuthForm = ({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="rounded-md bg-red-50 p-4"
+            className="rounded-xl bg-red-50 p-4 border border-red-200"
           >
-            <div className="text-sm font-medium text-red-800">
-              {validationError}
+            <div className="flex items-center">
+              <Shield className="w-5 h-5 text-red-600 mr-2" />
+              <div className="text-sm font-medium text-red-800">
+                {validationError}
+              </div>
             </div>
           </motion.div>
         )}
@@ -266,20 +271,23 @@ export const AuthForm = ({
               >
                 <label
                   htmlFor="identifier"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 mb-2"
                 >
                   Email or Phone Number
                 </label>
-                <input
-                  id="identifier"
-                  type="text"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:outline-none focus-visible:outline-none transition-all"
-                  placeholder="Enter your email or phone number"
-                  disabled={submitting}
-                />
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    id="identifier"
+                    type="text"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 text-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:outline-none transition-all"
+                    placeholder="Enter your email or phone number"
+                    disabled={submitting}
+                  />
+                </div>
               </motion.div>
             )}
 
@@ -290,29 +298,19 @@ export const AuthForm = ({
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.1 }}
               >
-                <div className="flex items-center mb-2">
+                <div className="flex items-center mb-3">
                   <motion.button
                     type="button"
                     onClick={() => setStep("identifier")}
-                    className="text-gray-500 hover:text-gray-700 mr-2"
+                    className="flex items-center text-gray-500 hover:text-gray-700 transition-colors"
                     disabled={submitting}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
+                    <ArrowLeft className="h-4 w-4 mr-1" />
+                    <span className="text-sm">Back</span>
                   </motion.button>
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="ml-2 text-sm font-medium text-gray-700 truncate">
                     {identifier}
                   </span>
                 </div>
@@ -320,24 +318,25 @@ export const AuthForm = ({
                 <div>
                   <label
                     htmlFor="password"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                    className="block text-sm font-medium text-gray-700 mb-2"
                   >
                     Password
                   </label>
                   <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <input
                       id="password"
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 pr-12 focus:outline-none focus-visible:outline-none transition-all"
+                      className="w-full pl-10 pr-12 py-3 border border-gray-300 text-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                       placeholder="Enter your password"
                       disabled={submitting}
                     />
                     <motion.button
                       type="button"
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                       onClick={() => setShowPassword(!showPassword)}
                       disabled={submitting}
                       whileTap={{ scale: 0.9 }}
@@ -360,9 +359,7 @@ export const AuthForm = ({
                 onClick={() => {
                   if (step === "identifier") {
                     if (!identifier.trim()) {
-                      setValidationError(
-                        "Please enter your email or phone number"
-                      );
+                      setValidationError("Please enter your email or phone number");
                       return;
                     }
                     setStep("password");
@@ -370,11 +367,11 @@ export const AuthForm = ({
                   }
                 }}
                 disabled={submitting || (step === "password" && !password)}
-                className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white ${
+                className={`w-full flex justify-center items-center py-3 px-4 rounded-xl shadow-sm text-lg font-medium text-white transition-all ${
                   submitting
-                    ? "bg-green-700"
-                    : "bg-green-600 hover:bg-green-700"
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-70 disabled:cursor-not-allowed`}
+                    ? "bg-green-700 cursor-not-allowed"
+                    : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-70`}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
               >
@@ -398,17 +395,15 @@ export const AuthForm = ({
                 )}
               </motion.button>
             </div>
+
             {/* Forgot Password */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center"></div>
-              <div className="text-sm">
-                <Link
-                  href="/agent/forgot-password"
-                  className="font-medium text-green-600 hover:text-green-500"
-                >
-                  Forgot password?
-                </Link>
-              </div>
+            <div className="text-center">
+              <Link
+                href="/agent/forgot-password"
+                className="text-sm font-medium text-green-600 hover:text-green-500 transition-colors"
+              >
+                Forgot your password?
+              </Link>
             </div>
           </motion.form>
         ) : (
@@ -429,27 +424,30 @@ export const AuthForm = ({
             >
               <label
                 htmlFor="nin"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
                 National Identification Number (NIN)
               </label>
-              <input
-                id="nin"
-                type="tel"
-                value={nimcNin}
-                onChange={(e) => setNimcNin(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                placeholder="Enter your 11-digit NIN"
-                maxLength={11}
-                disabled={nimcLoading}
-              />
+              <div className="relative">
+                <Smartphone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  id="nin"
+                  type="tel"
+                  value={nimcNin}
+                  onChange={(e) => setNimcNin(e.target.value.replace(/\D/g, '').slice(0, 11))}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                  placeholder="Enter your 11-digit NIN"
+                  maxLength={11}
+                  disabled={nimcLoading}
+                />
+              </div>
             </motion.div>
 
             <div>
               <motion.button
                 type="submit"
-                disabled={nimcLoading || !nimcNin}
-                className="w-full flex justify-center items-center py-3 px-4 rounded-lg text-lg font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-70 disabled:cursor-not-allowed"
+                disabled={nimcLoading || nimcNin.length !== 11}
+                className="w-full flex justify-center items-center py-3 px-4 rounded-xl text-lg font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
               >
@@ -471,6 +469,18 @@ export const AuthForm = ({
                 )}
               </motion.button>
             </div>
+
+            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+              <div className="flex items-start">
+                <Shield className="w-5 h-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900">NIMC Verification</p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Secure government-issued identity verification for enhanced account security.
+                  </p>
+                </div>
+              </div>
+            </div>
           </motion.form>
         )}
       </AnimatePresence>
@@ -482,10 +492,10 @@ export const AuthForm = ({
         transition={{ delay: 0.3 }}
       >
         <p>
-          Don&apos;t have an account?{" "}
+          Don&#39;t have an account?{" "}
           <Link
             href="/agent/signup"
-            className="font-medium text-green-600 hover:text-green-500"
+            className="font-medium text-green-600 hover:text-green-500 transition-colors"
           >
             Create account
           </Link>

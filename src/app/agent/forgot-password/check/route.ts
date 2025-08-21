@@ -12,7 +12,7 @@ import { subHours } from "date-fns";
 
 // ===== Security Config =====
 const SECURITY_CONFIG = {
-  BASE_LOCK_HOURS: 50,
+  BASE_LOCK_HOURS: 1,
   PENALTY_MONTHS: 1,
   MAX_LOCK_DAYS: 365,
   ACCOUNT_LOCKOUT: { MAX_ATTEMPTS: 3, WINDOW_HOURS: 1 },
