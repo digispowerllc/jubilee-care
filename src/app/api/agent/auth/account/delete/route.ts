@@ -1,10 +1,10 @@
 // File: src/app/api/agent/auth/account/delete/route.ts
-import { NextResponse } from 'next/server';
-import { getAgentFromSession } from '@/lib/auth-utils';
-import { prisma } from '@/lib/prisma';
-import { protectData, verifyHash } from '@/lib/security/dataProtection';
-import { verifyAgentPin } from '@/lib/pin-utils';
-import { subHours } from 'date-fns';
+import { NextResponse } from "next/server";
+import { getAgentFromSession } from "@/lib/utils/auth-utils";
+import { prisma } from "@/lib/utils/prisma";
+import { protectData, verifyHash } from "@/lib/security/dataProtection";
+import { verifyAgentPin } from "@/lib/utils/pin-utils";
+import { subHours } from "date-fns";
 
 const SECURITY_CONFIG = {
   BASE_LOCK_HOURS: 24,
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     const session = await getAgentFromSession();
     if (!session) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { success: false, error: "Unauthorized" },
         { status: 401 }
       );
     }
@@ -27,20 +27,23 @@ export async function POST(req: Request) {
     // Check existing lock
     const profile = await prisma.agentProfile.findUnique({
       where: { agentId: session.id },
-      select: { 
+      select: {
         deletionLockedUntil: true,
         deletionLockoutCount: true,
-        passwordHash: true 
-      }
+        passwordHash: true,
+      },
     });
 
-    if (profile?.deletionLockedUntil && new Date() < profile.deletionLockedUntil) {
+    if (
+      profile?.deletionLockedUntil &&
+      new Date() < profile.deletionLockedUntil
+    ) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Account locked',
+        {
+          success: false,
+          error: "Account locked",
           lockedUntil: profile.deletionLockedUntil,
-          lockoutCount: profile.deletionLockoutCount
+          lockoutCount: profile.deletionLockoutCount,
         },
         { status: 403 }
       );
@@ -51,12 +54,15 @@ export async function POST(req: Request) {
     // Validate inputs
     if (!/^\d{8,15}$/.test(pin)) {
       return NextResponse.json(
-        { success: false, error: 'PIN must be 8-15 digits' },
+        { success: false, error: "PIN must be 8-15 digits" },
         { status: 400 }
       );
     }
 
-    if (typeof confirmation !== 'string' || confirmation.toLowerCase() !== 'delete my data') {
+    if (
+      typeof confirmation !== "string" ||
+      confirmation.toLowerCase() !== "delete my data"
+    ) {
       return NextResponse.json(
         { success: false, error: 'Type "delete my data" to confirm' },
         { status: 400 }
@@ -64,17 +70,22 @@ export async function POST(req: Request) {
     }
 
     // Check recent attempts
-    const attemptWindowStart = subHours(new Date(), SECURITY_CONFIG.WINDOW_HOURS);
+    const attemptWindowStart = subHours(
+      new Date(),
+      SECURITY_CONFIG.WINDOW_HOURS
+    );
     const recentAttempts = await prisma.failedDeletionAttempt.count({
-      where: { 
+      where: {
         agentId: session.id,
-        createdAt: { gte: attemptWindowStart }
-      }
+        createdAt: { gte: attemptWindowStart },
+      },
     });
 
     if (recentAttempts >= SECURITY_CONFIG.MAX_ATTEMPTS) {
       const currentLockoutCount = profile?.deletionLockoutCount || 0;
-      const lockHours = SECURITY_CONFIG.BASE_LOCK_HOURS * Math.pow(SECURITY_CONFIG.PENALTY_MULTIPLIER, currentLockoutCount);
+      const lockHours =
+        SECURITY_CONFIG.BASE_LOCK_HOURS *
+        Math.pow(SECURITY_CONFIG.PENALTY_MULTIPLIER, currentLockoutCount);
       const lockMs = Math.min(
         lockHours * 60 * 60 * 1000,
         SECURITY_CONFIG.MAX_LOCK_DAYS * 24 * 60 * 60 * 1000
@@ -84,27 +95,27 @@ export async function POST(req: Request) {
       await prisma.$transaction([
         prisma.agentProfile.update({
           where: { agentId: session.id },
-          data: { 
+          data: {
             deletionLockedUntil: newLockoutUntil,
-            deletionLockoutCount: currentLockoutCount + 1
-          }
+            deletionLockoutCount: currentLockoutCount + 1,
+          },
         }),
         prisma.failedDeletionAttempt.create({
           data: {
             agentId: session.id,
-            ipAddress: req.headers.get('x-forwarded-for') || 'unknown',
-            userAgent: req.headers.get('user-agent') || undefined,
-            details: 'Attempt limit exceeded'
-          }
-        })
+            ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+            userAgent: req.headers.get("user-agent") || undefined,
+            details: "Attempt limit exceeded",
+          },
+        }),
       ]);
 
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Too many failed attempts',
+        {
+          success: false,
+          error: "Too many failed attempts",
           lockedUntil: newLockoutUntil,
-          lockoutCount: currentLockoutCount + 1
+          lockoutCount: currentLockoutCount + 1,
         },
         { status: 429 }
       );
@@ -113,7 +124,7 @@ export async function POST(req: Request) {
     // Verify credentials
     const [isPinValid, isPasswordValid] = await Promise.all([
       verifyAgentPin(session.id, pin),
-      verifyHash(password, profile?.passwordHash || '')
+      verifyHash(password, profile?.passwordHash || ""),
     ]);
 
     if (!isPinValid || !isPasswordValid) {
@@ -121,18 +132,19 @@ export async function POST(req: Request) {
       await prisma.failedDeletionAttempt.create({
         data: {
           agentId: session.id,
-          ipAddress: req.headers.get('x-forwarded-for') || 'unknown',
-          userAgent: req.headers.get('user-agent') || undefined,
-          details: isPasswordValid ? 'Invalid PIN' : 'Invalid password'
-        }
+          ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+          userAgent: req.headers.get("user-agent") || undefined,
+          details: isPasswordValid ? "Invalid PIN" : "Invalid password",
+        },
       });
 
-      const remainingAttempts = SECURITY_CONFIG.MAX_ATTEMPTS - recentAttempts - 1;
+      const remainingAttempts =
+        SECURITY_CONFIG.MAX_ATTEMPTS - recentAttempts - 1;
       return NextResponse.json(
-        { 
-          success: false, 
-          error: isPasswordValid ? 'Invalid PIN' : 'Invalid password',
-          remainingAttempts: Math.max(0, remainingAttempts)
+        {
+          success: false,
+          error: isPasswordValid ? "Invalid PIN" : "Invalid password",
+          remainingAttempts: Math.max(0, remainingAttempts),
         },
         { status: 403 }
       );
@@ -149,11 +161,11 @@ export async function POST(req: Request) {
       prisma.agent.update({
         where: { id: session.id },
         data: {
-          status: 'PENDING_DELETION',
+          status: "PENDING_DELETION",
           deletedAt: new Date(),
           deletionReason: protectedReason.encrypted,
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       }),
 
       // 2. Log the deletion request
@@ -162,14 +174,14 @@ export async function POST(req: Request) {
           action: "ACCOUNT_DELETION_REQUEST",
           agentId: session.id,
           details: "User initiated permanent deletion",
-          ipAddress: req.headers.get('x-forwarded-for') || "unknown",
-          userAgent: req.headers.get('user-agent') || "unknown",
+          ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+          userAgent: req.headers.get("user-agent") || "unknown",
           metadata: {
             deletionScheduled: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
             confirmationText: confirmation,
-            systemsAffected: ["profile", "messages", "subscriptions"]
-          }
-        }
+            systemsAffected: ["profile", "messages", "subscriptions"],
+          },
+        },
       }),
 
       // 3. Schedule actual data purging
@@ -178,37 +190,37 @@ export async function POST(req: Request) {
           agentId: session.id,
           scheduledAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           deletionType: "FULL_ACCOUNT",
-        }
+        },
       }),
 
       // 4. Clear failed attempts and locks
       prisma.failedDeletionAttempt.deleteMany({
-        where: { agentId: session.id }
+        where: { agentId: session.id },
       }),
       prisma.agentProfile.update({
         where: { agentId: session.id },
         data: {
           deletionLockedUntil: null,
-          deletionLockoutCount: 0
-        }
-      })
+          deletionLockoutCount: 0,
+        },
+      }),
     ]);
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Account deletion scheduled. All data will be permanently removed within 7 days.'
+        message:
+          "Account deletion scheduled. All data will be permanently removed within 7 days.",
       },
       { status: 200 }
     );
-
   } catch (error) {
-    console.error('Account deletion error:', error);
+    console.error("Account deletion error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to process deletion request',
-        systemMessage: error instanceof Error ? error.message : undefined
+        error: "Failed to process deletion request",
+        systemMessage: error instanceof Error ? error.message : undefined,
       },
       { status: 500 }
     );

@@ -94,7 +94,7 @@ export default function PasswordResetPage() {
     setStatus({ phase: "submitting" });
 
     try {
-      const res = await fetch("/api/agent/auth/password-reset", {
+      const res = await fetch("/agent/password-reset/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, sid, password }),
@@ -111,7 +111,7 @@ export default function PasswordResetPage() {
         message: "Password updated successfully! Redirecting to sign in...",
       });
 
-      setTimeout(() => router.push("/agent/signin"), 3000);
+      setTimeout(() => router.push("/agent/signin"), 2000);
     } catch (err) {
       setStatus({
         phase: "error",

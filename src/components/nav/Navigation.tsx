@@ -5,7 +5,13 @@ import { DesktopLinks, MobileLinks } from "./NavigationLinks";
 import { HamburgerMenu } from "./HamburgerMenu";
 import { BrandLogo } from "./BrandLogo";
 
-const Navigation = ({ authenticated }: { authenticated: boolean }) => {
+// Extend props to include optional agentId
+interface NavigationProps {
+  authenticated: boolean;
+  agentId?: string;
+}
+
+const Navigation = ({ authenticated, agentId }: NavigationProps) => {
   const { navOpen, setNavOpen, navRef } = useNavigation();
 
   return (
@@ -14,19 +20,28 @@ const Navigation = ({ authenticated }: { authenticated: boolean }) => {
       className="sticky top-0 z-30 bg-white px-6 py-4 shadow-xs select-none"
     >
       <div className="flex items-center justify-between">
-        {/* If authenticated → only show logo */}
         {authenticated ? (
-          <BrandLogo />
+          <>
+            <BrandLogo />
+            {/* Optional: display agentId somewhere if needed */}
+            {agentId && (
+              <span className="ml-4 text-sm text-gray-600">
+                {/* Agent: {agentId} */}
+              </span>
+            )}
+          </>
         ) : (
           <>
-            <HamburgerMenu onClick={() => setNavOpen(!navOpen)} className="mr-3" />
+            <HamburgerMenu
+              onClick={() => setNavOpen(!navOpen)}
+              className="mr-3"
+            />
             <BrandLogo />
             <DesktopLinks />
           </>
         )}
       </div>
 
-      {/* Mobile nav only if not authenticated */}
       {!authenticated && <MobileLinks navOpen={navOpen} />}
     </nav>
   );

@@ -1,4 +1,4 @@
-import { notifyError } from "@/components/global/Notification";
+import { toast } from "react-hot-toast";
 
 type AgentData = {
     surname: string;
@@ -46,7 +46,7 @@ export const validateEmail = (email: string): boolean => {
         /\s/.test(trimmed) ||
         !/^[\w.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(trimmed)
     ) {
-        notifyError("Enter a valid email address");
+        toast.error("Enter a valid email address");
         return false;
     }
     return true;
@@ -60,7 +60,7 @@ export const validateStep = async (
 ): Promise<boolean> => {
     const validateField = (value: string, fieldName: string, minLength = 1) => {
         if (!value?.trim() || value.trim().length < minLength) {
-            notifyError(`${fieldName} is required`);
+            toast.error(`${fieldName} is required`);
             return false;
         }
         return true;
@@ -74,7 +74,7 @@ export const validateStep = async (
                 agentData.otherName.trim() &&
                 !/^[A-Za-z]+$/.test(agentData.otherName.trim())
             ) {
-                notifyError("Other name must contain only letters");
+                toast.error("Other name must contain only letters");
                 return false;
             }
             break;
@@ -84,7 +84,7 @@ export const validateStep = async (
             if (!validateEmail(agentData.email)) return false;
             if (!validateField(agentData.phone, "Phone number", 10)) return false;
             if (!/^\d+$/.test(agentData.phone)) {
-                notifyError("Phone number must contain only digits");
+                toast.error("Phone number must contain only digits");
                 return false;
             }
             // Check password requirements
@@ -95,11 +95,11 @@ export const validateStep = async (
             );
 
             if (!isPasswordValid) {
-                notifyError("Please meet all password requirements");
+                toast.error("Please meet all password requirements");
                 return false;
             }
             if (password.length < 8) {
-                notifyError("Password must be at least 8 characters");
+                toast.error("Password must be at least 8 characters");
                 return false;
             }
             return await checkEmail();
@@ -107,7 +107,7 @@ export const validateStep = async (
         case 3:
             if (!validateField(agentData.nin, "NIN", 11)) return false;
             if (!/^\d{11}$/.test(agentData.nin)) {
-                notifyError("NIN must be exactly 11 digits");
+                toast.error("NIN must be exactly 11 digits");
                 return false;
             }
             break;
@@ -134,7 +134,7 @@ export const fetchStates = async (): Promise<string[]> => {
         sessionStorage.setItem("cachedStates", JSON.stringify(data.states));
         return data.states;
     } catch (error) {
-        notifyError("Failed to load states");
+        toast.error("Failed to load states");
         throw error;
     }
 };
@@ -157,7 +157,7 @@ export const fetchCities = async (
         lgaCache.set(state, data.lgas);
         return data.lgas;
     } catch (error) {
-        notifyError("Failed to load LGAs");
+        toast.error("Failed to load LGAs");
         throw error;
     }
 };

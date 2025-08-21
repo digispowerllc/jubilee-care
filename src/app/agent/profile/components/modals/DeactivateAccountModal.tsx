@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { FiAlertTriangle, FiX, FiLock, FiCheck } from "react-icons/fi";
 import { toast } from "react-hot-toast";
-import { verifyAgentPin } from "@/lib/pin-utils";
+import { verifyAgentPin } from "@/lib/utils/pin-utils";
 
 export function DeactivateModal({
   isOpen,
@@ -84,10 +84,10 @@ export function DeactivateModal({
       console.log("Deactivation successful", data);
       setFeedback("Account deactivation initiated successfully");
       setTimeout(() => {
-        window.location.href = "/logout";
+        window.location.href = "/api/agent/auth/signout";
       }, 2000);
     } catch (error) {
-        console.error("Deactivation error:", error);
+      console.error("Deactivation error:", error);
       setFeedback(
         error instanceof Error ? error.message : "Deactivation failed"
       );

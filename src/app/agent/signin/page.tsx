@@ -4,7 +4,7 @@
 
 import { useAuth } from "./useAuth";
 import { AuthForm } from "./AuthForm";
-import { notifySuccess, notifyError } from "@/components/global/Notification";
+import toast from "react-hot-toast";
 
 export default function SignInPage() {
   const {
@@ -18,27 +18,27 @@ export default function SignInPage() {
   const handleSubmit = async (identifier: string, password: string) => {
     const result = await handleSignIn(identifier, password);
     if (result.success) {
-      // notifySuccess("Login successful!");
+      // toast.success("Login successful!");
     } else if (result.message) {
-      notifyError(result.message);
+      toast.error(result.message);
     }
   };
 
   const handleProviderSubmit = async (provider: "google" | "github") => {
     const result = await handleProviderSignIn(provider);
     if (result.success) {
-      notifySuccess(`${provider} login successful!`);
+      toast.success(`${provider} login successful!`);
     } else if (result.message) {
-      notifyError(result.message);
+      toast.error(result.message);
     }
   };
 
   const handleNimcSubmit = async (nin: string) => {
     const result = await handleNimcVerification(nin);
     if (result.success) {
-      notifySuccess("NIMC verification successful!");
+      toast.success("NIMC verification successful!");
     } else if (result.message) {
-      notifyError(result.message);
+      toast.error(result.message);
     }
   };
 

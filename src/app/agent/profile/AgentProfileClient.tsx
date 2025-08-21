@@ -1,11 +1,9 @@
-// File: src/app/agent/profile/AgentProfileClient.tsx
 "use client";
 
-import { useState } from "react";
-import { AvatarUpload } from "@/components/global/AvatarUpload";
-import { TabController } from "./components/tabs/TabController";
+import { useState, useMemo } from "react";
+import { createTabController } from "./controllers/TabController";
 import {
-  Overview,
+  OverviewTab,
   PersonalTab,
   IdentificationTab,
   ContactTab,
@@ -13,8 +11,14 @@ import {
   SecurityTab,
   PreferencesTab,
 } from "./components/tabs";
-import { TabType, AgentProfileData } from "./types";
-import { useRouter } from "next/navigation";
+import {
+  TabType,
+  SecurityHandlers,
+  PasswordChangeRequest,
+  PINChangeRequest,
+  TwoFARequest,
+  AgentFullDataExtended,
+} from "./types";
 import {
   FiHome,
   FiUser,
@@ -24,38 +28,38 @@ import {
   FiShield,
   FiSettings,
 } from "react-icons/fi";
-import LogoutButton from "./components/LogoutButton";
+
+import ProfileHeader from "./components/tabs/ProfileHeader";
+import ProfileTabsNav from "./components/tabs/ProfileTabsNav";
 
 interface Props {
-  profileData: AgentProfileData;
+  profileData: AgentFullDataExtended;
+  useController?: boolean;
 }
 
-export default function AgentProfileClient({ profileData }: Props) {
-  const [state, setState] = useState({
-    activeTab: "overview" as TabType,
-    isEditingPassword: false,
-    isEditingPIN: false,
-    is2FAEnabled: false,
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-    newPIN: "",
-    confirmPIN: "",
-    pinVerified: true,
-  });
+const DEFAULT_TAB: TabType = "overview";
 
-  const router = useRouter();
+export default function AgentProfileClient({
+  profileData,
+  useController = true,
+}: Props) {
+  const { profile: agentRaw } = profileData;
+  const agent = {
+    ...agentRaw,
+    surname: agentRaw.surname ?? "",
+    firstName: agentRaw.firstName ?? "",
+    memberSince: agentRaw.memberSince
+      ? typeof agentRaw.memberSince === "string"
+        ? agentRaw.memberSince
+        : (agentRaw.memberSince as Date).toISOString()
+      : undefined,
+  };
+  const [activeTab, setActiveTab] = useState<TabType>(DEFAULT_TAB);
 
-  const [controller] = useState(
-    () =>
-      new TabController(
-        state,
-        (partialState: Partial<typeof state>) =>
-          setState((prev) => ({ ...prev, ...partialState })),
-        {} as TabController,
-        router
-      )
-  );
+  // Create controller
+  const controller = useMemo(() => createTabController(setActiveTab), []);
+
+  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
 
   const tabs: { value: TabType; label: string; icon: React.ElementType }[] = [
     { value: "overview", label: "Overview", icon: FiHome },
@@ -68,152 +72,98 @@ export default function AgentProfileClient({ profileData }: Props) {
   ];
 
   const overviewData = {
-    ...profileData,
-    emailVerified: Boolean(profileData.emailVerified),
+    ...agent,
+    emailVerified: !!agent.emailVerified,
+    phoneVerified: !!agent.phoneVerified,
+    memberSince:
+      agentRaw.memberSince instanceof Date
+        ? agentRaw.memberSince
+        : agentRaw.memberSince
+          ? new Date(agentRaw.memberSince)
+          : new Date(), // fallback to current date if undefined
   };
 
+  const securityHandlers: SecurityHandlers = {
+    onPasswordChange: (req: PasswordChangeRequest) =>
+      console.log("Password change request:", req),
+    onPINChange: (req: PINChangeRequest) =>
+      console.log("PIN change request:", req),
+    onToggle2FA: (req: TwoFARequest) => setIs2FAEnabled(req.enable),
+  };
+
+  const commonProps = { agent, ...securityHandlers };
+
+  const currentTab: TabType = activeTab;
+
+  // Add required handlers for IdentificationTab
+  const handleAddNIN = () => {
+    console.log("Add NIN clicked");
+  };
+
+  const handleViewNIN = () => {
+    console.log("View NIN clicked");
+  };
+
+  const handleUploadDocuments = (files: FileList) => {
+    console.log("Upload documents:", files);
+  };
+
+  const unifiedController = useController
+    ? {
+        ...controller,
+        handleAddNIN,
+        handleViewNIN,
+        handleUploadDocuments,
+      }
+    : {
+        switchTab: setActiveTab,
+        handleAddNIN,
+        handleViewNIN,
+        handleUploadDocuments,
+      };
+
   const renderTab = () => {
-    switch (state.activeTab) {
+    switch (currentTab) {
       case "overview":
-        return <Overview profileData={overviewData} controller={controller} />;
+        return <OverviewTab profileData={overviewData} />;
       case "personal":
-        return (
-          <PersonalTab profileData={profileData} controller={controller} />
-        );
+        return <PersonalTab profileData={overviewData} />;
       case "identification":
         return (
           <IdentificationTab
-            profileData={profileData}
-            controller={controller}
+            profileData={overviewData}
+            controller={unifiedController}
           />
         );
       case "contact":
-        return <ContactTab profileData={profileData} controller={controller} />;
+        return <ContactTab profileData={overviewData} />;
       case "address":
-        return <AddressTab profileData={profileData} controller={controller} />;
+        return <AddressTab profileData={overviewData} />;
       case "security":
-        return (
-          <SecurityTab profileData={profileData} controller={controller} />
-        );
+        return <SecurityTab profileData={overviewData} />;
       case "preferences":
         return (
-          <PreferencesTab profileData={profileData} controller={controller} />
+          <PreferencesTab
+            profileData={overviewData}
+            controller={unifiedController}
+          />
         );
       default:
-        return <Overview profileData={overviewData} controller={controller} />;
+        return <OverviewTab profileData={overviewData} />;
     }
   };
 
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       {/* Profile Header */}
-      <header className="mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-5">
-        <AvatarUpload
-          initialAvatarUrl={profileData.avatarUrl}
-          initials={`${profileData.surname?.charAt(0)}${profileData.firstName?.charAt(0)}`}
-          fullName={`${profileData.surname} ${profileData.firstName}`}
-          agentId={profileData.agentId} // Internal use
-        />
-
-        <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-medium text-gray-900 tracking-tight">
-                {profileData.surname} {profileData.firstName}
-              </h1>
-              {profileData.emailVerified ? (
-                <span
-                  className="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800"
-                  title="Verified Account"
-                >
-                  Verified
-                </span>
-              ) : (
-                <span
-                  className="px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800"
-                  title="Unverified Account"
-                >
-                  Unverified
-                </span>
-              )}
-            </div>
-
-            <p className="text-sm text-gray-500 font-light">
-              Agent ID:{" "}
-              <span className="font-medium">
-                {profileData.fieldId ?? profileData.agentId}
-              </span>
-            </p>
-
-            {profileData.memberSince && (
-              <p className="text-sm text-gray-500 font-light">
-                Member since:{" "}
-                {new Date(profileData.memberSince).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
-            )}
-          </div>
-
-          <div className="self-start sm:self-center">
-            <LogoutButton />
-          </div>
-        </div>
-      </header>
+      <ProfileHeader agent={agent} />
 
       {/* Tab Navigation */}
-      <div className="mb-8">
-        {/* Mobile */}
-        <div className="sm:hidden flex justify-between border-b border-gray-100 pb-1">
-          {tabs.map(({ value, label, icon: Icon }) => (
-            <button
-              key={value}
-              onClick={() => controller.switchTab(value)}
-              className={`relative px-3 py-2 text-sm font-medium transition-colors duration-150 ${
-                state.activeTab === value
-                  ? "text-green-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-              aria-label={label}
-            >
-              <Icon className="h-5 w-5 mx-auto" />
-              {state.activeTab === value && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 rounded-full" />
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Desktop */}
-        <div className="hidden sm:block">
-          <nav className="flex space-x-8">
-            {tabs.map(({ value, label, icon: Icon }) => (
-              <button
-                key={value}
-                onClick={() => controller.switchTab(value)}
-                className={`group relative px-1 py-3 text-sm font-medium transition-colors duration-200 ${
-                  state.activeTab === value
-                    ? "text-green-600"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Icon className="h-4 w-4" />
-                  <span>{label}</span>
-                </div>
-                {state.activeTab === value && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 transition-all duration-300" />
-                )}
-                {state.activeTab !== value && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-transparent group-hover:bg-gray-200 transition-all duration-300" />
-                )}
-              </button>
-            ))}
-          </nav>
-        </div>
-      </div>
+      <ProfileTabsNav
+        tabs={tabs}
+        currentTab={currentTab}
+        onSwitchTab={unifiedController.switchTab}
+      />
 
       {/* Active Tab Content */}
       <div className="transition-opacity duration-300 ease-in-out">

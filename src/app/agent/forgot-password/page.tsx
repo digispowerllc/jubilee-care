@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/agent/auth/verify-email-account", {
+      const response = await fetch("/agent/forgot-password/check", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -49,10 +49,10 @@ export default function ForgotPasswordPage() {
       try {
         const errorData = await response.json();
         errorMessage = errorData.message || errorData.error || errorMessage;
-      } catch (jsonError) {
+      } catch {
         try {
           errorMessage = await response.text();
-        } catch (textError) {
+        } catch {
           errorMessage = `Request failed with status ${response.status}`;
         }
       }
@@ -192,7 +192,7 @@ export default function ForgotPasswordPage() {
                   />
                 </svg>
                 <span className="text-sm font-medium text-green-800">
-                  Reset email sent successfully!
+                  Password reset request completed successfully!
                 </span>
               </div>
             </div>

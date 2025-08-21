@@ -1,115 +1,261 @@
 // File: src/app/agent/profile/services/profileService.ts
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/utils/prisma";
 import { unprotectData } from "@/lib/security/dataProtection";
-import { AgentProfileData } from "../types";
+import type {
+  AgentFullDataExtended,
+  AgentData,
+  SessionSummary,
+  AccountLockSummary,
+  AuditLogSummary,
+  FailedAttemptSummary,
+  DeletionScheduleSummary,
+  AgentStatus,
+} from "../types";
+
+import type {
+  AgentSession,
+  AccountLock,
+  AuditLog,
+  FailedAttempt,
+  FailedDeletionAttempt,
+  DeletionSchedule,
+  VerificationStatus,
+} from "@prisma/client";
 
 /**
- * Fetch raw agent data from DB and decrypt fields in one go
+ * Fetch and prepare a single agent's full profile with decrypted fields
  */
-export async function prepareProfileData(agentId: string): Promise<AgentProfileData | null> {
-    if (!agentId) throw new Error("Agent ID is required");
+export async function getAgentFullData(
+  agentId: string
+): Promise<AgentFullDataExtended | null> {
+  if (!agentId?.trim()) throw new Error("Valid agent ID is required");
 
-    // Fetch agent with all needed fields
-    const agentData = await prisma.agent.findUnique({
-        where: { id: agentId },
-        select: {
-            id: true,
-            fieldId: true, // <-- Added fieldId
-            surname: true,
-            firstName: true,
-            otherName: true,
-            dob: true,
-            gender: true,
-            email: true,
-            phone: true,
-            nin: true,
-            state: true,
-            lga: true,
-            address: true,
-            createdAt: true,
-            avatarUrl: true,
-            profile: {
-                select: {
-                    emailVerified: true
-                }
-            }
-        }
-    });
+  const agent = await prisma.agent.findUnique({
+    where: { id: agentId },
+    include: {
+      profile: true,
+      VerificationStatus: { orderBy: { createdAt: "desc" }, take: 1 },
+      sessions: true,
+      AccountLock: true,
+      AuditLog: true,
+      FailedAttempt: true,
+      FailedDeletionAttempt: true,
+      DeletionSchedule: true,
+    },
+  });
 
-    if (!agentData) return null;
+  if (!agent) return null;
 
-    // Decrypt all fields in parallel
-    const [
-        surname,
-        firstName,
-        otherName,
-        dob,
-        gender,
-        email,
-        phone,
-        nin,
-        state,
-        lga,
-        address
-    ] = await Promise.all([
-        agentData.surname ? unprotectData(agentData.surname, "name") : null,
-        agentData.firstName ? unprotectData(agentData.firstName, "name") : null,
-        agentData.otherName ? unprotectData(agentData.otherName, "name") : null,
-        agentData.dob ? unprotectData(agentData.dob.toISOString(), "date") : null,
-        agentData.gender ? unprotectData(agentData.gender, "gender") : null,
-        agentData.email ? unprotectData(agentData.email, "email") : null,
-        agentData.phone ? unprotectData(agentData.phone, "phone") : null,
-        agentData.nin ? unprotectData(agentData.nin, "government") : null,
-        agentData.state ? unprotectData(agentData.state, "location") : null,
-        agentData.lga ? unprotectData(agentData.lga, "location") : null,
-        agentData.address ? unprotectData(agentData.address, "location") : null,
-    ]);
+  const decryptedProfile = await decryptAgentFields(agent);
 
-    let emailVerified: boolean;
+  const latestVerification = agent.VerificationStatus?.[0];
 
-    if (typeof agentData.profile?.emailVerified === "boolean") {
-        // Explicitly true or false
-        emailVerified = agentData.profile.emailVerified;
-    } else if (agentData.profile?.emailVerified instanceof Date) {
-        // Date value means verified
-        emailVerified = true;
-    } else {
-        // null, undefined, or any other unexpected value
-        emailVerified = false;
-    }
+  const profile: AgentData = {
+    agentId: agent.id,
+    fieldId: agent.fieldId,
+    surname: decryptedProfile.surname,
+    firstName: decryptedProfile.firstName,
+    otherName: decryptedProfile.otherName,
+    gender: decryptedProfile.gender,
+    dob: decryptedProfile.dob
+      ? new Date(decryptedProfile.dob)
+      : (agent.dob ?? null),
+    email: decryptedProfile.email,
+    phone: decryptedProfile.phone,
+    emailVerified: !!latestVerification?.emailVerified,
+    phoneVerified: !!latestVerification?.phoneVerified,
+    nin: decryptedProfile.nin,
+    bvn: decryptedProfile.bvn ?? undefined,
+    ninVerified: !!latestVerification?.ninVerified,
+    bvnVerified: !!latestVerification?.bvnVerified,
+    documentVerified: !!latestVerification?.documentVerified,
+    state: decryptedProfile.state,
+    lga: decryptedProfile.lga,
+    address: decryptedProfile.address,
+    dobVerified: !!latestVerification?.dobVerified,
+    genderVerified: !!latestVerification?.genderVerified,
+    memberSince: agent.createdAt,
+    avatarUrl: agent.avatarUrl ?? undefined,
+    createdAt: agent.createdAt,
+    updatedAt: agent.updatedAt,
+    lastLoginAt: agent.lastLoginAt ?? undefined,
+    isActive: agent.isActive,
+    status: deriveStatus(agent.isActive, {
+      emailVerified: latestVerification?.emailVerified,
+      documentVerified: latestVerification?.documentVerified,
+    }),
+    admittedAt: agent.admittedAt ?? undefined,
+  };
 
+  const security = {
+    sessions: mapSessions(agent.sessions),
+    accountLocks: agent.AccountLock ? mapAccountLocks([agent.AccountLock]) : [],
+    auditLogs: mapAuditLogs(agent.AuditLog),
+    failedAttempts: mapFailedAttempts([
+      ...agent.FailedAttempt,
+      ...agent.FailedDeletionAttempt,
+    ]),
+    deletionSchedules: mapDeletionSchedules(agent.DeletionSchedule),
+  };
 
-    return {
-        agentId: agentData.id,           // for internal logic
-        fieldId: agentData.fieldId,      // to display as "Agent ID"
-        surname: surname ?? "",
-        firstName: firstName ?? "",
-        otherName: otherName ?? null,
-        dob: dob ? new Date(dob) : agentData.dob ?? null,
-        gender: gender ?? agentData.gender ?? null,
-        email: email ?? "",
-        phone: phone ?? "",
-        nin: nin ?? "",
-        state: state ?? "",
-        lga: lga ?? "",
-        address: address ?? "",
-        memberSince: agentData.createdAt,
-        avatarUrl: agentData.avatarUrl ?? undefined,
-        emailVerified,
-        createdAt: agentData.createdAt
-    };
+  return { profile, security, other: { notes: "" } };
 }
 
 /**
- * Utility: initials from name
+ * Decrypt agent fields
  */
-export function getInitials(surname: string | null, firstName: string | null) {
-    return `${surname?.charAt(0) ?? ""}${firstName?.charAt(0) ?? ""}`.toUpperCase();
+async function decryptAgentFields(
+  agent: import("@prisma/client").Agent & { profile: unknown }
+) {
+  const [
+    surname,
+    firstName,
+    otherName,
+    dob,
+    gender,
+    email,
+    phone,
+    nin,
+    bvn,
+    state,
+    lga,
+    address,
+  ] = await Promise.all([
+    decrypt(agent.surname, "name"),
+    decrypt(agent.firstName, "name"),
+    decrypt(agent.otherName, "name"),
+    agent.dob ? decrypt(agent.dob.toISOString(), "date") : null,
+    decrypt(agent.gender, "gender"),
+    decrypt(agent.email, "email"),
+    decrypt(agent.phone, "phone"),
+    decrypt(agent.nin, "government"),
+    decrypt(agent.bvn, "government"),
+    decrypt(agent.state, "location"),
+    decrypt(agent.lga, "location"),
+    decrypt(agent.address, "location"),
+  ]);
+
+  return {
+    surname,
+    firstName,
+    otherName,
+    dob,
+    gender,
+    email,
+    phone,
+    nin,
+    bvn,
+    state,
+    lga,
+    address,
+  };
+}
+
+function decrypt(
+  value: string | null,
+  type: Parameters<typeof unprotectData>[1]
+): Promise<string | null> {
+  return value ? unprotectData(value, type) : Promise.resolve(null);
 }
 
 /**
- * Utility: full name
+ * Mapping helpers
  */
-export function getFullName(surname: string, firstName: string, otherName?: string | null) {
-    return `${surname} ${firstName}${otherName ? ` ${otherName}` : ""}`;
+function mapSessions(sessions: AgentSession[]): SessionSummary[] {
+  return sessions.map((s) => ({
+    id: s.id,
+    ipAddress: s.ipAddress ?? undefined,
+    userAgent: s.userAgent ?? undefined,
+    createdAt: s.createdAt,
+    expiresAt: s.expiresAt,
+    revokedAt: s.revokedAt ?? undefined,
+  }));
+}
+
+function mapAccountLocks(locks: AccountLock[]): AccountLockSummary[] {
+  return locks.map((l) => ({
+    id: l.id,
+    reason: l.reason ?? "",
+    createdAt: l.createdAt,
+    expiresAt: l.expiresAt,
+    action: l.action ?? undefined,
+    ipAddress: l.ipAddress ?? undefined,
+  }));
+}
+
+function mapAuditLogs(logs: AuditLog[]): AuditLogSummary[] {
+  return logs.map((l) => ({
+    id: l.id,
+    action: l.action as AuditLogSummary["action"],
+    ipAddress: l.ipAddress,
+    userAgent: l.userAgent ?? "",
+    status: l.status as AuditLogSummary["status"],
+    severity: l.severity as AuditLogSummary["severity"],
+    createdAt: l.createdAt,
+    details: l.details ?? undefined,
+    targetId: l.targetId ?? undefined,
+    targetType: l.targetType ?? undefined,
+  }));
+}
+
+function mapFailedAttempts(
+  failed: (FailedAttempt | FailedDeletionAttempt)[]
+): FailedAttemptSummary[] {
+  return failed.map((f) => ({
+    id: f.id,
+    agentId: f.agentId,
+    action: (["LOGIN", "ACCOUNT_DELETION", "PIN_VERIFICATION"].includes(
+      f.action ?? ""
+    )
+      ? f.action
+      : "ACCOUNT_DELETION") as
+      | "LOGIN"
+      | "ACCOUNT_DELETION"
+      | "PIN_VERIFICATION",
+    ipAddress: f.ipAddress,
+    userAgent: "userAgent" in f ? (f.userAgent ?? undefined) : undefined,
+    details: f.details ?? undefined,
+    attempts: isFailedAttempt(f)
+      ? ((f as FailedAttempt).attempts ?? undefined)
+      : undefined,
+    createdAt: f.createdAt,
+  }));
+}
+
+// Type guard for FailedAttempt
+function isFailedAttempt(
+  f: FailedAttempt | FailedDeletionAttempt
+): f is FailedAttempt {
+  return (
+    "attempts" in f && typeof (f as FailedAttempt).attempts !== "undefined"
+  );
+}
+
+function mapDeletionSchedules(
+  schedules: DeletionSchedule[]
+): DeletionScheduleSummary[] {
+  return schedules.map((d) => ({
+    id: d.id,
+    agentId: d.agentId,
+    deletionType: (d.deletionType === "FULL_ACCOUNT" ||
+    d.deletionType === "DATA_ONLY"
+      ? d.deletionType
+      : "FULL_ACCOUNT") as "FULL_ACCOUNT" | "DATA_ONLY",
+    scheduledAt: d.scheduledAt,
+    completedAt: d.completedAt ?? undefined,
+    createdAt: d.createdAt,
+  }));
+}
+
+/**
+ * Derive AgentStatus
+ */
+function deriveStatus(
+  isActive: boolean,
+  verification?: { emailVerified?: boolean; documentVerified?: boolean }
+): AgentStatus {
+  if (!isActive) return "DEACTIVATED";
+  if (!verification?.emailVerified || !verification?.documentVerified)
+    return "PENDING_DELETION";
+  return "ACTIVE";
 }

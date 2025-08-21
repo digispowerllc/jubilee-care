@@ -12,9 +12,17 @@ export default function LogoutButton() {
   const handleLogout = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/agent/auth/logout", { method: "POST" });
-      if (res.ok) {
+      const res = await fetch("/api/agent/auth/signout", { method: "POST" });
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+      const data = await res.json();
+
+      if (data.success) {
+        // Redirect only if signout was successful
         window.location.href = "/agent/signin";
+      } else {
+        console.error("Signout failed:", data.message);
+        setLoading(false);
       }
     } catch (err) {
       console.error("Logout failed", err);
@@ -27,7 +35,7 @@ export default function LogoutButton() {
       <motion.button
         onClick={() => setIsOpen(true)}
         disabled={loading}
-        className="fixed top-4 right-4 flex items-center gap-2 px-3 py-2 bg-white text-red-500 rounded-md shadow-md hover:bg-red-600 hover:text-white transition-colors z-50 disabled:opacity-70"
+        className="flex items-center gap-2 px-3 py-2 bg-white text-red-500 rounded-md shadow-md hover:bg-red-600 hover:text-white transition-colors z-50 disabled:opacity-70"
         aria-label="Logout"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}

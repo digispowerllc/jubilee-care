@@ -6,11 +6,11 @@ const isDev = process.env.NODE_ENV === "development";
 const nextConfig: NextConfig = {
   turbopack: isDev
     ? {
-      resolveAlias: {
-        underscore: "lodash",
-      },
-      resolveExtensions: [".mdx", ".tsx", ".ts", ".jsx", ".js", ".json"],
-    }
+        resolveAlias: {
+          underscore: "lodash",
+        },
+        resolveExtensions: [".mdx", ".tsx", ".ts", ".jsx", ".js", ".json"],
+      }
     : undefined,
 
   reactStrictMode: true,
@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
 
   experimental: {
     serverActions: {
-      bodySizeLimit: '10mb',
+      bodySizeLimit: "10mb",
     },
   },
   async headers() {
@@ -60,13 +60,20 @@ const nextConfig: NextConfig = {
 
   images: {
     remotePatterns: [
-      new URL('https://res.cloudinary.com/**'),
-      new URL('https://ui-avatars.com/**'),
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**", // allow all paths under this host
+      },
+      {
+        protocol: "https",
+        hostname: "ui-avatars.com",
+        pathname: "/**", // allow all paths under this host
+      },
     ],
     disableStaticImages: false,
-    minimumCacheTTL: 60,
+    minimumCacheTTL: 60, // cache images for 60 seconds
   },
-
   webpack: (config) => {
     if (!isDev) {
       config.resolve.fallback = { fs: false, net: false, tls: false };

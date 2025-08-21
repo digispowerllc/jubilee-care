@@ -1,12 +1,18 @@
-import { FiMapPin, FiHome } from "react-icons/fi";
-import { TabController } from "./TabController";
-import { AddressTabProps } from "../../types";
+// File: app/agent/profile/tabs/AddressTab.tsx
+"use client";
 
-export function AddressTab({ profileData, controller }: AddressTabProps) {
+import { FiMapPin, FiHome, FiEdit2 } from "react-icons/fi";
+import { AgentData } from "../../types";
+
+interface AddressTabProps {
+  profileData: AgentData; // consistent naming with other tabs
+}
+
+export function AddressTab({ profileData }: AddressTabProps) {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
         <div className="flex items-center">
           <div className="flex-shrink-0 p-3 rounded-full border border-gray-200">
             <FiHome className="h-6 w-6 text-gray-600" />
@@ -27,26 +33,29 @@ export function AddressTab({ profileData, controller }: AddressTabProps) {
         {/* State & LGA Card */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
           <div className="px-6 py-5 space-y-4">
-            <div>
+            <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
                 Administrative Region
               </h3>
-              <div className="mt-2 space-y-4">
-                <div>
-                  <p className="text-xs font-medium text-gray-500">State</p>
-                  <p className="mt-1 text-base font-medium text-gray-900 p-3 bg-gray-50 rounded-md">
-                    {profileData.state}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-500">
-                    Local Government Area
-                  </p>
-                  <p className="mt-1 text-base font-medium text-gray-900 p-3 bg-gray-50 rounded-md">
-                    {profileData.lga}
-                  </p>
-                </div>
-              </div>
+              {/* Edit Button (modal trigger) */}
+              <button
+                type="button"
+                className="inline-flex items-center text-xs text-primary-600 hover:text-primary-800"
+                onClick={() => {
+                  // hook up modal open here
+                  console.log("Edit Administrative Region clicked");
+                }}
+              >
+                <FiEdit2 className="h-3.5 w-3.5 mr-1" />
+                Edit
+              </button>
+            </div>
+            <div className="mt-2 space-y-4">
+              <InfoField label="State" value={profileData.state} />
+              <InfoField
+                label="Local Government Area"
+                value={profileData.lga}
+              />
             </div>
           </div>
         </div>
@@ -70,10 +79,10 @@ export function AddressTab({ profileData, controller }: AddressTabProps) {
       </div>
 
       {/* Verification Notice */}
-      <div className="bg-blue-50 rounded-lg shadow-sm p-4">
+      <div className="bg-blue-50 rounded-lg shadow-sm p-4 border border-blue-100">
         <div className="flex">
           <div className="flex-shrink-0">
-            <FiMapPin className="h-5 w-5 text-gray-600" />
+            <FiMapPin className="h-5 w-5 text-blue-600" />
           </div>
           <div className="ml-3">
             <h3 className="text-sm font-medium text-blue-800">
@@ -82,12 +91,24 @@ export function AddressTab({ profileData, controller }: AddressTabProps) {
             <div className="mt-2 text-sm text-blue-700">
               <p>
                 This address may be used for official documentation and service
-                delivery. Please ensure it&#39;s current and accurate.
+                delivery. Please ensure it’s current and accurate.
               </p>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Reusable InfoField for cleaner structure */
+function InfoField({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div>
+      <p className="text-xs font-medium text-gray-500">{label}</p>
+      <p className="mt-1 text-base font-medium text-gray-900 p-3 bg-gray-50 rounded-md">
+        {value || "Not provided"}
+      </p>
     </div>
   );
 }

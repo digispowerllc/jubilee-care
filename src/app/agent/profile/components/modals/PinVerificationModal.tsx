@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { FiLock, FiX, FiRotateCw } from "react-icons/fi";
 import { toast } from "react-hot-toast";
-import { verifyAgentPin } from "@/lib/pin-utils";
+import { verifyAgentPin } from "@/lib/utils/pin-utils";
 
 interface PinVerificationModalProps {
   isOpen: boolean;
@@ -35,12 +35,12 @@ export function PinVerificationModal({
         credentials: "include",
         cache: "no-store",
       });
-      
+
       if (!res.ok) throw new Error("Session check failed");
-      
+
       const { valid } = await res.json();
       if (!mounted) return;
-      
+
       setIsSessionValid(valid);
       if (!valid) {
         toast.error("Session expired. Please log in again.");
@@ -55,11 +55,11 @@ export function PinVerificationModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // First verify session
     await checkSession();
     if (!isSessionValid) return;
-    
+
     if (pin.length < 4) return;
 
     setIsLoading(true);
@@ -69,9 +69,9 @@ export function PinVerificationModal({
         credentials: "include",
         cache: "no-store",
       });
-      
+
       if (!sessionRes.ok) throw new Error("Failed to get session");
-      
+
       const { agentId } = await sessionRes.json();
       if (!agentId) throw new Error("No agent ID in session");
 
@@ -80,7 +80,7 @@ export function PinVerificationModal({
       if (!isValid) {
         throw new Error("Invalid PIN");
       }
-      
+
       toast.success("PIN verified successfully");
       onSuccess();
       onClose();

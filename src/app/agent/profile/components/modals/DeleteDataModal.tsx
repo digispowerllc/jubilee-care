@@ -249,7 +249,10 @@ export function DeleteModal({
       }
 
       setStep("final");
-      setTimeout(() => (window.location.href = "/logout"), 2000);
+      setTimeout(
+        () => (window.location.href = "/api/agent/auth/signout"),
+        2000
+      );
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Deletion failed");
     } finally {

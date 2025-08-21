@@ -1,32 +1,17 @@
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+// File: src/lib/middleware/withPublicPaths.ts
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { isPublicPath } from "@/lib/utils/auth-paths";
 
-const publicPaths = [
-    '/',
-    '/auth/signin',
-    '/auth/signup',
-    '/auth/forgot-password',
-    '/auth/password-reset',
-    '/api/auth',
-    '/_next/static',
-    '_next/image',
-    '/favicon.ico',
-    '/robots.txt',
-    '/sitemap.xml'
-];
+export async function withPublicPaths(
+  request: NextRequest
+): Promise<NextResponse> {
+  const pathname = request.nextUrl.pathname;
+  const response = NextResponse.next();
 
-export async function withPublicPaths(request: NextRequest): Promise<NextResponse> {
-    const isPublicPath = publicPaths.some(path =>
-        request.nextUrl.pathname === path ||
-        request.nextUrl.pathname.startsWith(path)
-    );
+  if (isPublicPath(pathname)) {
+    response.headers.set("x-public-path", "true");
+  }
 
-    // console.log(`Checking public paths for: ${request.nextUrl.pathname}`);
-
-    if (isPublicPath) {
-        // console.log(`Public path accessed: ${request.nextUrl.pathname}`);
-        return NextResponse.next();
-    }
-    // Default response if not a public path
-    return NextResponse.next();
+  return response;
 }

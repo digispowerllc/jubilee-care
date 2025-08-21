@@ -1,4 +1,4 @@
-// middleware.ts
+// File: src/lib/middleware/securityHeaders.ts
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 

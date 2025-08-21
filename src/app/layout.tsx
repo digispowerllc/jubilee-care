@@ -1,9 +1,9 @@
 // File: src/app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Notification } from "@/components/global/Notification";
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "react-hot-toast";
 import LayoutLoaderWrapper from "./LayoutLoaderWrapper";
+import { headers } from "next/headers"; // <--- import headers
 
 import "./globals.css";
 
@@ -22,20 +22,18 @@ export const metadata: Metadata = {
   description: "NIMC FEP",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {" "}
         <LayoutLoaderWrapper>{children}</LayoutLoaderWrapper>
         <Toaster position="top-right" />
-        <Notification maxNotifications={3} position="top-right" />
       </body>
     </html>
   );

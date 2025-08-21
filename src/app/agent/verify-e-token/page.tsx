@@ -35,7 +35,7 @@ export default function VerifyAccountPage() {
     try {
       console.log("Verifying token:", token, "sid:", sid);
 
-      const res = await fetch("/api/agent/auth/verify-e-token", {
+      const res = await fetch("/agent/verify-e-token/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, sid }),
@@ -84,10 +84,10 @@ export default function VerifyAccountPage() {
           `/agent/password-reset?token=${encodeURIComponent(formToken)}&sid=${encodeURIComponent(sid!)}`
         );
       } else {
-         router.push(`/agent/sign-in`);
+        router.push(`/agent/sign-in`);
       }
     } else {
-       router.push("/");
+      router.push("/");
     }
   }, [countdown, verified, error, router, formToken, sid]);
 

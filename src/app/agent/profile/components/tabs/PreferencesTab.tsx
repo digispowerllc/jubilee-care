@@ -1,34 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import {
-  FiBell,
-  FiMoon,
-  FiEye,
-  FiCalendar,
-  FiDollarSign,
-  FiSettings,
-} from "react-icons/fi";
-import { AgentProfileData } from "../../types";
-import { TabController } from "./TabController";
+import { FiBell, FiMoon, FiSettings } from "react-icons/fi";
 
 // PreferencesTab component
-interface PreferencesTabProps {
-  profileData: AgentProfileData;
-  controller: TabController;
-}
+type PreferencesTabProps = object;
 
 export { PreferencesTab };
-
-const PreferencesTab: React.FC<PreferencesTabProps> = ({
-  profileData,
-  controller,
-}) => {
+const PreferencesTab: React.FC<PreferencesTabProps> = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
-  const [showSensitiveData, setShowSensitiveData] = useState(false);
-  const [defaultView, setDefaultView] = useState("dashboard");
-  const [commissionDisplay, setCommissionDisplay] = useState("percentage");
 
   return (
     <div className="space-y-6">

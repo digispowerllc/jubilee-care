@@ -1,138 +1,245 @@
-// types.ts
-import { TabController } from "./components/tabs/TabController";
+// File: src/app/agent/profile/types.ts
 
+/**
+ * Profile tab types
+ */
 export type TabType =
-    | 'overview'
-    | 'personal'
-    | 'identification'
-    | 'contact'
-    | 'address'
-    | 'security'
-    | 'preferences';
+  | "overview"
+  | "personal"
+  | "identification"
+  | "contact"
+  | "address"
+  | "security"
+  | "preferences";
 
-export interface AgentProfileData {
-    // Core Identification
-    agentId: string;        // Internal ID for backend operations
-    fieldId: string;        // Displayed as "Agent ID" in the UI
-    surname: string;
-    firstName: string;
-    otherName: string | null;
-    gender: string | null;
-    dob: Date | null;
+/**
+ * Overall account status
+ */
+export type AgentStatus =
+  | "ACTIVE"
+  | "DEACTIVATED"
+  | "PENDING_DELETION"
+  | "DELETED";
 
-    // Contact Information
-    email: string;
-    phone: string;
-    emailVerified: boolean;
-    phoneVerified: boolean;
+/**`
+ * Audit log enums
+ */
+export type AuditAction =
+  | "ACCOUNT_DELETION_REQUEST"
+  | "ACCOUNT_DEACTIVATION"
+  | "LOGIN_ATTEMPT"
+  | "LOGIN_SUCCESS"
+  | "PASSWORD_CHANGE"
+  | "PASSWORD_RESET"
+  | "DATA_EXPORT"
+  | "DATA_DELETION"
+  | "PERMISSION_CHANGE"
+  | "SYSTEM_EVENT";
 
-    // Government Identification
-    nin: string;
-    ninVerified: boolean;
-    bvnVerified: boolean;
-    documentVerified: boolean;
+export type AuditStatus = "SUCCESS" | "FAILED" | "PENDING" | "REVERTED";
+export type Severity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
-    // Location
-    state: string;
-    lga: string;
-    address: string;
+/**
+ * Core decrypted profile / personal information
+ */
+export interface AgentData {
+  agentId: string;
+  fieldId: string;
+  surname: string | null;
+  firstName: string | null;
+  otherName: string | null;
+  gender: string | null;
+  dob: Date | null;
 
-    // Verification Status
-    dobVerified: boolean;
-    genderVerified: boolean;
+  // Contact
+  email: string | null;
+  phone: string | null;
+  emailVerified: boolean;
+  phoneVerified: boolean;
 
-    // Metadata
-    memberSince?: Date;
-    avatarUrl?: string;
-    createdAt: Date;
-    updatedAt: Date;
-    lastLoginAt?: Date;
+  // Government IDs
+  nin: string | null;
+  bvn?: string | null;
+  ninVerified: boolean;
+  bvnVerified: boolean;
+  documentVerified: boolean;
 
-    // Account Status
-    isActive: boolean;
-    status: string;
-    admittedAt?: Date;
+  // Location
+  state: string | null;
+  lga: string | null;
+  address: string | null;
+
+  // Verification flags
+  dobVerified: boolean;
+  genderVerified: boolean;
+
+  // Account metadata
+  memberSince: Date;
+  avatarUrl?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  lastLoginAt?: Date;
+
+  // Status
+  isActive: boolean;
+  status: AgentStatus;
+  admittedAt?: Date;
+  deletedAt?: Date;
+  deactivatedAt?: Date;
+  deletionReason?: string;
+  deactivationReason?: string;
 }
 
-export interface UnprotectedData extends Omit<AgentProfileData, 'emailVerified'> {
-    emailVerified: boolean; // Ensure consistent type
+/**
+ * Supporting summaries
+ */
+export interface SessionSummary {
+  id: string;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: Date;
+  expiresAt: Date;
+  revokedAt?: Date;
 }
 
-// Verification Status Types
-export type VerificationStatus = 'verified' | 'pending' | 'rejected' | 'not_added';
-export type DocumentType = 'nin' | 'bvn' | 'passport' | 'driver_license';
-
-export interface VerificationDocument {
-    type: DocumentType;
-    status: VerificationStatus;
-    verifiedAt?: Date;
-    rejectionReason?: string;
+export interface AccountLockSummary {
+  id: string;
+  reason?: string;
+  createdAt: Date;
+  expiresAt: Date;
+  action?: string;
+  ipAddress?: string;
 }
 
+export interface AuditLogSummary {
+  id: string;
+  action: AuditAction;
+  ipAddress: string;
+  userAgent: string;
+  status: AuditStatus;
+  severity: Severity;
+  createdAt: Date;
+  details?: string;
+  targetId?: string;
+  targetType?: string;
+}
+
+/**
+ * Failed login or deletion attempt summary
+ */
+export interface FailedAttemptSummary {
+  id: string;
+  agentId: string;
+  action: "LOGIN" | "ACCOUNT_DELETION" | "PIN_VERIFICATION";
+  ipAddress: string;
+  userAgent?: string;
+  details?: string;
+  attempts?: number;
+  createdAt: Date;
+}
+
+/**
+ * Account deletion schedule summary
+ */
+export interface DeletionScheduleSummary {
+  id: string;
+  agentId: string;
+  deletionType: "FULL_ACCOUNT" | "DATA_ONLY";
+  scheduledAt: Date;
+  completedAt?: Date;
+  createdAt: Date;
+}
+
+/**
+ * Security-related info
+ */
+export interface SecurityData {
+  sessions: SessionSummary[];
+  accountLocks: AccountLockSummary[];
+  auditLogs: AuditLogSummary[];
+}
+
+/**
+ * Extended security info including failed attempts and deletion schedules
+ */
+export interface SecurityDataExtended extends SecurityData {
+  failedAttempts: FailedAttemptSummary[];
+  deletionSchedules: DeletionScheduleSummary[];
+}
+
+/**
+ * Other agent metadata
+ */
+export interface OtherData {
+  notes?: string; // placeholder for future expansion
+}
+
+/**
+ * Full aggregate type for convenience
+ */
+export interface AgentFullData {
+  profile: AgentData;
+  security: SecurityData;
+  other: OtherData;
+}
+
+/**
+ * Full aggregate type with extended security
+ */
+export interface AgentFullDataExtended {
+  profile: AgentData;
+  security: SecurityDataExtended;
+  other: OtherData;
+}
+
+/**
+ * Security-related request structures
+ */
+export interface PasswordChangeRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface PINChangeRequest {
+  newPIN: string;
+  confirmPIN: string;
+}
+
+export interface TwoFARequest {
+  enable: boolean;
+}
+
+/**
+ * Tab props common security handlers
+ */
+export interface SecurityHandlers {
+  onPasswordChange: (req: PasswordChangeRequest) => void;
+  onPINChange: (req: PINChangeRequest) => void;
+  onToggle2FA: (req: TwoFARequest) => void;
+}
+
+/**
+ * Tab + Security Controller State
+ */
 export interface ProfileControllerState {
-    activeTab: TabType;
-    isEditingPassword: boolean;
-    isEditingPIN: boolean;
-    is2FAEnabled: boolean;
-    currentPassword: string;
-    newPassword: string;
-    confirmPassword: string;
-    newPIN: string;
-    confirmPIN: string;
-    isEditingPersonal?: boolean;
-    pinVerified: boolean;
-    isViewingNIN?: boolean;
-    isAddingNIN?: boolean;
-    isUploadingDocuments?: boolean;
-}
+  // UI Navigation
+  activeTab: TabType;
 
-export interface ProfileTabProps {
-    profileData: AgentProfileData;
-    controller: TabController;
-}
+  // Security Forms
+  isEditingPassword: boolean;
+  isEditingPIN: boolean;
 
-export interface IdentificationTabProps extends ProfileTabProps {
-    documentStatus?: VerificationStatus;
-    hasUploadedDocuments?: boolean;
-    verificationDocuments?: VerificationDocument[];
-    onViewNIN?: () => void;
-    onAddNIN?: () => void;
-    onUploadDocuments?: (files: FileList) => void;
-}
+  // Password Fields
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 
-export interface ContactTabProps extends ProfileTabProps {
-    secondaryEmail?: string;
-    secondaryPhone?: string;
-    onVerifyEmail?: () => void;
-    onVerifyPhone?: () => void;
-}
+  // PIN Fields
+  newPIN: string;
+  confirmPIN: string;
 
-export interface AddressTabProps extends ProfileTabProps {
-    onVerifyAddress?: () => void;
-    addressStatus?: VerificationStatus;
-}
-
-export interface SecurityTabProps extends ProfileTabProps {
-    lastPasswordChange?: Date;
-    lastLogin?: Date;
-    failedLoginAttempts?: number;
-    activeSessions?: number;
-}
-
-export interface PreferencesTabProps extends ProfileTabProps {
-    language?: string;
-    notificationPreferences?: {
-        email: boolean;
-        sms: boolean;
-        push: boolean;
-    };
-    timezone?: string;
-}
-
-// Verification Status Helper
-export interface VerificationStatusInfo {
-    verified: boolean;
-    level: 'Full' | 'Partial' | 'None';
-    date: string | Date;
-    pendingFields?: string[];
+  // Status Flags
+  pinVerified: boolean;
+  is2FAEnabled: boolean;
 }

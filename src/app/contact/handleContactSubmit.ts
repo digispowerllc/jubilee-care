@@ -1,4 +1,4 @@
-import { notifySuccess, notifyError } from "@/components/global/Notification";
+import toast from "react-hot-toast";
 
 export interface ContactFormValues {
     name: string;
@@ -15,27 +15,27 @@ export async function handleContactSubmit(
     setLoading: (v: boolean) => void
 ) {
     if (!name) {
-        notifyError("Your name is required.");
+        toast.error("Your name is required.");
         return;
     }
     if (!email) {
-        notifyError("Your email is required.");
+        toast.error("Your email is required.");
         return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        notifyError("Please enter a valid email address.");
+        toast.error("Please enter a valid email address.");
         return;
     }
     if (!message) {
-        notifyError("Your message is required.");
+        toast.error("Your message is required.");
         return;
     }
     if (message.length < 10) {
-        notifyError("Your message must be at least 10 characters long.");
+        toast.error("Your message must be at least 10 characters long.");
         return;
     }
     if (message.length > 100) {
-        notifyError("Your message cannot exceed 100 characters.");
+        toast.error("Your message cannot exceed 100 characters.");
         return;
     }
 
@@ -47,9 +47,9 @@ export async function handleContactSubmit(
         if (!res.ok) {
             try {
                 const errorData = await res.json();
-                notifyError(errorData.error || "Failed to verify email.");
+                toast.error(errorData.error || "Failed to verify email.");
             } catch {
-                notifyError("Failed to verify email. Invalid server response.");
+                toast.error("Failed to verify email. Invalid server response.");
             }
             return;
         }
@@ -57,7 +57,7 @@ export async function handleContactSubmit(
         const result = await res.json();
 
         if (result.disposable) {
-            notifyError("Invalid email address provided.");
+            toast.error("Invalid email address provided.");
             return;
         }
 
@@ -71,12 +71,12 @@ export async function handleContactSubmit(
         setEmail("");
         setMessage("");
         setErrors([]);
-        notifySuccess("Redirecting to WhatsApp...");
+        toast.success("Redirecting to WhatsApp...");
     } catch (error: unknown) {
         if (error instanceof Error) {
-            notifyError(error.message);
+            toast.error(error.message);
         } else {
-            notifyError("Something went wrong. Try again.");
+            toast.error("Something went wrong. Try again.");
         }
     } finally {
         setLoading(false);

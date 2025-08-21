@@ -3,8 +3,8 @@
 import { useState, useRef, ChangeEvent, useEffect } from "react";
 import { FiUpload } from "react-icons/fi";
 import Image from "next/image";
-import { uploadImage } from "@/lib/actions/upload";
 import toast from "react-hot-toast";
+import { uploadImage } from "@/lib/utils/upload";
 
 interface AvatarUploadProps {
   initialAvatarUrl?: string;
@@ -95,10 +95,9 @@ export function AvatarUpload({
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Calculate SVG wave height based on upload progress (0-200)
   const uploadHeight = Math.min(200, 200 * (uploadProgress / 100));
 
-  // Initialize DB and load cached avatar
+  // Load cached avatar from IndexedDB
   useEffect(() => {
     const loadCachedAvatar = async () => {
       if (!initialAvatarUrl) {
@@ -108,28 +107,23 @@ export function AvatarUpload({
         await saveAvatarToDB(agentId, initialAvatarUrl);
       }
     };
-
     loadCachedAvatar();
   }, [agentId, initialAvatarUrl]);
 
   const resetFileInput = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate image type
     if (!file.type.startsWith("image/")) {
       toast.error("Please select a valid image file (JPEG, PNG, etc.)");
       resetFileInput();
       return;
     }
 
-    // Validate size limit (5MB)
     const MAX_FILE_SIZE = 5 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
       toast.error("Image size must be less than 5MB");
@@ -139,46 +133,46 @@ export function AvatarUpload({
 
     let previewUrl: string | undefined;
     let toastId: string | undefined;
+
     try {
       setIsUploading(true);
       setUploadProgress(0);
-      // toastId = toast.loading("Uploading image...");
 
-      // Create and store preview URL
       previewUrl = URL.createObjectURL(file);
       setAvatarUrl(previewUrl);
 
-      // Simulate progress with wave animation
+      // Simulate wave progress
       const progressInterval = setInterval(() => {
         setUploadProgress((prev) => {
-          const newProgress = prev + Math.random() * 10;
-          if (newProgress >= 100) {
+          const next = prev + Math.random() * 10;
+          if (next >= 100) {
             clearInterval(progressInterval);
             return 100;
           }
-          return newProgress;
+          return next;
         });
       }, 300);
 
-      // Prepare form data
       const formData = new FormData();
       formData.append("file", file);
       formData.append("agentId", agentId);
 
-      // Upload to backend
-      const result = await uploadImage(formData) as { success?: boolean; url?: string; error?: string };
+      const result = (await uploadImage(formData)) as {
+        success?: boolean;
+        url?: string;
+        error?: string;
+      };
+
       clearInterval(progressInterval);
       setUploadProgress(100);
 
-      // Let the animation complete
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500)); // let animation finish
 
       if (result?.success && result.url) {
         toast.success("Profile picture updated successfully!", { id: toastId });
         setAvatarUrl(result.url);
         await saveAvatarToDB(agentId, result.url);
       } else {
-        // Use type assertion to access error if present, otherwise fallback
         throw new Error(result?.error || "Failed to upload image");
       }
     } catch (error) {
@@ -187,30 +181,57 @@ export function AvatarUpload({
         error instanceof Error ? error.message : "Failed to upload image",
         { id: toastId }
       );
-      // Fall back to cached avatar from IndexedDB
       const cachedAvatar = await getAvatarFromDB(agentId);
       setAvatarUrl(cachedAvatar || undefined);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
       resetFileInput();
-      // Clean up object URL to avoid memory leaks
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     }
   };
 
+  const LIGHT_MODE_COLORS = [
+    { bg: "a8dadc", text: "1d3557" }, // soft cyan bg, dark text
+    { bg: "f1faee", text: "1d3557" }, // pale cream bg, dark text
+    { bg: "ffe5d9", text: "9d0208" }, // soft peach bg, dark red text
+    { bg: "cce3de", text: "1d3557" }, // muted teal bg, dark text
+    { bg: "e7e6f7", text: "264653" }, // soft lavender bg, slate text
+  ];
+
+  const DARK_MODE_COLORS = [
+    { bg: "1d3557", text: "f1faee" }, // deep blue bg, light text
+    { bg: "457b9d", text: "f1faee" }, // muted blue bg, light text
+    { bg: "2a9d8f", text: "f1faee" }, // muted teal bg, light text
+    { bg: "264653", text: "f1faee" }, // dark slate bg, light text
+    { bg: "6d6875", text: "f1faee" }, // soft purple bg, light text
+  ];
+
+  // Utility to pick random color
+  const getRandomColor = (colors: { bg: string; text: string }[]) => {
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
+
   const getAvatarUrl = () => {
     if (avatarUrl) return avatarUrl;
+
+    const isDarkMode =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+    const colorSet = isDarkMode ? DARK_MODE_COLORS : LIGHT_MODE_COLORS;
+    const { bg, text } = getRandomColor(colorSet);
+
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(
       fullName || initials
-    )}&background=random&color=fff&size=256&rounded=true`;
+    )}&background=${bg}&color=${text}&size=256&rounded=true`;
   };
 
   const finalAvatar = getAvatarUrl();
 
   return (
     <div className="relative group w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-100 overflow-hidden border-2 border-primary flex items-center justify-center">
-      {/* SVG Wave Animation - Only visible during upload */}
+      {/* Wave Animation */}
       {isUploading && (
         <svg
           viewBox="0 0 200 200"
@@ -233,14 +254,12 @@ export function AvatarUpload({
             clipPath="url(#wave-clip)"
             className="transition-transform duration-300 ease-out"
           />
-          {/* Secondary wave layer for depth */}
           <path
             d="M0,40 C50,20 100,40 150,20 S250,40 300,20 V200 H0 Z"
             fill="rgba(255,255,255,0.2)"
             transform={`translate(0, ${200 - uploadHeight})`}
             className="wave-animation"
           />
-          {/* Tertiary wave layer */}
           <path
             d="M0,60 C50,40 100,60 150,40 S250,60 300,40 V200 H0 Z"
             fill="rgba(255,255,255,0.15)"
@@ -251,9 +270,7 @@ export function AvatarUpload({
       )}
 
       {/* Avatar Image */}
-      {finalAvatar.startsWith("data:") ||
-      finalAvatar.startsWith("blob:") ||
-      finalAvatar.startsWith("http") ? (
+      {finalAvatar.startsWith("http") || finalAvatar.startsWith("blob:") ? (
         <Image
           src={finalAvatar}
           alt={fullName}
@@ -285,7 +302,7 @@ export function AvatarUpload({
         disabled={isUploading}
       />
 
-      {/* Upload button */}
+      {/* Upload Button */}
       <button
         type="button"
         onClick={() => !isUploading && fileInputRef.current?.click()}
@@ -296,7 +313,7 @@ export function AvatarUpload({
         {!isUploading && <FiUpload className="w-5 h-5 text-white" />}
       </button>
 
-      {/* Wave animation styles */}
+      {/* Wave Animation Styles */}
       <style jsx global>{`
         @keyframes wave-float {
           0%,

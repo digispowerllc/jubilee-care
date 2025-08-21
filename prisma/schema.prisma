@@ -71,34 +71,29 @@ model Agent {
   otherName          String
   gender             String?
   dob                DateTime?
-  email              String
-  phone              String
-  nin                String    @unique
+  email              String    @unique
+  phone              String    @unique
+  nin                String?   @unique
+  bvn                String?   @unique
   state              String
   lga                String
   address            String
   emailHash          String    @unique
   phoneHash          String    @unique
   ninHash            String    @unique
+  bvnHash            String?   @unique
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @default(now()) @updatedAt
   lastLoginAt        DateTime?
   lastLoginAttemptIp String?
   isActive           Boolean   @default(true)
-  status             String    @default("")
   admittedAt         DateTime?
   deletedAt          DateTime?
   deletionReason     String?
   deactivatedAt      DateTime?
   deactivationReason String?
   avatarUrl          String    @default("")
-  emailVerified      Boolean   @default(false)
-  phoneVerified      Boolean   @default(false)
-  ninVerified        Boolean   @default(false)
-  bvnVerified        Boolean   @default(false)
-  dobVerified        Boolean   @default(false)
-  genderVerified     Boolean   @default(false)
-  documentVerified   Boolean   @default(false)
+  status             String    @default("ACTIVE") // "ACTIVE", "DEACTIVATED", "PENDING_DELETION", "DELETED"
 
   profile               AgentProfile?
   sessions              AgentSession[]
@@ -110,6 +105,7 @@ model Agent {
   AccountLock           AccountLock?
   FailedAttempt         FailedAttempt[]
   FailedDeletionAttempt FailedDeletionAttempt[]
+  VerificationStatus    VerificationStatus[]
 
   @@index([emailHash])
   @@index([phoneHash])
@@ -117,13 +113,6 @@ model Agent {
   @@index([state])
   @@index([lga])
   @@index([createdAt])
-  @@index([emailVerified])
-  @@index([phoneVerified])
-  @@index([ninVerified])
-  @@index([bvnVerified])
-  @@index([dobVerified])
-  @@index([genderVerified])
-  @@index([documentVerified])
   // Automatic data retention policy (7 years for compliance)
   @@map("agent")
 }
@@ -198,6 +187,34 @@ model DeletionSchedule {
 
   @@index([agentId])
   @@index([scheduledAt])
+}
+
+model VerificationStatus {
+  id      String @id @default(cuid())
+  agentId String
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  emailVerified    Boolean @default(false)
+  phoneVerified    Boolean @default(false)
+  ninVerified      Boolean @default(false)
+  bvnVerified      Boolean @default(false)
+  documentVerified Boolean @default(false) // e.g. driver’s license / passport from API
+  dobVerified      Boolean @default(false)
+  genderVerified   Boolean @default(false)
+
+  lastCheckedAt DateTime? // when last verified against an agency
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([emailVerified])
+  @@index([phoneVerified])
+  @@index([ninVerified])
+  @@index([bvnVerified])
+  @@index([dobVerified])
+  @@index([genderVerified])
+  @@index([documentVerified])
+  @@index([lastCheckedAt])
+  @@map("verification_status")
 }
 
 model FailedAttempt {
@@ -293,26 +310,26 @@ model PasswordResetEvent {
 }
 
 model User {
-  id                String    @id
-  username          String    @unique
+  id                String       @id @default(cuid())
+  username          String       @unique
   passwordHash      String
-  email             String    @unique
-  verified          Int       @default(0)
+  email             String       @unique
+  verified          Boolean      @default(false) // Changed from Int to Boolean
   fullName          String
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @default(now())
-  bio               String    @default("")
-  country           String    @default("")
-  state             String    @default("")
-  city              String    @default("")
-  address           String    @default("")
-  phoneNumber       String    @unique
-  phoneVerified     Boolean   @default(false)
-  hasPin            Boolean   @default(false)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @default(now()) @updatedAt
+  bio               String       @default("")
+  country           String       @default("")
+  state             String       @default("")
+  city              String       @default("")
+  address           String       @default("")
+  phoneNumber       String       @unique
+  phoneVerified     Boolean      @default(false)
+  hasPin            Boolean      @default(false)
   pinHash           String?
-  isBanned          Boolean   @default(false)
+  isBanned          Boolean      @default(false)
   passwordChangedAt DateTime?
-  role              String    @default("user")
+  role              UserRoleEnum @default(USER)
   sessions          Session[]
   roles             UserRole?
 
@@ -330,14 +347,20 @@ model User {
   @@index([hasPin])
   @@index([isBanned])
   @@index([passwordChangedAt])
+  @@map("user")
+}
+
+enum UserRoleEnum {
+  ADMIN
+  AGENT
+  USER
 }
 
 model UserRole {
-  id   String @id
-  role String @default("agent")
-  user User   @relation(fields: [id], references: [id], onDelete: Cascade)
+  id   String       @id
+  role UserRoleEnum @default(AGENT)
+  user User         @relation(fields: [id], references: [id], onDelete: Cascade)
 
-  // Automatic data retention policy (7 years for compliance)
   @@map("user_role")
 }
 
@@ -345,16 +368,15 @@ model Session {
   id        String   @id @default(cuid())
   token     String   @unique
   userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   expiresAt DateTime
   revoked   Boolean  @default(false)
   userAgent String?
   ipAddress String?
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
-  // Automatic data retention policy (7 years for compliance)
   @@map("session")
 }
 
@@ -369,4 +391,21 @@ model OAuthAccount {
   @@unique([provider, providerId])
   // Automatic data retention policy (7 years for compliance)
   @@map("oauth_account")
+}
+
+model SessionCleanupLog {
+  id      String   @id @default(cuid())
+  removed Int
+  runAt   DateTime @default(now())
+
+  @@map("session_cleanup_log")
+}
+
+model SessionCleanupConfig {
+  id                 String   @id @default(cuid())
+  cleanupProbability Float    @default(0.1) // 10% chance of cleanup per request
+  maxLifetimeHours   Int      @default(48) // hard kill sessions older than 48 hours
+  lastRunAt          DateTime @default(now())
+
+  @@map("session_cleanup_config")
 }

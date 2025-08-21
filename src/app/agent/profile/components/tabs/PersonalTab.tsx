@@ -1,22 +1,20 @@
 // File: src/components/profile/tabs/PersonalTab.tsx
 "use client";
 
-import { TabController } from "./TabController";
 import {
   FiUser,
-  FiEdit2,
   FiLock,
   FiCheckCircle,
   FiAlertTriangle,
+  FiEdit2,
 } from "react-icons/fi";
-import { AgentProfileData } from "../../types";
+import { AgentData } from "../../types";
 
 interface PersonalTabProps {
-  profileData: AgentProfileData;
-  controller: TabController;
+  profileData: AgentData;
 }
 
-export function PersonalTab({ profileData, controller }: PersonalTabProps) {
+export function PersonalTab({ profileData }: PersonalTabProps) {
   // Required fields for full verification
   const requiredFields = [
     profileData.surname,
@@ -36,60 +34,59 @@ export function PersonalTab({ profileData, controller }: PersonalTabProps) {
     date: "2023-11-15",
   };
 
-  // Helper function to determine if a field should show verification
-  const shouldShowVerification = (value: string | null | undefined) => {
-    return value !== null && value !== undefined && value !== "";
-  };
+  const shouldShowVerification = (value: string | null | undefined) =>
+    value !== null && value !== undefined && value !== "";
 
   return (
     <div className="space-y-6">
       {/* Header Card */}
       <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 p-3 rounded-xl bg-primary-50 text-primary-600">
-              <FiUser className="h-6 w-6" />
-            </div>
-            <div className="ml-5">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Personal Information
-              </h2>
-              <p className="py-1 text-sm text-gray-500">
-                Your verified identification details
-              </p>
-            </div>
+        <div className="flex items-center">
+          <div className="flex-shrink-0 p-3 rounded-xl bg-primary-50 text-primary-600">
+            <FiUser className="h-6 w-6" />
           </div>
-
-          <button
-            onClick={() => controller.setState({ isEditingPersonal: true })}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-          >
-            <FiEdit2 className="mr-2 h-4 w-4" />
-            Edit
-          </button>
+          <div className="ml-5">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Personal Information
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Your verified identification details
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Main Information Card */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-        {/* Name Section */}
         <div className="px-6 py-5 space-y-6">
+          {/* Legal Name Section */}
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-              Legal Name
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                Legal Name
+              </h3>
+              <button
+                type="button"
+                className="inline-flex items-center text-xs text-gray-400 cursor-not-allowed"
+                title="Editing disabled"
+                disabled
+              >
+                <FiEdit2 className="h-3.5 w-3.5 mr-1" />
+                Edit
+              </button>
+            </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <InfoField
                 label="Surname"
                 value={profileData.surname}
                 showCheck={shouldShowVerification(profileData.surname)}
-                required={true}
+                required
               />
               <InfoField
                 label="First Name"
                 value={profileData.firstName}
                 showCheck={shouldShowVerification(profileData.firstName)}
-                required={true}
+                required
               />
               <InfoField
                 label="Other Names"
@@ -102,29 +99,46 @@ export function PersonalTab({ profileData, controller }: PersonalTabProps) {
 
           <div className="border-t border-gray-200"></div>
 
-          {/* Personal Details Section */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-            <InfoField
-              label="Date of Birth"
-              value={
-                profileData.dob
-                  ? new Date(profileData.dob).toLocaleDateString()
-                  : "—"
-              }
-              showCheck={shouldShowVerification(
-                profileData.dob ? profileData.dob.toString() : null
-              )}
-              required={true}
-            />
-            <InfoField
-              label="Gender"
-              value={profileData.gender || "—"}
-              showCheck={shouldShowVerification(profileData.gender)}
-              required={true}
-            />
+          {/* Date of Birth / Gender Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                Date of Birth & Gender
+              </h3>
+              <button
+                type="button"
+                className="inline-flex items-center text-xs text-gray-400 cursor-not-allowed"
+                title="Editing disabled"
+                disabled
+              >
+                <FiEdit2 className="h-3.5 w-3.5 mr-1" />
+                Edit
+              </button>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+              <InfoField
+                label="Date of Birth"
+                value={
+                  profileData.dob
+                    ? new Date(profileData.dob).toLocaleDateString()
+                    : "—"
+                }
+                showCheck={shouldShowVerification(
+                  profileData.dob ? profileData.dob.toString() : null
+                )}
+                required
+              />
+              <InfoField
+                label="Gender"
+                value={profileData.gender || "—"}
+                showCheck={shouldShowVerification(profileData.gender)}
+                required
+              />
+            </div>
           </div>
         </div>
       </div>
+
       {/* Verification Status Section */}
       <div className="bg-blue-50 px-6 py-4 border-t border-gray-200 rounded-t-xl">
         <div className="flex items-start">
@@ -151,25 +165,29 @@ export function PersonalTab({ profileData, controller }: PersonalTabProps) {
               </span>
             </div>
             <div className="mt-1 text-sm text-gray-500">
-              <p>
+              <div>
                 {verificationStatus.verified ? (
                   <>
-                    Verified on{" "}
-                    {new Date(verificationStatus.date).toLocaleDateString()}
-                    <p className="mt-1">
-                      All required information has been successfully verified.
+                    <p>
+                      Verified on{" "}
+                      {new Date(verificationStatus.date).toLocaleDateString()}
                     </p>
+                    <div className="p-1">
+                      All required information has been successfully verified.
+                    </div>
                   </>
                 ) : (
                   <>
-                    Last updated{" "}
-                    {new Date(verificationStatus.date).toLocaleDateString()}
-                    <p className="mt-1">
-                      Some required information is missing or incomplete.
+                    <p>
+                      Last updated{" "}
+                      {new Date(verificationStatus.date).toLocaleDateString()}
                     </p>
+                    <div className="p-1">
+                      Some required information is missing or incomplete.
+                    </div>
                   </>
                 )}
-              </p>
+              </div>
             </div>
           </div>
         </div>
@@ -194,7 +212,7 @@ export function PersonalTab({ profileData, controller }: PersonalTabProps) {
   );
 }
 
-// Enhanced InfoField component
+// InfoField component
 function InfoField({
   label,
   value,

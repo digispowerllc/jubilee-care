@@ -1,6 +1,6 @@
+// File: src/app/agent/profile/components/tabs/OverviewTab.tsx
 "use client";
 
-import { TabController } from "./TabController";
 import { TabType } from "../../types";
 import {
   FiCheckCircle,
@@ -17,16 +17,29 @@ import {
 interface OverviewTabProps {
   profileData: {
     emailVerified: boolean;
-    // Include other properties if needed
+    phoneVerified?: boolean;
   };
-  controller: TabController;
+  controller?: {
+    switchTab: (tab: TabType) => void;
+  };
+  switchTab?: (tab: TabType) => void;
 }
 
-export function OverviewTab({ profileData, controller }: OverviewTabProps) {
+export function OverviewTab({
+  profileData,
+  controller,
+  switchTab,
+}: OverviewTabProps) {
+  // Normalize navigation: prefer controller if provided, else fallback to switchTab
+  const handleNavigate = (tab: TabType) => {
+    if (controller?.switchTab) controller.switchTab(tab);
+    else if (switchTab) switchTab(tab);
+  };
+
   const quickActions: {
     name: string;
     tab?: TabType;
-    icon: React.ComponentType<{ className?: string }>;
+    icon: React.ElementType;
     description: string;
     secure?: boolean;
   }[] = [
@@ -77,7 +90,6 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
       tab: "contact",
       icon: FiClipboard,
       description: "Get help or contact support",
-      secure: true,
     },
   ];
 
@@ -118,7 +130,7 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
                       : "bg-blue-100 text-blue-600"
                 }`}
               >
-                <metric.icon className="h-6 w-6" />
+                <metric.icon className="h-6 w-6" aria-hidden="true" />
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">
@@ -149,12 +161,10 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
               <button
                 key={action.name}
                 type="button"
-                onClick={() => {
-                  if (action.tab && controller.state.activeTab !== action.tab) {
-                    controller.switchTab(action.tab); // Only switch if different
-                  }
-                }}
-                className="group relative flex items-start space-x-4 rounded-lg p-4 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                onClick={() => action.tab && handleNavigate(action.tab)}
+                aria-label={`Go to ${action.name}`}
+                className="group relative flex items-start space-x-4 rounded-lg p-4 
+                           hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
               >
                 <div
                   className={`flex-shrink-0 p-3 rounded-lg ${
@@ -163,7 +173,7 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
                       : "bg-gray-100 text-gray-600"
                   } group-hover:bg-opacity-80`}
                 >
-                  <action.icon className="h-5 w-5" />
+                  <action.icon className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <h4 className="text-sm font-medium text-gray-900">
@@ -188,6 +198,7 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
           Account Status
         </h3>
         <div className="mt-4 space-y-4">
+          {/* Email */}
           <div className="flex items-start">
             <div className="flex-shrink-0 pt-0.5">
               {profileData.emailVerified ? (
@@ -198,10 +209,7 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-700">
-                Email{" "}
-                {profileData.emailVerified
-                  ? "Verified"
-                  : "Pending Verification"}
+                Email {profileData.emailVerified ? "Verified" : "Pending"}
               </p>
               <p className="text-sm text-gray-500">
                 {profileData.emailVerified
@@ -210,6 +218,31 @@ export function OverviewTab({ profileData, controller }: OverviewTabProps) {
               </p>
             </div>
           </div>
+
+          {/* Phone */}
+          {profileData.phoneVerified !== undefined && (
+            <div className="flex items-start">
+              <div className="flex-shrink-0 pt-0.5">
+                {profileData.phoneVerified ? (
+                  <FiCheckCircle className="h-5 w-5 text-green-500" />
+                ) : (
+                  <FiXCircle className="h-5 w-5 text-yellow-500" />
+                )}
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-700">
+                  Phone {profileData.phoneVerified ? "Verified" : "Pending"}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {profileData.phoneVerified
+                    ? "Your phone number has been confirmed"
+                    : "Please verify your phone to access all features"}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Security */}
           <div className="flex items-start">
             <div className="flex-shrink-0 pt-0.5">
               <FiShield className="h-5 w-5 text-blue-500" />

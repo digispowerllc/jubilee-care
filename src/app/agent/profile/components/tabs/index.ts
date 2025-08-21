@@ -1,6 +1,6 @@
 // File: src/components/profile/tabs/index.ts
 
-export { OverviewTab as Overview } from "./OverviewTab";
+export { OverviewTab } from "./OverviewTab";
 export { PersonalTab } from "./PersonalTab";
 export { IdentificationTab } from "./IdentificationTab";
 export { ContactTab } from "./ContactTab";
