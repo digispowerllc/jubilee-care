@@ -62,6 +62,8 @@ export async function getAgentFullData(
       : (agent.dob ?? null),
     email: decryptedProfile.email,
     phone: decryptedProfile.phone,
+    nameVerified: latestVerification.nameVerified,
+    nameVerificationDate: latestVerification.nameVerificationDate ?? null,
     genderVerifiedDate: latestVerification.genderVerifiedDate ?? null,
     dobVerifiedDate: latestVerification.dobVerifiedDate ?? null,
     emailVerified: !!latestVerification?.emailVerified,

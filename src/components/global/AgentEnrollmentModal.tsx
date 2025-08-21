@@ -76,7 +76,7 @@ const AgentEnrollmentModal: React.FC<Props> = ({ onClose }) => {
             assisted signup.
           </p>
 
-          <div className="text-sm text-yellow-700 bg-yellow-50 p-2 rounded mb-4">
+          <div className="text-sm text-amber-700 bg-amber-50 p-2 rounded mb-4">
             ⏳ This enrollment link will close by <strong>3:00 PM</strong>{" "}
             today. Time left:{" "}
             <span className="font-semibold">

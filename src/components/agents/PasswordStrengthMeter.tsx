@@ -72,7 +72,7 @@ const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({
     if (strength >= 95) return "bg-green-700"; // Extremely Secure
     if (strength >= 85) return "bg-green-500"; // Very Strong
     if (strength >= 70) return "bg-lime-500"; // Strong
-    if (strength >= 55) return "bg-yellow-500"; // Medium
+    if (strength >= 55) return "bg-amber-500"; // Medium
     if (strength >= 40) return "bg-orange-500"; // Weak
     return "bg-red-500"; // Very Weak
   };

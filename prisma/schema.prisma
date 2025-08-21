@@ -208,6 +208,8 @@ model VerificationStatus {
   dobVerifiedDate      DateTime?
   genderVerified       Boolean   @default(false)
   genderVerifiedDate   DateTime?
+  nameVerified         Boolean   @default(false)
+  nameVerificationDate DateTime?
 
   lastCheckedAt DateTime? // when last verified against an agency
   createdAt     DateTime  @default(now())

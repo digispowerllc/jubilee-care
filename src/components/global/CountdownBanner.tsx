@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 
 const getRemainingTime = () => {
   const now = new Date();
@@ -33,9 +33,8 @@ const CountdownBanner: React.FC = () => {
   }, []);
 
   return (
-    <div className="bg-yellow-100 text-yellow-900 text-sm text-center py-2 px-4">
-      ⏳ Agent Enrollment ends by <strong>3:00 PM</strong> today. Time left: 
-      {' '}
+    <div className="bg-amber-100 text-amber-900 text-sm text-center py-2 px-4">
+      ⏳ Agent Enrollment ends by <strong>3:00 PM</strong> today. Time left:{" "}
       <span className="font-semibold">
         {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
       </span>

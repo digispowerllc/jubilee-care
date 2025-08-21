@@ -50,6 +50,8 @@ export interface AgentData {
   otherName: string | null;
   gender: string | null;
   dob: Date | null;
+  nameVerified: boolean;
+  nameVerificationDate: Date | null;
 
   // Contact
   email: string | null;
