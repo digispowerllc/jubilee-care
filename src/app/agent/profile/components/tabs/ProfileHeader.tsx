@@ -29,8 +29,7 @@ interface ProfileHeaderProps {
     agentId: string;
     fieldId?: string | null;
     memberSince?: string | null;
-    fullName: string; // Assuming fullName is a computed property
-  };
+      };
 }
 
 export default function ProfileHeader({ agent }: ProfileHeaderProps) {
