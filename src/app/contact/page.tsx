@@ -18,48 +18,7 @@ import {
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import Head from "next/head";
-
-export async function handleContactSubmit(
-  data: { name: string; email: string; message: string },
-  setName: (name: string) => void,
-  setEmail: (email: string) => void,
-  setMessage: (message: string) => void,
-  setErrors: (errors: string[]) => void,
-  setLoading: (loading: boolean) => void
-): Promise<boolean> {
-  setLoading(true);
-  setErrors([]);
-
-  const errors: string[] = [];
-
-  if (!data.name.trim()) errors.push("Full name is required.");
-  if (!data.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
-    errors.push("Valid email is required.");
-  if (!data.message.trim()) errors.push("Message cannot be empty.");
-
-  if (errors.length > 0) {
-    setErrors(errors);
-    setLoading(false);
-    return false;
-  }
-
-  try {
-    // Example: simulate API request
-    await new Promise((res) => setTimeout(res, 1500));
-
-    // Reset form after success
-    setName("");
-    setEmail("");
-    setMessage("");
-    setLoading(false);
-
-    return true;
-  } catch (err) {
-    setErrors(["Something went wrong. Please try again later."]);
-    setLoading(false);
-    return false;
-  }
-}
+import { handleContactSubmit } from "./handleContactSubmit"; // <--- external file
 
 const ContactPage: React.FC = () => {
   const [name, setName] = useState("");
@@ -82,9 +41,7 @@ const ContactPage: React.FC = () => {
       setLoading
     );
 
-    if (success) {
-      setSubmitted(true);
-    }
+    if (success) setSubmitted(true);
   };
 
   const contactInfo = [
@@ -113,7 +70,6 @@ const ContactPage: React.FC = () => {
 
   return (
     <>
-      {/* SEO Meta Tags */}
       <Head>
         <title>Contact Us | Jubilee Care Identity Agency</title>
         <meta
@@ -140,8 +96,7 @@ const ContactPage: React.FC = () => {
                 Message Sent Successfully!
               </h2>
               <p className="text-gray-600">
-                Thank you for reaching out. We’ll get back to you within 24
-                hours.
+                Thank you for reaching out. We’ll get back to you within 24 hours.
               </p>
               <motion.button
                 onClick={() => setSubmitted(false)}
@@ -184,22 +139,14 @@ const ContactPage: React.FC = () => {
                           <h3 className="font-semibold">{item.title}</h3>
                           <a
                             href={item.href}
-                            target={
-                              item.href.startsWith("http") ? "_blank" : undefined
-                            }
-                            rel={
-                              item.href.startsWith("http")
-                                ? "noopener noreferrer"
-                                : undefined
-                            }
+                            target={item.href.startsWith("http") ? "_blank" : undefined}
+                            rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
                             className="text-green-100 hover:text-white transition-colors flex items-center mt-1"
                           >
                             {item.content}
                             <FiExternalLink className="h-3 w-3 ml-1" />
                           </a>
-                          <p className="text-green-200 text-sm mt-1">
-                            {item.description}
-                          </p>
+                          <p className="text-green-200 text-sm mt-1">{item.description}</p>
                         </div>
                       </motion.div>
                     ))}
@@ -247,10 +194,7 @@ const ContactPage: React.FC = () => {
 
                     <div className="space-y-4">
                       <div>
-                        <label
-                          htmlFor="name"
-                          className="block text-sm font-medium text-gray-700 mb-2"
-                        >
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                           Full Name
                         </label>
                         <div className="relative">
@@ -272,10 +216,7 @@ const ContactPage: React.FC = () => {
                       </div>
 
                       <div>
-                        <label
-                          htmlFor="email"
-                          className="block text-sm font-medium text-gray-700 mb-2"
-                        >
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                           Email Address
                         </label>
                         <div className="relative">
@@ -297,10 +238,7 @@ const ContactPage: React.FC = () => {
                       </div>
 
                       <div>
-                        <label
-                          htmlFor="message"
-                          className="block text-sm font-medium text-gray-700 mb-2"
-                        >
+                        <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
                           Message
                         </label>
                         <div className="relative">
