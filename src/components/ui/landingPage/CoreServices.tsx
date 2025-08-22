@@ -19,7 +19,7 @@ const CoreServices: React.FC = () => {
       title: "NIN Enrollment",
       description:
         "Professional registration and updates for National Identification Numbers with secure data handling.",
-      gradient: "from-green-500 to-emerald-500",
+      gradient: "from-green-500 to-green-500",
     },
     {
       icon: FiShield,
@@ -75,7 +75,7 @@ const CoreServices: React.FC = () => {
   return (
     <section
       id="services"
-      className="relative bg-gradient-to-br from-green-50 to-emerald-50 px-6 py-20 lg:py-28"
+      className="relative bg-gradient-to-br from-green-50 to-green-50 px-6 py-20 lg:py-28"
     >
       {/* Background pattern */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmMWZhZjQiIGZpbGwtb3BhY2l0eT0iMC40Ij48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIi8+PC9nPjwvZz48L3N2Zz4=')] opacity-20"></div>
@@ -126,7 +126,7 @@ const CoreServices: React.FC = () => {
               </div>
 
               {/* Hover effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl -z-10"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-green-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl -z-10"></div>
             </div>
           ))}
         </div>
@@ -144,7 +144,7 @@ const CoreServices: React.FC = () => {
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <a
                 href="/agent/signup"
-                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-3 text-base font-semibold text-white shadow-sm hover:from-green-700 hover:to-emerald-700 transition-all"
+                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-green-600 to-green-600 px-8 py-3 text-base font-semibold text-white shadow-sm hover:from-green-700 hover:to-green-700 transition-all"
               >
                 <FiUserCheck className="mr-2 h-5 w-5" />
                 Become an Agent

@@ -2,7 +2,18 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, CheckCircle, ArrowLeft, Shield, User, Mail, Phone, MapPin, FileText } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  CheckCircle,
+  ArrowLeft,
+  Shield,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  FileText,
+} from "lucide-react";
 import { FiLock } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,6 +26,7 @@ import {
   fetchStates,
   fetchCities,
 } from "./signupHandlers";
+import AgentSignupSeo from "@/components/seo/AgentSignupSeo";
 
 type AgentData = {
   surname: string;
@@ -129,11 +141,10 @@ export default function AgentEnroll() {
 
   // Calculate password strength
   useEffect(() => {
-    const isValid = (
+    const isValid =
       password.length >= 8 &&
       /\d/.test(password) &&
-      /[!@#$%^&*(),.?":{}|<>]/.test(password)
-    );
+      /[!@#$%^&*(),.?":{}|<>]/.test(password);
     setIsPasswordValid(isValid);
   }, [password]);
 
@@ -251,337 +262,397 @@ export default function AgentEnroll() {
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 px-4 py-10">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200"
-      >
-        {/* Header */}
-        <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 text-center">
-          <div className="flex items-center justify-center mb-4">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-              <Shield className="h-8 w-8 text-white" />
+    <>
+      <AgentSignupSeo />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 px-4 py-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200"
+        >
+          {/* Header */}
+          <div className="bg-gradient-to-r from-green-600 to-green-600 p-6 text-center">
+            <div className="flex items-center justify-center mb-4">
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                <Shield className="h-8 w-8 text-white" />
+              </div>
             </div>
+            <h1 className="text-3xl font-bold text-white mb-2">
+              Agent Enrollment
+            </h1>
+            <p className="text-green-100">
+              Complete all steps to register as an agent
+            </p>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Agent Enrollment
-          </h1>
-          <p className="text-green-100">
-            Complete all steps to register as an agent
-          </p>
-        </div>
 
-        <div className="p-8 space-y-8">
-          {/* Step Progress */}
-          <div className="relative">
-            <div className="flex justify-between mb-3">
-              {steps.map((stepItem) => (
-                <div key={stepItem.number} className="text-center flex-1">
-                  <div className="text-sm font-medium text-gray-600 mb-1">
-                    Step {stepItem.number}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {stepItem.title}
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            <div className="relative mb-8">
-              <div className="absolute top-3 left-0 w-full h-1.5 bg-gray-200 rounded-full" />
-              <div
-                className="absolute top-3 left-0 h-1.5 bg-green-500 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${((step - 1) / 3) * 100}%` }}
-              />
-              <div className="flex justify-between relative">
+          <div className="p-8 space-y-8">
+            {/* Step Progress */}
+            <div className="relative">
+              <div className="flex justify-between mb-3">
                 {steps.map((stepItem) => (
-                  <div
-                    key={stepItem.number}
-                    className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium transition-all ${
-                      stepItem.number <= step
-                        ? "bg-green-500 text-white shadow-lg"
-                        : "bg-gray-200 text-gray-500"
-                    }`}
-                  >
-                    {stepItem.number < step ? "✓" : stepItem.number}
+                  <div key={stepItem.number} className="text-center flex-1">
+                    <div className="text-sm font-medium text-gray-600 mb-1">
+                      Step {stepItem.number}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {stepItem.title}
+                    </div>
                   </div>
                 ))}
               </div>
+
+              <div className="relative mb-8">
+                <div className="absolute top-3 left-0 w-full h-1.5 bg-gray-200 rounded-full" />
+                <div
+                  className="absolute top-3 left-0 h-1.5 bg-green-500 rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${((step - 1) / 3) * 100}%` }}
+                />
+                <div className="flex justify-between relative">
+                  {steps.map((stepItem) => (
+                    <div
+                      key={stepItem.number}
+                      className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium transition-all ${
+                        stepItem.number <= step
+                          ? "bg-green-500 text-white shadow-lg"
+                          : "bg-gray-200 text-gray-500"
+                      }`}
+                    >
+                      {stepItem.number < step ? "✓" : stepItem.number}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Form */}
-          <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
-            <AnimatePresence mode="wait">
-              {step === 1 && (
-                <motion.div
-                  key="step-1"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="grid grid-cols-1 sm:grid-cols-2 gap-6"
-                >
-                  {renderField("surname", "Surname", "text", true, undefined, User)}
-                  {renderField("firstName", "First Name", "text", true, undefined, User)}
-                  {renderField("otherName", "Other Name", "text", false, undefined, User)}
-                </motion.div>
-              )}
+            {/* Form */}
+            <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
+              <AnimatePresence mode="wait">
+                {step === 1 && (
+                  <motion.div
+                    key="step-1"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-6"
+                  >
+                    {renderField(
+                      "surname",
+                      "Surname",
+                      "text",
+                      true,
+                      undefined,
+                      User
+                    )}
+                    {renderField(
+                      "firstName",
+                      "First Name",
+                      "text",
+                      true,
+                      undefined,
+                      User
+                    )}
+                    {renderField(
+                      "otherName",
+                      "Other Name",
+                      "text",
+                      false,
+                      undefined,
+                      User
+                    )}
+                  </motion.div>
+                )}
 
-              {step === 2 && (
-                <motion.div
-                  key="step-2"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
-                >
-                  {renderField("email", "Email Address", "email", true, undefined, Mail)}
-                  {renderField("phone", "Phone Number", "tel", true, {
-                    minLength: 10,
-                    maxLength: 11,
-                  }, Phone)}
+                {step === 2 && (
+                  <motion.div
+                    key="step-2"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="space-y-6"
+                  >
+                    {renderField(
+                      "email",
+                      "Email Address",
+                      "email",
+                      true,
+                      undefined,
+                      Mail
+                    )}
+                    {renderField(
+                      "phone",
+                      "Phone Number",
+                      "tel",
+                      true,
+                      {
+                        minLength: 10,
+                        maxLength: 11,
+                      },
+                      Phone
+                    )}
 
-                  {/* Password */}
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Create Password<span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => updatePassword(e.target.value)}
-                        onBlur={handleBlur}
-                        className="w-full pl-10 pr-12 py-3 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                        placeholder="At least 8 characters with number and special character"
-                        minLength={8}
-                      />
-                      <button
-                        type="button"
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
-
-                    {/* Password Requirements */}
-                    <div className="mt-3 space-y-2">
-                      <PasswordRequirement
-                        met={passwordStrength.hasMinLength}
-                        text="At least 8 characters"
-                      />
-                      <PasswordRequirement
-                        met={passwordStrength.hasNumber}
-                        text="Contains a number"
-                      />
-                      <PasswordRequirement
-                        met={passwordStrength.hasSpecialChar}
-                        text="Contains a special character"
-                      />
-                      <PasswordRequirement
-                        met={passwordStrength.hasUppercase}
-                        text="Contains an uppercase letter"
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {step === 3 && (
-                <motion.div
-                  key="step-3"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
-                >
-                  {renderField("nin", "National Identification Number (NIN)", "tel", true, {
-                    minLength: 11,
-                    maxLength: 11,
-                  }, FileText)}
-                  
-                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                    <div className="flex items-start">
-                      <Shield className="h-5 w-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-sm font-medium text-blue-900">NIN Verification</p>
-                        <p className="text-xs text-blue-700 mt-1">
-                          Your NIN will be verified for identity confirmation and enhanced security.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {step === 4 && (
-                <motion.div
-                  key="step-4"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {/* State */}
+                    {/* Password */}
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-medium text-gray-700">
-                        State<span className="text-red-500">*</span>
+                        Create Password<span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                        <select
-                          value={agentData.state}
-                          onChange={(e) => updateField("state", e.target.value)}
+                        <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => updatePassword(e.target.value)}
                           onBlur={handleBlur}
-                          disabled={stateLoading}
-                          className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 text-gray-700 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all appearance-none"
-                          required
+                          className="w-full pl-10 pr-12 py-3 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                          placeholder="At least 8 characters with number and special character"
+                          minLength={8}
+                        />
+                        <button
+                          type="button"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                          onClick={() => setShowPassword(!showPassword)}
                         >
-                          <option value="">Select State</option>
-                          {states.map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
+                          {showPassword ? (
+                            <EyeOff className="h-5 w-5" />
+                          ) : (
+                            <Eye className="h-5 w-5" />
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Password Requirements */}
+                      <div className="mt-3 space-y-2">
+                        <PasswordRequirement
+                          met={passwordStrength.hasMinLength}
+                          text="At least 8 characters"
+                        />
+                        <PasswordRequirement
+                          met={passwordStrength.hasNumber}
+                          text="Contains a number"
+                        />
+                        <PasswordRequirement
+                          met={passwordStrength.hasSpecialChar}
+                          text="Contains a special character"
+                        />
+                        <PasswordRequirement
+                          met={passwordStrength.hasUppercase}
+                          text="Contains an uppercase letter"
+                        />
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {step === 3 && (
+                  <motion.div
+                    key="step-3"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="space-y-6"
+                  >
+                    {renderField(
+                      "nin",
+                      "National Identification Number (NIN)",
+                      "tel",
+                      true,
+                      {
+                        minLength: 11,
+                        maxLength: 11,
+                      },
+                      FileText
+                    )}
+
+                    <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                      <div className="flex items-start">
+                        <Shield className="h-5 w-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-blue-900">
+                            NIN Verification
+                          </p>
+                          <p className="text-xs text-blue-700 mt-1">
+                            Your NIN will be verified for identity confirmation
+                            and enhanced security.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {step === 4 && (
+                  <motion.div
+                    key="step-4"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="space-y-6"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      {/* State */}
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-gray-700">
+                          State<span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                          <select
+                            value={agentData.state}
+                            onChange={(e) =>
+                              updateField("state", e.target.value)
+                            }
+                            onBlur={handleBlur}
+                            disabled={stateLoading}
+                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 text-gray-700 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all appearance-none"
+                            required
+                          >
+                            <option value="">Select State</option>
+                            {states.map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* LGA */}
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-gray-700">
+                          LGA<span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                          <select
+                            value={agentData.lga}
+                            onChange={(e) => updateField("lga", e.target.value)}
+                            onBlur={handleBlur}
+                            disabled={!cities.length || cityLoading}
+                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 text-gray-700 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all appearance-none"
+                            required
+                          >
+                            <option value="">Select LGA</option>
+                            {cities.map((c) => (
+                              <option key={c} value={c}>
+                                {c}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </div>
 
-                    {/* LGA */}
+                    {/* Address */}
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-medium text-gray-700">
-                        LGA<span className="text-red-500">*</span>
+                        Full Address<span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                        <select
-                          value={agentData.lga}
-                          onChange={(e) => updateField("lga", e.target.value)}
+                        <MapPin className="absolute left-3 top-4 h-5 w-5 text-gray-400" />
+                        <textarea
+                          value={agentData.address}
+                          onChange={(e) =>
+                            updateField("address", e.target.value)
+                          }
                           onBlur={handleBlur}
-                          disabled={!cities.length || cityLoading}
-                          className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 text-gray-700 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all appearance-none"
+                          className="w-full min-h-[100px] pl-10 pr-4 py-3 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                          placeholder="Street, Area, Landmark..."
+                          minLength={10}
+                          maxLength={200}
                           required
-                        >
-                          <option value="">Select LGA</option>
-                          {cities.map((c) => (
-                            <option key={c} value={c}>
-                              {c}
-                            </option>
-                          ))}
-                        </select>
+                        />
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-                  {/* Address */}
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Full Address<span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-4 h-5 w-5 text-gray-400" />
-                      <textarea
-                        value={agentData.address}
-                        onChange={(e) => updateField("address", e.target.value)}
-                        onBlur={handleBlur}
-                        className="w-full min-h-[100px] pl-10 pr-4 py-3 rounded-xl border border-gray-300 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                        placeholder="Street, Area, Landmark..."
-                        minLength={10}
-                        maxLength={200}
-                        required
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              {/* Navigation */}
+              <div className="flex items-center justify-between pt-8 border-t border-gray-200">
+                {step > 1 ? (
+                  <motion.button
+                    type="button"
+                    onClick={prevStep}
+                    className="flex items-center text-green-600 hover:text-green-800 font-medium transition-colors"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Previous
+                  </motion.button>
+                ) : (
+                  <div></div>
+                )}
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between pt-8 border-t border-gray-200">
-              {step > 1 ? (
-                <motion.button
-                  type="button"
-                  onClick={prevStep}
-                  className="flex items-center text-green-600 hover:text-green-800 font-medium transition-colors"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Previous
-                </motion.button>
-              ) : (
-                <div></div>
-              )}
+                {step < 4 ? (
+                  <motion.button
+                    type="button"
+                    onClick={nextStep}
+                    className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-600 text-white font-medium rounded-xl shadow-md hover:from-green-700 hover:to-green-700 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                    disabled={step === 2 && (emailChecking || !isPasswordValid)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {step === 2 && emailChecking ? (
+                      <div className="flex items-center">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 1,
+                            ease: "linear",
+                          }}
+                          className="h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"
+                        />
+                        Verifying...
+                      </div>
+                    ) : (
+                      "Continue"
+                    )}
+                  </motion.button>
+                ) : (
+                  <motion.button
+                    type="button"
+                    onClick={submitForm}
+                    disabled={formSubmitted}
+                    className="px-8 py-3 bg-gradient-to-r from-green-600 to-green-600 text-white font-medium rounded-xl shadow-md hover:from-green-700 hover:to-green-700 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {formSubmitted ? (
+                      <div className="flex items-center">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 1,
+                            ease: "linear",
+                          }}
+                          className="h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"
+                        />
+                        Submitting...
+                      </div>
+                    ) : (
+                      "Complete Enrollment"
+                    )}
+                  </motion.button>
+                )}
+              </div>
+            </form>
 
-              {step < 4 ? (
-                <motion.button
-                  type="button"
-                  onClick={nextStep}
-                  className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-medium rounded-xl shadow-md hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-                  disabled={step === 2 && (emailChecking || !isPasswordValid)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {step === 2 && emailChecking ? (
-                    <div className="flex items-center">
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                        className="h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"
-                      />
-                      Verifying...
-                    </div>
-                  ) : (
-                    "Continue"
-                  )}
-                </motion.button>
-              ) : (
-                <motion.button
-                  type="button"
-                  onClick={submitForm}
-                  disabled={formSubmitted}
-                  className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-medium rounded-xl shadow-md hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {formSubmitted ? (
-                    <div className="flex items-center">
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                        className="h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"
-                      />
-                      Submitting...
-                    </div>
-                  ) : (
-                    "Complete Enrollment"
-                  )}
-                </motion.button>
-              )}
+            {/* Footer */}
+            <div className="text-center text-sm text-gray-500 pt-4">
+              Already have an account?{" "}
+              <a
+                href="/agent/signin"
+                className="font-medium text-green-600 hover:text-green-500 transition-colors"
+              >
+                Sign in here
+              </a>
             </div>
-          </form>
-
-          {/* Footer */}
-          <div className="text-center text-sm text-gray-500 pt-4">
-            Already have an account?{" "}
-            <a
-              href="/agent/signin"
-              className="font-medium text-green-600 hover:text-green-500 transition-colors"
-            >
-              Sign in here
-            </a>
           </div>
-        </div>
-      </motion.div>
-    </div>
+        </motion.div>
+      </div>
+    </>
   );
 }
 

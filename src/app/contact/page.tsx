@@ -19,6 +19,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import Head from "next/head";
 import { handleContactSubmit } from "./contact-utils";
+import { ContactSeo } from "@/components/seo";
 
 const ContactPage: React.FC = () => {
   const [name, setName] = useState("");
@@ -70,6 +71,7 @@ const ContactPage: React.FC = () => {
 
   return (
     <>
+      <ContactSeo />
       <Head>
         <title>Contact Us | Jubilee Care Identity Agency</title>
         <meta

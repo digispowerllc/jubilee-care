@@ -5,6 +5,7 @@
 import { useAuth } from "./useAuth";
 import { AuthForm } from "./AuthForm";
 import toast from "react-hot-toast";
+import { AgentLoginSeo } from "@/components/seo";
 
 export default function SignInPage() {
   const {
@@ -43,14 +44,17 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-4">
-      <AuthForm
-        loading={loading}
-        nimcLoading={nimcLoading}
-        onSubmit={handleSubmit}
-        onProviderSignIn={handleProviderSubmit}
-        onNimcVerify={handleNimcSubmit}
-      />
-    </div>
+    <>
+      <AgentLoginSeo />
+      <div className="min-h-screen flex items-center justify-center bg-white px-4">
+        <AuthForm
+          loading={loading}
+          nimcLoading={nimcLoading}
+          onSubmit={handleSubmit}
+          onProviderSignIn={handleProviderSubmit}
+          onNimcVerify={handleNimcSubmit}
+        />
+      </div>
+    </>
   );
 }

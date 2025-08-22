@@ -1,3 +1,4 @@
+// Homepage (page.tsx)
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,7 +10,7 @@ import ImpactSection from "@/components/ui/landingPage/ImpactSection";
 import VisualInsight from "@/components/ui/landingPage/VisualInsight";
 import AboutUs from "@/components/ui/landingPage/AboutUs";
 import SocialHandles from "@/components/ui/landingPage/SocialHandles";
-
+import { ProjectsSeo } from "@/components/seo";
 
 export default function HomePage() {
   const [showModal, setShowModal] = useState(false);
@@ -25,38 +26,41 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="animate-fade-in">
-      {/* Modal rendered outside main content */}
-      {showModal && (
-        <div className="animate-fade-in">
-          <AgentEnrollmentModal onClose={() => setShowModal(false)} />
-        </div>
-      )}
+    <>
+      <ProjectsSeo />
+      <div className="animate-fade-in">
+        {/* Modal rendered outside main content */}
+        {showModal && (
+          <div className="animate-fade-in">
+            <AgentEnrollmentModal onClose={() => setShowModal(false)} />
+          </div>
+        )}
 
-      <main className="min-h-screen bg-white">
-        <Hero />
-        <CoreServices />
-        <ImpactSection />
-        <Testimonials />
-        <VisualInsight />
-        <AboutUs />
-        <SocialHandles />
-      </main>
+        <main className="min-h-screen bg-white">
+          <Hero />
+          <CoreServices />
+          <ImpactSection />
+          <Testimonials />
+          <VisualInsight />
+          <AboutUs />
+          <SocialHandles />
+        </main>
 
-      <style jsx global>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
+        <style jsx global>{`
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+            }
+            to {
+              opacity: 1;
+            }
           }
-          to {
-            opacity: 1;
-          }
-        }
 
-        .animate-fade-in {
-          animation: fadeIn 0.5s ease-out forwards;
-        }
-      `}</style>
-    </div>
+          .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+          }
+        `}</style>
+      </div>
+    </>
   );
 }
