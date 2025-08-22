@@ -155,7 +155,7 @@ const Testimonials: React.FC = () => {
                     <div className="flex mb-4">{renderStars(t.rating)}</div>
 
                     <p className="text-gray-700 leading-relaxed mb-6 relative z-10">
-                      "{t.text}";
+                    &quot;t.tst&quot;
                     </p>
 
                     <div className="flex items-center gap-4 mt-auto pt-4 border-t border-gray-100">

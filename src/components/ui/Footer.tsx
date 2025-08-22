@@ -50,7 +50,7 @@ const Footer: React.FC = () => {
             {/* Brand Column */}
             <div className="lg:col-span-1">
               <div className="flex items-center gap-3 mb-6">
-                <a
+                <Link
                   href="/"
                   className="hover:opacity-80 transition-opacity"
                   aria-label="Jubilee Care Home"
@@ -63,7 +63,7 @@ const Footer: React.FC = () => {
                     unoptimized
                     className="rounded-lg"
                   />
-                </a>
+                </Link>
                 <div>
                   <h3 className="text-lg font-bold text-green-800">Jubilee Care</h3>
                   <p className="text-sm text-green-600">ICT Innovative Consult</p>
@@ -77,14 +77,14 @@ const Footer: React.FC = () => {
               {/* Social Links */}
               <div className="flex space-x-4">
                 {socialLinks.map((social, index) => (
-                  <a
+                  <Link
                     key={index}
                     href={social.href}
                     aria-label={social.label}
                     className="bg-white text-green-600 p-2 rounded-lg border border-green-200 hover:bg-green-600 hover:text-white transition-all duration-300"
                   >
                     <social.icon className="h-4 w-4" />
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -95,13 +95,13 @@ const Footer: React.FC = () => {
               <ul className="space-y-3">
                 {quickLinks.map((link, index) => (
                   <li key={index}>
-                    <a
+                    <link
                       href={link.href}
                       className="text-gray-600 hover:text-green-700 text-sm transition-colors duration-300 flex items-center gap-2"
                     >
                       <FiExternalLink className="h-3 w-3" />
                       {link.name}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -113,12 +113,12 @@ const Footer: React.FC = () => {
               <ul className="space-y-3">
                 {services.map((service, index) => (
                   <li key={index}>
-                    <a
+                    <Link
                       href={service.href}
                       className="text-gray-600 hover:text-green-700 text-sm transition-colors duration-300"
                     >
                       {service.name}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -134,21 +134,21 @@ const Footer: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <FiPhone className="h-5 w-5 text-green-600 flex-shrink-0" />
-                  <a
+                  <Link
                     href="tel:+2347039792389"
                     className="text-gray-600 hover:text-green-700 text-sm transition-colors duration-300"
                   >
                     +234 703 979 2389
-                  </a>
+                  </Link>
                 </div>
                 <div className="flex items-center gap-3">
                   <FiMail className="h-5 w-5 text-green-600 flex-shrink-0" />
-                  <a
+                  <Link
                     href="mailto:info@jubileecare.ng"
                     className="text-gray-600 hover:text-green-700 text-sm transition-colors duration-300"
                   >
                     info@jubileecare.ng
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -167,15 +167,15 @@ const Footer: React.FC = () => {
               </p>
               
               <div className="flex items-center gap-6 text-sm text-gray-600">
-                <a href="/privacy" className="hover:text-green-700 transition-colors duration-300">
+                <Link href="/privacy" className="hover:text-green-700 transition-colors duration-300">
                   Privacy Policy
-                </a>
-                <a href="/terms" className="hover:text-green-700 transition-colors duration-300">
+                </Link>
+                <Link href="/terms" className="hover:text-green-700 transition-colors duration-300">
                   Terms of Service
-                </a>
-                <a href="/sitemap" className="hover:text-green-700 transition-colors duration-300">
+                </Link>
+                <Link href="/sitemap" className="hover:text-green-700 transition-colors duration-300">
                   Sitemap
-                </a>
+                </Link>
               </div>
             </div>
           </div>
@@ -184,13 +184,13 @@ const Footer: React.FC = () => {
 
       {/* Floating Contact Button */}
       <div className="fixed bottom-6 right-6 z-50">
-        <a
+        <Link
           href="/contact"
           className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-4 rounded-full shadow-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-110 flex items-center justify-center"
           aria-label="Contact Us"
         >
           <FiMail className="h-6 w-6" />
-        </a>
+        </Link>
       </div>
     </footer>
   );

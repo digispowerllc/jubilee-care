@@ -67,12 +67,13 @@ const SocialHandles: React.FC = () => {
       
       <div className="relative mx-auto max-w-4xl">
         <div className="text-center mb-10">
+
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Stay <span className="text-green-600">Connected</span>
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
             Follow us on social media and reach out through your preferred channel. 
-            We're here to help you with all your digital identity needs.
+            We&#39;re here to help you with all your digital identity needs.
           </p>
         </div>
 

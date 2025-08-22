@@ -81,11 +81,11 @@ const ImpactSection: React.FC = () => {
   ];
 
   return (
-    <section className="relative bg-gradient-to-br from-green-50 to-emerald-50 px-6 py-16 lg:py-24 overflow-hidden">
+    <section className="relative bg-gradient-to-br from-green-50 to-green-50 px-6 py-16 lg:py-24 overflow-hidden">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-full h-full opacity-5">
         <div className="absolute top-10 left-10 w-64 h-64 bg-green-300 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
-        <div className="absolute top-0 right-10 w-64 h-64 bg-emerald-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+        <div className="absolute top-0 right-10 w-64 h-64 bg-green-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
         <div className="absolute bottom-10 left-20 w-64 h-64 bg-green-200 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
       </div>
 
@@ -142,7 +142,7 @@ const ImpactSection: React.FC = () => {
 
         {/* Impact statement */}
         <div className="mt-12 text-center">
-          <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl p-8 text-white">
+          <div className="bg-gradient-to-r from-green-600 to-green-600 rounded-xl p-8 text-white">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white bg-opacity-20 mb-4 mx-auto">
               <FiGlobe className="h-8 w-8 text-white" />
             </div>
@@ -150,7 +150,7 @@ const ImpactSection: React.FC = () => {
               Building a Digitally Inclusive Nigeria
             </h3>
             <p className="text-green-100 max-w-3xl mx-auto">
-              Through our partnership with NIMC, we're bridging the digital
+              Through our partnership with NIMC, we&#39;re bridging the digital
               divide and ensuring every Nigerian has access to secure identity
               services, empowering communities and driving national development.
             </p>

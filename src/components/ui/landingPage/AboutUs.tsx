@@ -82,7 +82,7 @@ const AboutUs: React.FC = () => {
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-4">Our Vision</h3>
             <p className="text-gray-600 leading-relaxed">
-              To be Nigeria's leading partner in digital identity transformation, 
+              To be Nigeria&#39;s leading partner in digital identity transformation, 
               creating a future where every citizen has equal access to secure digital 
               services and opportunities for growth.
             </p>
@@ -118,7 +118,7 @@ const AboutUs: React.FC = () => {
             Making a Difference Across Nigeria
           </h3>
           <p className="text-green-100 max-w-3xl mx-auto">
-            Through our partnership with NIMC, we're bringing digital identity services 
+            Through our partnership with NIMC, we&#39;re bringing digital identity services 
             to urban and rural communities alike, ensuring every Nigerian has access to 
             secure identification and the opportunities it unlocks.
           </p>
