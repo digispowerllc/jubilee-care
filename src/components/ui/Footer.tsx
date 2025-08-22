@@ -2,16 +2,17 @@
 
 import React from "react";
 import Image from "next/image";
-import { 
-  FiMail, 
-  FiPhone, 
-  FiMapPin, 
-  FiExternalLink, 
-  FiFacebook, 
-  FiTwitter, 
-  FiInstagram, 
+import Link from "next/link";
+import {
+  FiMail,
+  FiPhone,
+  FiMapPin,
+  FiExternalLink,
+  FiFacebook,
+  FiTwitter,
+  FiInstagram,
   FiLinkedin,
-  FiHeart
+  FiHeart,
 } from "react-icons/fi";
 
 const Footer: React.FC = () => {
@@ -31,14 +32,14 @@ const Footer: React.FC = () => {
     { name: "Verification", href: "/services#verification" },
     { name: "ICT Training", href: "/services#training" },
     { name: "Consultancy", href: "/services#consultancy" },
-    { name: "Support", href: "/services#support" }
+    { name: "Support", href: "/services#support" },
   ];
 
   const socialLinks = [
     { icon: FiFacebook, href: "#", label: "Facebook" },
     { icon: FiTwitter, href: "#", label: "Twitter" },
     { icon: FiInstagram, href: "#", label: "Instagram" },
-    { icon: FiLinkedin, href: "#", label: "LinkedIn" }
+    { icon: FiLinkedin, href: "#", label: "LinkedIn" },
   ];
 
   return (
@@ -65,15 +66,19 @@ const Footer: React.FC = () => {
                   />
                 </Link>
                 <div>
-                  <h3 className="text-lg font-bold text-green-800">Jubilee Care</h3>
-                  <p className="text-sm text-green-600">ICT Innovative Consult</p>
+                  <h3 className="text-lg font-bold text-green-800">
+                    Jubilee Care
+                  </h3>
+                  <p className="text-sm text-green-600">
+                    ICT Innovative Consult
+                  </p>
                 </div>
               </div>
               <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-                Official NIMC Front-End Partner delivering secure digital identity 
-                services and ICT solutions across Nigeria.
+                Official NIMC Front-End Partner delivering secure digital
+                identity services and ICT solutions across Nigeria.
               </p>
-              
+
               {/* Social Links */}
               <div className="flex space-x-4">
                 {socialLinks.map((social, index) => (
@@ -91,11 +96,13 @@ const Footer: React.FC = () => {
 
             {/* Quick Links */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Quick Links</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                Quick Links
+              </h3>
               <ul className="space-y-3">
                 {quickLinks.map((link, index) => (
                   <li key={index}>
-                    <link
+                    <Link
                       href={link.href}
                       className="text-gray-600 hover:text-green-700 text-sm transition-colors duration-300 flex items-center gap-2"
                     >
@@ -109,7 +116,9 @@ const Footer: React.FC = () => {
 
             {/* Services */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Our Services</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                Our Services
+              </h3>
               <ul className="space-y-3">
                 {services.map((service, index) => (
                   <li key={index}>
@@ -126,11 +135,15 @@ const Footer: React.FC = () => {
 
             {/* Contact Info */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Contact Us</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                Contact Us
+              </h3>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <FiMapPin className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-600 text-sm">Umuahia, Abia State, Nigeria</span>
+                  <span className="text-gray-600 text-sm">
+                    Umuahia, Abia State, Nigeria
+                  </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <FiPhone className="h-5 w-5 text-green-600 flex-shrink-0" />
@@ -162,18 +175,28 @@ const Footer: React.FC = () => {
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-gray-600 text-sm flex items-center gap-1">
-                © {currentYear} Jubilee Care ICT Innovative Consult. All rights reserved.
+                © {currentYear} Jubilee Care ICT Innovative Consult. All rights
+                reserved.
                 <FiHeart className="h-3 w-3 text-red-500" />
               </p>
-              
+
               <div className="flex items-center gap-6 text-sm text-gray-600">
-                <Link href="/privacy" className="hover:text-green-700 transition-colors duration-300">
+                <Link
+                  href="/privacy"
+                  className="hover:text-green-700 transition-colors duration-300"
+                >
                   Privacy Policy
                 </Link>
-                <Link href="/terms" className="hover:text-green-700 transition-colors duration-300">
+                <Link
+                  href="/terms"
+                  className="hover:text-green-700 transition-colors duration-300"
+                >
                   Terms of Service
                 </Link>
-                <Link href="/sitemap" className="hover:text-green-700 transition-colors duration-300">
+                <Link
+                  href="/sitemap"
+                  className="hover:text-green-700 transition-colors duration-300"
+                >
                   Sitemap
                 </Link>
               </div>
