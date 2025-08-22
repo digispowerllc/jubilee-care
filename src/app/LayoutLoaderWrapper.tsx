@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Navigation from "@/components/nav/Navigation";
+import Footer from "@/components/ui/Footer"; // Import the Footer component
+import { FiLoader } from "react-icons/fi";
 
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -26,8 +28,13 @@ export default function LayoutLoaderWrapper({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-white to-white">
+        <div className="text-center space-y-4">
+          <div className="flex justify-center">
+            <FiLoader className="h-8 w-8 text-green-600 animate-spin" />
+          </div>
+          {/* <p className="text-gray-600 font-medium">Loading your dashboard...</p> */}
+        </div>
       </div>
     );
   }
@@ -36,6 +43,7 @@ export default function LayoutLoaderWrapper({
     <div className="min-h-screen flex flex-col">
       <Navigation authenticated={!!agentId} agentId={agentId ?? undefined} />
       <main className="flex-1">{children}</main>
+      <Footer /> {/* Add Footer here */}
     </div>
   );
 }

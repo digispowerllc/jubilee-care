@@ -29,6 +29,7 @@ interface ProfileHeaderProps {
     agentId: string;
     fieldId?: string | null;
     memberSince?: string | null;
+    fullName: string; // Assuming fullName is a computed property
   };
 }
 
@@ -67,6 +68,8 @@ export default function ProfileHeader({ agent }: ProfileHeaderProps) {
     { label: "Gender", verified: agent.genderVerified, icon: FiUser },
   ];
 
+  const agentFullName = `${agent.surname} ${agent.firstName.slice(0, 1)}${agent.otherName?.slice(0, 1) ?? ""}`;
+
   return (
     <header className="relative mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
       <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6">
@@ -75,7 +78,7 @@ export default function ProfileHeader({ agent }: ProfileHeaderProps) {
           <AvatarUpload
             initialAvatarUrl={agent.avatarUrl ?? undefined}
             initials={`${agent.surname?.charAt(0)}${agent.firstName?.charAt(0)}`}
-            fullName={`${agent.surname} ${agent.firstName} ${agent.otherName}`}
+            fullName={agentFullName}
             agentId={agent.agentId}
           />
         </div>
@@ -86,8 +89,9 @@ export default function ProfileHeader({ agent }: ProfileHeaderProps) {
             <div className="space-y-3">
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">
-                  {agent.surname} {agent.firstName}
-                  {agent.otherName && ` ${agent.otherName}`}
+                  {/* {agent.surname} {agent.firstName}
+                  {agent.otherName && ` ${agent.otherName}`} */}
+                  {agentFullName}
                 </h1>
 
                 {/* Verification status */}

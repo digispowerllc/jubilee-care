@@ -4,7 +4,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import LayoutLoaderWrapper from "./LayoutLoaderWrapper";
 import { headers } from "next/headers"; // <--- import headers
-
 import "./globals.css";
 
 const geistSans = Geist({
@@ -26,7 +25,7 @@ export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
-}) {
+  }) {
   return (
     <html lang="en">
       <body
@@ -36,5 +35,7 @@ export default async function RootLayout({
         <Toaster position="top-right" />
       </body>
     </html>
+
   );
+  
 }
