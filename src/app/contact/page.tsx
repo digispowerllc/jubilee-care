@@ -18,7 +18,7 @@ import {
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import Head from "next/head";
-import { handleContactSubmit } from "./handleContactSubmit"; // <--- external file
+import { handleContactSubmit } from "./contact-utils";
 
 const ContactPage: React.FC = () => {
   const [name, setName] = useState("");
@@ -96,7 +96,7 @@ const ContactPage: React.FC = () => {
                 Message Sent Successfully!
               </h2>
               <p className="text-gray-600">
-                Thank you for reaching out. We’ll get back to you within 24 hours.
+                Thank you for reaching out. We'll get back to you within 24 hours.
               </p>
               <motion.button
                 onClick={() => setSubmitted(false)}
@@ -176,7 +176,7 @@ const ContactPage: React.FC = () => {
                       Contact Us
                     </h1>
                     <p className="text-gray-600 text-center mb-6">
-                      We’d love to hear from you. Send us a message below.
+                      We'd love to hear from you. Send us a message below.
                     </p>
 
                     {errors.length > 0 && (
