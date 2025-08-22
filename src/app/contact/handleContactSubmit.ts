@@ -5,7 +5,6 @@ export interface ContactFormValues {
     email: string;
     message: string;
 }
-
 export async function handleContactSubmit(
     { name, email, message }: ContactFormValues,
     setName: (v: string) => void,
