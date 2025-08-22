@@ -48,7 +48,7 @@ export default function AgentForgotPasswordSeo() {
                   "@type": "ListItem",
                   "position": 2,
                   "name": "Agent Login",
-                  "item": "https://jcic.vercel.app/agent/login"
+                  "item": "https://jcic.vercel.app/agent/signin"
                 },
                 {
                   "@type": "ListItem",

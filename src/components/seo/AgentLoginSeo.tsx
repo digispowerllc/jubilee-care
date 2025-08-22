@@ -7,7 +7,7 @@ export default function AgentLoginSeo() {
   const title = "Agent Login - NIMC Partner Portal";
   const description =
     "Access your Jubilee Care agent dashboard. Login to manage NIN enrollments, verifications, and access NIMC partner resources.";
-  const url = "https://jcic.vercel.app/agent/login";
+  const url = "https://jcic.vercel.app/agent/signin";
 
   return (
     <Head>
